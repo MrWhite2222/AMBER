@@ -1101,139 +1101,65 @@ $$
           </>
         )}
 
-        {/* REGISTROS */}
-        {viewMode === "registros" && (
-          <div
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              borderRadius: "12px",
-              padding: "15px",
-              border: "1px solid rgba(255,255,255,0.1)",
-              overflowX: "auto",
-            }}
-          >
-            <h3
-              style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}
-            >
-              📋 Todas las Ventas ({allVentas.length})
-            </h3>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "0.8em",
-              }}
-            >
-              <thead>
-                <tr
-                  style={{
-                    borderBottom: "2px solid rgba(243,156,18,0.4)",
-                    background: "rgba(0,0,0,0.2)",
-                  }}
-                >
-                  {[
-                    "Fecha",
-                    "Producto",
-                    "Código",
-                    "Cant",
-                    "Precio",
-                    "Ganancia",
-                    "Pago",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: ["Precio", "Ganancia", "Cant"].includes(h)
-                          ? "right"
-                          : "left",
-                        color: "#f39c12",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {allVentas.map((v, i) => (
-                  <tr
-                    key={i}
-                    style={{
-                      borderBottom: "1px solid rgba(255,255,255,0.07)",
-                      background:
-                        i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)",
-                    }}
-                  >
-                    <td
-                      style={{
-                        padding: "8px 10px",
-                        color: "#bbb",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {v["Fecha"]}
-                    </td>
-                    <td style={{ padding: "8px 10px", color: "#fff" }}>
-                      {v["Tipo de producto"]}
-                    </td>
-                    <td
-                      style={{
-                        padding: "8px 10px",
-                        color: "#777",
-                        fontSize: "0.85em",
-                      }}
-                    >
-                      {v["Código"]}
-                    </td>
-                    <td
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: "right",
-                        color: "#3498db",
-                      }}
-                    >
-                      {v["Cantidad"]}
-                    </td>
-                    <td
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: "right",
-                        color: "#fff",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      $ {parseNumero(v["Precio venta"]).toLocaleString("es-AR")}
-                    </td>
-                    <td
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: "right",
-                        color: "#2ecc71",
-                        fontWeight: "600",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      ${" "}
-                      {parseNumero(v["Ganancia Neta"]).toLocaleString("es-AR")}
-                    </td>
-                    <td
-                      style={{
-                        padding: "8px 10px",
-                        color: "#777",
-                        fontSize: "0.85em",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {v["Medio de pago"]}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+       {/* REGISTROS */}
+{viewMode === "registros" && (
+  <>
+    {/* Filtros */}
+    <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "12px", padding: "18px", marginBottom: "20px", border: "1px solid rgba(255,255,255,0.1)" }}>
+      <h2 style={{ margin: "0 0 15px", color: "#f39c12", fontSize: "1.1em" }}>🔍 Filtros</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "12px" }}>
+        <div>
+          <label style={lbl}>📅 Desde</label>
+          <input type="date" value={df.startDate} onChange={e => setDf(f => ({ ...f, startDate: e.target.value }))} style={inp} />
+        </div>
+        <div>
+          <label style={lbl}>📅 Hasta</label>
+          <input type="date" value={df.endDate} onChange={e => setDf(f => ({ ...f, endDate: e.target.value }))} style={inp} />
+        </div>
+        <div>
+          <label style={lbl}>🏷️ Producto</label>
+          <div style={{ position: "relative" }}>
+            <input type="text" placeholder="Buscar..." value={dashSearch} onChange={e => { setDashSearch(e.target.value); setShowDashDrop(true); }} onFocus={() => setShowDashDrop(true)} style={inp} />
+            {showDashDrop && dashNombresFiltrados.length > 0 && (
+              <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#0f3460", borderRadius: "6px", marginTop: "3px", zIndex: 10, border: "1px solid #f39c12" }}>
+                {dashNombresFiltrados.map((n, i) => <div key={i} onClick={() => { setDf(f => ({ ...f, producto: n })); setDashSearch(n); setShowDashDrop(false); }} style={{ padding: "9px 10px", cursor: "pointer", color: "#fff", fontSize: "0.85em", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{n}</div>)}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      </div>
+      <button onClick={() => { setDf({ startDate: "", endDate: "", producto: "" }); setDashSearch(""); }} style={{ marginTop: "12px", padding: "7px 18px", borderRadius: "6px", border: "1px solid #f39c12", background: "transparent", color: "#f39c12", fontWeight: "600", cursor: "pointer", fontSize: "0.85em" }}>🔄 Limpiar filtros</button>
+    </div>
+
+    {/* Tabla de registros */}
+    <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "12px", padding: "15px", border: "1px solid rgba(255,255,255,0.1)", overflowX: "auto" }}>
+      <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>📋 Ventas ({ventasDash.length} registros)</h3>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8em" }}>
+        <thead><tr style={{ borderBottom: "2px solid rgba(243,156,18,0.4)", background: "rgba(0,0,0,0.2)" }}>
+          {["Fecha", "Producto", "Código", "Cant", "Precio", "Ganancia", "Pago"].map(h => (
+            <th key={h} style={{ padding: "8px 10px", textAlign: ["Precio", "Ganancia", "Cant"].includes(h) ? "right" : "left", color: "#f39c12", whiteSpace: "nowrap" }}>{h}</th>
+          ))}
+        </tr></thead>
+        <tbody>{ventasDash.map((v, i) => (
+          <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+            <td style={{ padding: "8px 10px", color: "#bbb", whiteSpace: "nowrap" }}>{v["Fecha"]}</td>
+            <td style={{ padding: "8px 10px", color: "#fff" }}>{v["Tipo de producto"]}</td>
+            <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em" }}>{v["Código"]}</td>
+            <td style={{ padding: "8px 10px", textAlign: "right", color: "#3498db" }}>{v["Cantidad"]}</td>
+            <td style={{ padding: "8px 10px", textAlign: "right", color: "#fff", whiteSpace: "nowrap" }}>$ {parseNumero(v["Precio venta"]).toLocaleString("es-AR")}</td>
+            <td style={{ padding: "8px 10px", textAlign: "right", color: "#2ecc71", fontWeight: "600", whiteSpace: "nowrap" }}>$ {parseNumero(v["Ganancia Neta"]).toLocaleString("es-AR")}</td>
+            <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em", whiteSpace: "nowrap" }}>{v["Medio de pago"]}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+      {ventasDash.length === 0 && (
+        <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+          <p>No se encontraron ventas con esos filtros.</p>
+        </div>
+      )}
+    </div>
+  </>
+)}
         {/* MODAL NUEVA VENTA */}
         {showForm && (
           <div
