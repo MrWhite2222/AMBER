@@ -25,7 +25,7 @@ const leerHoja = async (nombreHoja) => {
   }
   };
 
-// Actualizar fila
+// agregar fila
 const agregarFila = async (nombreHoja, fila) => {
   try {
     const response = await fetch(API_URL, {
@@ -41,6 +41,25 @@ const agregarFila = async (nombreHoja, fila) => {
   } catch (error) {
     console.error("Error agregando fila:", error);
     return { success: false };
+  }
+};
+// actualizar fila
+const actualizarFila = async (nombreHoja, rowNumber, fila) => {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "update",
+        sheet: nombreHoja,
+        rowNumber,
+        fila,
+      }),
+    });
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error("Error actualizando fila:", error);
+    return false;
   }
 };
 
