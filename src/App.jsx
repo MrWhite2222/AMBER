@@ -417,6 +417,25 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     .slice(0, 8);
 }, [searchProducto, inventarioUnico]);
 
+  //Filtro Edicion
+const editProductosFiltrados = useMemo(() => {
+  if (!editSearchProducto) return [];
+
+  return inventarioUnico
+    .filter((p) => parseNumero(p["STOCK"]) > 0)
+    .filter(
+      (p) =>
+        String(p["PRODUCTO"] ?? "")
+          .toUpperCase()
+          .includes(editSearchProducto.toUpperCase()) ||
+        String(p["CÓDIGO"] ?? "")
+          .toUpperCase()
+          .includes(editSearchProducto.toUpperCase())
+    )
+    .slice(0, 8);
+}, [editSearchProducto, inventarioUnico]);
+
+  
   // Calcular ganancia
   const calcularGanancia = () => {
     if (!selectedProducto || !formData.precioVenta) return 0;
@@ -2042,7 +2061,7 @@ const handleGuardarEdicion = async () => {
               onFocus={() => setShowEditProductoDrop(true)}
               style={inp}
             />
-            {showEditProductoDrop && productosFiltrados.length > 0 && (
+            {showEditProductoDrop && editProductosFiltrados.length > 0 && (
               <div
                 style={{
                   position: "absolute",
@@ -2058,7 +2077,7 @@ const handleGuardarEdicion = async () => {
                   overflowY: "auto",
                 }}
               >
-                {productosFiltrados.map((p, i) => (
+                {editProductosFiltrados.map((p, i) => (
                   <div
                     key={i}
                     onClick={() => {
