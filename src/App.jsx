@@ -23,7 +23,6 @@ const leerHoja = async (nombreHoja) => {
     console.error("Error leyendo hoja:", error);
     return [];
   }
-};
 // Agregar fila a una hoja
 const agregarFila = async (nombreHoja, fila) => {
   try {
@@ -79,18 +78,18 @@ const agregarFila = async (nombreHoja, fila) => {
     ][new Date().getMonth()];
 
 // Autocompletar precio según medio de pago
-useEffect(() => {
-  if (selectedProducto) {
-    const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
-    const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
+  useEffect(() => {
+    if (selectedProducto) {
+      const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
+      const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
     
-    // Si es efectivo, transferencia o QR, usa precio efectivo
-    const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(formData.medioPago);
-    const precioFinal = esEfectivo ? precioEfectivo : precioLista;
+      // Si es efectivo, transferencia o QR, usa precio efectivo
+      const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(formData.medioPago);
+      const precioFinal = esEfectivo ? precioEfectivo : precioLista;
     
-    setFormData(f => ({ ...f, precioVenta: String(precioFinal) }));
-  }
-}, [selectedProducto, formData.medioPago]);
+     setFormData(f => ({ ...f, precioVenta: String(precioFinal) }));
+    }
+  }, [selectedProducto, formData.medioPago]);
 
   // Parsear fecha del formato DD/MM/YYYY
   const parseFecha = (fechaStr) => {
