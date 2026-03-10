@@ -291,22 +291,41 @@ const handleGuardarVenta = async () => {
   
   setGuardando(true);
   
-  // DEBUG: Ver qué valores tenemos
-  console.log("=== DEBUG NUEVA VENTA ===");
-  console.log("formData.precioVenta:", formData.precioVenta);
-  console.log("selectedProducto:", selectedProducto);
-  
-  const precio = parseNumero(formData.precioVenta);
-  const costo = parseNumero(selectedProducto["COSTO U."]);
   const cantidad = Number(formData.cantidad) || 1;
-  const ganancia = (precio - costo) * cantidad;
+  const medioPago = formData.medioPago;
   
-  console.log("precio parseado:", precio);
-  console.log("costo parseado:", costo);
+  // G: Precio venta - desde el formulario o del inventario según medio de pago
+  const precioManual = parseNumero(formData.precioVenta);
+  const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
+  const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
+  const precio = precioManual > 0 ? precioManual : (medioPago === "EFECTIVO" ? precioEfectivo : precioLista);
   
-  const esConTarjeta = formData.medioPago.includes("CRED") || formData.medioPago === "DEBITO";
-  const iva = esConTarjeta ? precio * 0.21 : 0;
-  const gananciaNeta = ganancia - iva;
+  // H: Costo U. - del inventario
+  const costo = parseNumero(selectedProducto["COSTO U."]);
+  
+  // I: IVA 21% - calculado según medio de pago (igual que tu fórmula)
+  let iva = 0;
+  if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA") {
+    iva = 0;
+  } else if (medioPago === "DEBITO") {
+    iva = precio * 0.012 * (1 + 0.012);
+  } else if (medioPago === "CRED. 1 CUOTA") {
+    iva = precio * 0.242 * (1 + 0.012);
+  } else if (medioPago === "CRED. 3 CUOTAS") {
+    iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
+  } else if (medioPago === "CRED. 6 CUOTAS") {
+    iva = precio * (0.0242 + 1 - 1/1.2139) + (precio - precio * (0.0242 + 1 - 1/1.2139)) * 0.012;
+  } else if (medioPago === "CRED.13 CUOTAS") {
+    iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
+  } else {
+    iva = precio * 0.012;
+  }
+  
+  // J: Ganancia Neta
+  const gananciaNeta = precio === 0 ? 0 : Math.round(((precio - iva) * cantidad) * 1000) / 1000;
+  
+  // K: Ganancias con recompra
+  const gananciaRecompra = (precio - costo - iva) * cantidad;
   
   const fechaFormateada = formatearFecha(formData.fecha);
   
@@ -316,20 +335,18 @@ const handleGuardarVenta = async () => {
     "Código": selectedProducto["CÓDIGO"],
     "Tipo de producto": selectedProducto["PRODUCTO"],
     "Cantidad": cantidad,
-    "Medio de pago": formData.medioPago,
+    "Medio de pago": medioPago,
     "Precio venta": precio,
     "Costo U.": costo,
     "IVA 21%": iva,
     "Ganancia Neta": gananciaNeta,
-    "Ganancias con recompra": ganancia
+    "Ganancias con recompra": gananciaRecompra
   };
   
-  console.log("nuevaVenta completa:", nuevaVenta);
-  
-  // 1. Agregar localmente AL INSTANTE (sin esperar)
+  // 1. Agregar localmente AL INSTANTE
   setAllVentas(prev => [...prev, nuevaVenta]);
   
-  // 2. Limpiar formulario y cerrar modal INMEDIATAMENTE
+  // 2. Limpiar formulario y cerrar modal
   setFormData({
     fecha: new Date().toISOString().split("T")[0],
     cantidad: 1,
@@ -341,11 +358,10 @@ const handleGuardarVenta = async () => {
   setShowForm(false);
   setGuardando(false);
   
-  // 3. Guardar en Google Sheets EN BACKGROUND (sin bloquear)
+  // 3. Guardar en Google Sheets EN BACKGROUND
   agregarFila("Ventas", nuevaVenta).then(exito => {
-    console.log("Resultado de agregarFila:", exito);
     if (!exito) {
-      alert("⚠️ Error al sincronizar con Google Sheets. La venta se guardó localmente.");
+      alert("⚠️ Error al sincronizar con Google Sheets.");
     }
   });
 };
