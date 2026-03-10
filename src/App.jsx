@@ -23,6 +23,7 @@ const leerHoja = async (nombreHoja) => {
     console.error("Error leyendo hoja:", error);
     return [];
   }
+  };
 // Agregar fila a una hoja
 const agregarFila = async (nombreHoja, fila) => {
   try {
