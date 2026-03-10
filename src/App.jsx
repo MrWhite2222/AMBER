@@ -11,9 +11,9 @@ import {
 import { Search, RefreshCw } from "lucide-react";
 
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbxbuFXbd4EKuBsiJNmaA-7_pNOk1nb4WCUWdnLF9fIX9HUyTOwXB9HwG4cv_tsSzD9R/exec";
+  "https://script.google.com/macros/s/AKfycbwWfGHtmiNS-ed3zVemIUlS5KHnzOCq1fq0i9E5S4rZsDFtlknD1gF87zK-dthdtvB-/exec";
 
-// Leer datos de una hoja
+// Leer datos de una hoj
 const leerHoja = async (nombreHoja) => {
   try {
     const response = await fetch(`${API_URL}?action=read&sheet=${nombreHoja}`);
