@@ -197,11 +197,13 @@ const AmberApp = () => {
   }, [allVentas]);
 
   const dashNombresFiltrados = useMemo(() => {
-    if (!dashSearch) return [];
-    return nombresUnicos
-      .filter((n) => n.toUpperCase().includes(dashSearch.toUpperCase()))
-      .slice(0, 6);
-  }, [dashSearch, nombresUnicos]);
+  if (!dashSearch) return [];
+  return nombresUnicos
+    .filter((n) =>
+      String(n ?? "").toUpperCase().includes(dashSearch.toUpperCase())
+    )
+    .slice(0, 6);
+}, [dashSearch, nombresUnicos]);
 
   // Ventas filtradas para dashboard
   const ventasDash = useMemo(() => {
@@ -209,17 +211,20 @@ const AmberApp = () => {
     const f = parseFecha(v["Fecha"]);
     if (!f) return false;
 
-    const productoInv = inventario.find((p) => p["CÓDIGO"] === v["Código"]);
-    const talle = (productoInv?.["TALLE"] || "").toUpperCase();
-    const color = (productoInv?.["COLOR"] || "").toUpperCase();
+    const productoInv = inventario.find(
+      (p) =>
+        p &&
+        String(p["CÓDIGO"] ?? "").trim() === String(v["Código"] ?? "").trim()
+    );
+
+    const talle = String(productoInv?.["TALLE"] ?? "").toUpperCase();
+    const color = String(productoInv?.["COLOR"] ?? "").toUpperCase();
 
     const startOk = !df.startDate || f >= new Date(df.startDate);
     const endOk = !df.endDate || f <= new Date(df.endDate);
     const prodOk = !df.producto || v["Tipo de producto"] === df.producto;
-    const talleOk =
-      !df.talle || talle.includes(df.talle.toUpperCase());
-    const colorOk =
-      !df.color || color.includes(df.color.toUpperCase());
+    const talleOk = !df.talle || talle.includes(String(df.talle).toUpperCase());
+    const colorOk = !df.color || color.includes(String(df.color).toUpperCase());
 
     return startOk && endOk && prodOk && talleOk && colorOk;
   });
@@ -246,26 +251,34 @@ const AmberApp = () => {
 
   // Inventario filtrado
   const inventarioFiltrado = useMemo(() => {
-    let items = inventario;
-    if (!showSinStock) items = items.filter((i) => parseNumero(i["STOCK"]) > 0);
-    if (invSearch)
-      items = items.filter(
-        (i) =>
-          (i["PRODUCTO"] || "")
-            .toUpperCase()
-            .includes(invSearch.toUpperCase()) ||
-          (i["CÓDIGO"] || "").toUpperCase().includes(invSearch.toUpperCase())
-      );
-    if (invTalle)
-      items = items.filter((i) =>
-        (i["TALLE"] || "").toUpperCase().includes(invTalle.toUpperCase())
-      );
-    if (invColor)
-      items = items.filter((i) =>
-        (i["COLOR"] || "").toUpperCase().includes(invColor.toUpperCase())
-      );
-    return items;
-  }, [inventario, invSearch, invTalle, invColor, showSinStock]);
+  let items = inventario;
+
+  if (!showSinStock) {
+    items = items.filter((i) => parseNumero(i["STOCK"]) > 0);
+  }
+
+  if (invSearch) {
+    items = items.filter(
+      (i) =>
+        String(i["PRODUCTO"] ?? "").toUpperCase().includes(invSearch.toUpperCase()) ||
+        String(i["CÓDIGO"] ?? "").toUpperCase().includes(invSearch.toUpperCase())
+    );
+  }
+
+  if (invTalle) {
+    items = items.filter((i) =>
+      String(i["TALLE"] ?? "").toUpperCase().includes(invTalle.toUpperCase())
+    );
+  }
+
+  if (invColor) {
+    items = items.filter((i) =>
+      String(i["COLOR"] ?? "").toUpperCase().includes(invColor.toUpperCase())
+    );
+  }
+
+  return items;
+}, [inventario, invSearch, invTalle, invColor, showSinStock]);
 
   const invStats = useMemo(
     () => ({
@@ -284,20 +297,21 @@ const AmberApp = () => {
 
   // Productos filtrados para el buscador
   const productosFiltrados = useMemo(() => {
-    if (!searchProducto) return [];
-    return inventario
-      .filter((p) => parseNumero(p["STOCK"]) > 0)
-      .filter(
-        (p) =>
-          (p["PRODUCTO"] || "")
-            .toUpperCase()
-            .includes(searchProducto.toUpperCase()) ||
-          (p["CÓDIGO"] || "")
-            .toUpperCase()
-            .includes(searchProducto.toUpperCase())
-      )
-      .slice(0, 8);
-  }, [searchProducto, inventario]);
+  if (!searchProducto) return [];
+
+  return inventario
+    .filter((p) => parseNumero(p["STOCK"]) > 0)
+    .filter(
+      (p) =>
+        String(p["PRODUCTO"] ?? "")
+          .toUpperCase()
+          .includes(searchProducto.toUpperCase()) ||
+        String(p["CÓDIGO"] ?? "")
+          .toUpperCase()
+          .includes(searchProducto.toUpperCase())
+    )
+    .slice(0, 8);
+}, [searchProducto, inventario]);
 
   // Calcular ganancia
   const calcularGanancia = () => {
