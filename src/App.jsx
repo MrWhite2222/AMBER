@@ -1140,17 +1140,25 @@ $$
             <th key={h} style={{ padding: "8px 10px", textAlign: ["Precio", "Ganancia", "Cant"].includes(h) ? "right" : "left", color: "#f39c12", whiteSpace: "nowrap" }}>{h}</th>
           ))}
         </tr></thead>
-        <tbody>{ventasDash.map((v, i) => (
-          <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
-            <td style={{ padding: "8px 10px", color: "#bbb", whiteSpace: "nowrap" }}>{v["Fecha"]}</td>
-            <td style={{ padding: "8px 10px", color: "#fff" }}>{v["Tipo de producto"]}</td>
-            <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em" }}>{v["Código"]}</td>
-            <td style={{ padding: "8px 10px", textAlign: "right", color: "#3498db" }}>{v["Cantidad"]}</td>
-            <td style={{ padding: "8px 10px", textAlign: "right", color: "#fff", whiteSpace: "nowrap" }}>$ {parseNumero(v["Precio venta"]).toLocaleString("es-AR")}</td>
-            <td style={{ padding: "8px 10px", textAlign: "right", color: "#2ecc71", fontWeight: "600", whiteSpace: "nowrap" }}>$ {parseNumero(v["Ganancia Neta"]).toLocaleString("es-AR")}</td>
-            <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em", whiteSpace: "nowrap" }}>{v["Medio de pago"]}</td>
-          </tr>
-        ))}</tbody>
+      <tbody>{ventasDash.map((v, i) => {
+  // Buscar el producto en inventario por código
+  const productoInv = inventario.find(p => p["CÓDIGO"] === v["Código"]);
+  const talle = productoInv ? productoInv["TALLE"] : "-";
+  const color = productoInv ? productoInv["COLOR"] : "-";
+  
+  return (
+    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+      <td style={{ padding: "8px 10px", color: "#bbb", whiteSpace: "nowrap" }}>{v["Fecha"]}</td>
+      <td style={{ padding: "8px 10px", color: "#fff" }}>{v["Tipo de producto"]}</td>
+      <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em" }}>{v["Código"]}</td>
+      <td style={{ padding: "8px 10px", color: "#9b59b6" }}>{talle}</td>
+      <td style={{ padding: "8px 10px", color: "#3498db" }}>{color}</td>
+      <td style={{ padding: "8px 10px", textAlign: "right", color: "#3498db" }}>{v["Cantidad"]}</td>
+      <td style={{ padding: "8px 10px", textAlign: "right", color: "#fff", whiteSpace: "nowrap" }}>$ {parseNumero(v["Precio venta"]).toLocaleString("es-AR")}</td>
+      <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em", whiteSpace: "nowrap" }}>{v["Medio de pago"]}</td>
+    </tr>
+  );
+})}</tbody>
       </table>
       {ventasDash.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
