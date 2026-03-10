@@ -29,12 +29,35 @@ const agregarFila = async (nombreHoja, fila) => {
   try {
     const response = await fetch(API_URL, {
       method: "POST",
-      body: JSON.stringify({ sheet: nombreHoja, fila }),
+      body: JSON.stringify({
+        action: "append",
+        sheet: nombreHoja,
+        fila,
+      }),
     });
     const result = await response.json();
     return result.success;
   } catch (error) {
     console.error("Error agregando fila:", error);
+    return false;
+  }
+};
+// Actualizar fila
+const actualizarFila = async (nombreHoja, rowNumber, fila) => {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "update",
+        sheet: nombreHoja,
+        rowNumber,
+        fila,
+      }),
+    });
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error("Error actualizando fila:", error);
     return false;
   }
 };
@@ -96,6 +119,40 @@ const AmberApp = () => {
 
   return Array.from(mapa.values());
 }, [inventario]);
+
+const abrirEdicion = (venta) => {
+  const productoInv = inventarioUnico.find(
+    (p) =>
+      p &&
+      String(p["CÓDIGO"] ?? "").trim() === String(venta["Código"] ?? "").trim()
+  );
+
+  const productoBase = {
+    "CÓDIGO": venta["Código"] ?? productoInv?.["CÓDIGO"] ?? "",
+    "PRODUCTO": venta["Tipo de producto"] ?? productoInv?.["PRODUCTO"] ?? "",
+    "TALLE": venta["Talle"] ?? productoInv?.["TALLE"] ?? "",
+    "COLOR": venta["Color"] ?? productoInv?.["COLOR"] ?? "",
+    "COSTO U.": venta["Costo U."] ?? productoInv?.["COSTO U."] ?? 0,
+    "PRECIO U. EFECTIVO": productoInv?.["PRECIO U. EFECTIVO"] ?? venta["Precio venta"] ?? 0,
+    "PRECIO U. LISTA": productoInv?.["PRECIO U. LISTA"] ?? venta["Precio venta"] ?? 0,
+  };
+
+  setVentaEditando(venta);
+  setEditSelectedProducto(productoBase);
+  setEditSearchProducto(
+    `${productoBase["PRODUCTO"]} ${productoBase["TALLE"]} ${productoBase["COLOR"]}`.trim()
+  );
+
+  setEditFormData({
+    fecha: venta["Fecha"] || "",
+    cantidad: venta["Cantidad"] || 1,
+    precioVenta: String(venta["Precio venta"] ?? ""),
+    medioPago: venta["Medio de pago"] || "EFECTIVO",
+  });
+
+  setShowEditProductoDrop(false);
+  setShowEditForm(true);
+};
   
   // Inventario filters
   const [invSearch, setInvSearch] = useState("");
@@ -107,6 +164,21 @@ const AmberApp = () => {
   const [guardando, setGuardando] = useState(false);
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split("T")[0],
+    cantidad: 1,
+    precioVenta: "",
+    medioPago: "EFECTIVO",
+  });
+  const [selectedProducto, setSelectedProducto] = useState(null);
+  const [searchProducto, setSearchProducto] = useState("");
+  const [showProductoDrop, setShowProductoDrop] = useState(false);
+
+  // Estados para editar ventas
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [ventaEditando, setVentaEditando] = useState(null);
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+
+  const [editFormData, setEditFormData] = useState({
+    fecha: "",
     cantidad: 1,
     precioVenta: "",
     medioPago: "EFECTIVO",
@@ -144,6 +216,21 @@ const AmberApp = () => {
      setFormData(f => ({ ...f, precioVenta: String(precioFinal) }));
     }
   }, [selectedProducto, formData.medioPago]);
+
+  useEffect(() => {
+  if (editSelectedProducto) {
+    const precioEfectivo = parseNumero(editSelectedProducto["PRECIO U. EFECTIVO"]);
+    const precioLista = parseNumero(editSelectedProducto["PRECIO U. LISTA"]);
+
+    const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(editFormData.medioPago);
+    const precioFinal = esEfectivo ? precioEfectivo : precioLista;
+
+    setEditFormData((f) => ({
+      ...f,
+      precioVenta: String(precioFinal),
+    }));
+  }
+}, [editSelectedProducto, editFormData.medioPago]);
 
   // Parsear fecha del formato DD/MM/YYYY
   const parseFecha = (fechaStr) => {
@@ -424,6 +511,86 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
       alert("⚠️ Error al sincronizar con Google Sheets.");
     }
   });
+};
+
+const handleGuardarEdicion = async () => {
+  if (!ventaEditando || !editSelectedProducto || !editFormData.precioVenta) return;
+  if (!ventaEditando._rowNumber) {
+    alert("No se puede editar esta venta: falta _rowNumber.");
+    return;
+  }
+
+  setGuardandoEdicion(true);
+
+  const cantidad = Number(editFormData.cantidad) || 1;
+  const medioPago = editFormData.medioPago;
+
+  const precioManual = parseNumero(editFormData.precioVenta);
+  const precioEfectivo = parseNumero(editSelectedProducto["PRECIO U. EFECTIVO"]);
+  const precioLista = parseNumero(editSelectedProducto["PRECIO U. LISTA"]);
+  const precio = precioManual > 0 ? precioManual : (medioPago === "EFECTIVO" ? precioEfectivo : precioLista);
+
+  const costo = parseNumero(editSelectedProducto["COSTO U."]);
+
+  let iva = 0;
+  if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "QR") {
+    iva = 0;
+  } else if (medioPago === "DEBITO") {
+    iva = precio * 0.012 * (1 + 0.012);
+  } else if (medioPago === "CRED.1 CUOTA") {
+    iva = precio * 0.0242 * (1 + 0.012);
+  } else if (medioPago === "CRED.3 CUOTAS") {
+    iva = precio * (0.0242 + 1 - 1 / 1.1039) + (precio - precio * (0.0242 + 1 - 1 / 1.1039)) * 0.012;
+  } else if (medioPago === "CRED.6 CUOTAS") {
+    iva = precio * (0.0242 + 1 - 1 / 1.2139) + (precio - precio * (0.0242 + 1 - 1 / 1.2139)) * 0.012;
+  } else if (medioPago === "CRED.13 CUOTAS") {
+    iva = precio * (0.0242 + 1 - 1 / 1.1039) + (precio - precio * (0.0242 + 1 - 1 / 1.1039)) * 0.012;
+  } else {
+    iva = precio * 0.012;
+  }
+
+  const gananciaNeta =
+    precio === 0 ? 0 : Math.round(((precio - iva) * cantidad) * 1000) / 1000;
+
+  const gananciaRecompra = (precio - costo - iva) * cantidad;
+
+  const ventaActualizada = {
+    "Fecha": ventaEditando["Fecha"], // fija
+    "Código (Buscador)": `${editSelectedProducto["PRODUCTO"]} ${editSelectedProducto["TALLE"]} ${editSelectedProducto["COLOR"]} | ${editSelectedProducto["CÓDIGO"]}`,
+    "Código": editSelectedProducto["CÓDIGO"],
+    "Talle": editSelectedProducto["TALLE"],
+    "Color": editSelectedProducto["COLOR"],
+    "Tipo de producto": editSelectedProducto["PRODUCTO"],
+    "Cantidad": cantidad,
+    "Medio de pago": medioPago,
+    "Precio venta": precio,
+    "Costo U.": costo,
+    "Impuesto": iva,
+    "Ganancia Neta": gananciaNeta,
+    "Ganancias con recompra": gananciaRecompra,
+  };
+
+  const ok = await actualizarFila("Ventas", ventaEditando._rowNumber, ventaActualizada);
+
+  if (!ok) {
+    alert("Error al actualizar la venta.");
+    setGuardandoEdicion(false);
+    return;
+  }
+
+  setAllVentas((prev) =>
+    prev.map((v) =>
+      v._rowNumber === ventaEditando._rowNumber
+        ? { ...v, ...ventaActualizada, _rowNumber: ventaEditando._rowNumber }
+        : v
+    )
+  );
+
+  setShowEditForm(false);
+  setVentaEditando(null);
+  setEditSelectedProducto(null);
+  setEditSearchProducto("");
+  setGuardandoEdicion(false);
 };
   // Estilos
   const inp = {
@@ -1315,43 +1482,174 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
 </button>
 </div>
 
-    {/* Tabla de registros */}
-    <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "12px", padding: "15px", border: "1px solid rgba(255,255,255,0.1)", overflowX: "auto" }}>
-      <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>📋 Ventas ({ventasDash.length} registros)</h3>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8em" }}>
-        <thead><tr style={{ borderBottom: "2px solid rgba(243,156,18,0.4)", background: "rgba(0,0,0,0.2)" }}>
-          {["Fecha", "Producto", "Código", "Talle", "Color", "Cant", "Precio", "Pago"].map(h => (
-            <th key={h} style={{ padding: "8px 10px", textAlign: ["Precio", "Ganancia", "Cant"].includes(h) ? "right" : "left", color: "#f39c12", whiteSpace: "nowrap" }}>{h}</th>
-          ))}
-        </tr></thead>
-      <tbody>{ventasDash.map((v, i) => {
-  // Buscar el producto en inventario por código
-  const productoInv = inventario.find(p => p["CÓDIGO"] === v["Código"]);
-  const talle = productoInv ? productoInv["TALLE"] : "-";
-  const color = productoInv ? productoInv["COLOR"] : "-";
-  
-  return (
-    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
-      <td style={{ padding: "8px 10px", color: "#bbb", whiteSpace: "nowrap" }}>{v["Fecha"]}</td>
-      <td style={{ padding: "8px 10px", color: "#fff" }}>{v["Tipo de producto"]}</td>
-      <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em" }}>{v["Código"]}</td>
-      <td style={{ padding: "8px 10px", color: "#9b59b6" }}>{talle}</td>
-      <td style={{ padding: "8px 10px", color: "#3498db" }}>{color}</td>
-      <td style={{ padding: "8px 10px", textAlign: "right", color: "#3498db" }}>{v["Cantidad"]}</td>
-      <td style={{ padding: "8px 10px", textAlign: "right", color: "#fff", whiteSpace: "nowrap" }}>$ {parseNumero(v["Precio venta"]).toLocaleString("es-AR")}</td>
-      <td style={{ padding: "8px 10px", color: "#777", fontSize: "0.85em", whiteSpace: "nowrap" }}>{v["Medio de pago"]}</td>
-    </tr>
-  );
-})}</tbody>
-      </table>
-      {ventasDash.length === 0 && (
-        <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-          <p>No se encontraron ventas con esos filtros.</p>
-        </div>
-      )}
+{/* Tabla de registros */}
+<div
+  style={{
+    background: "rgba(255,255,255,0.05)",
+    borderRadius: "12px",
+    padding: "15px",
+    border: "1px solid rgba(255,255,255,0.1)",
+    overflowX: "auto",
+  }}
+>
+  <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
+    📋 Ventas ({ventasDash.length} registros)
+  </h3>
+
+  <table
+    style={{
+      width: "100%",
+      borderCollapse: "collapse",
+      fontSize: "0.8em",
+    }}
+  >
+    <thead>
+      <tr
+        style={{
+          borderBottom: "2px solid rgba(243,156,18,0.4)",
+          background: "rgba(0,0,0,0.2)",
+        }}
+      >
+        {[
+          "Fecha",
+          "Producto",
+          "Código",
+          "Talle",
+          "Color",
+          "Cant",
+          "Precio",
+          "Pago",
+          "Editar",
+        ].map((h) => (
+          <th
+            key={h}
+            style={{
+              padding: "8px 10px",
+              textAlign: ["Precio", "Cant"].includes(h) ? "right" : "left",
+              color: "#f39c12",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {h}
+          </th>
+        ))}
+      </tr>
+    </thead>
+
+    <tbody>
+      {ventasDash.map((v, i) => {
+        const productoInv = inventarioUnico.find(
+          (p) =>
+            p &&
+            String(p["CÓDIGO"] ?? "").trim() ===
+              String(v["Código"] ?? "").trim()
+        );
+
+        const talle = v["Talle"] ?? productoInv?.["TALLE"] ?? "-";
+        const color = v["Color"] ?? productoInv?.["COLOR"] ?? "-";
+
+        return (
+          <tr
+            key={i}
+            style={{
+              borderBottom: "1px solid rgba(255,255,255,0.07)",
+              background:
+                i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)",
+            }}
+          >
+            <td
+              style={{
+                padding: "8px 10px",
+                color: "#bbb",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {v["Fecha"]}
+            </td>
+
+            <td style={{ padding: "8px 10px", color: "#fff" }}>
+              {v["Tipo de producto"]}
+            </td>
+
+            <td
+              style={{
+                padding: "8px 10px",
+                color: "#777",
+                fontSize: "0.85em",
+              }}
+            >
+              {v["Código"]}
+            </td>
+
+            <td style={{ padding: "8px 10px", color: "#9b59b6" }}>
+              {talle}
+            </td>
+
+            <td style={{ padding: "8px 10px", color: "#3498db" }}>
+              {color}
+            </td>
+
+            <td
+              style={{
+                padding: "8px 10px",
+                textAlign: "right",
+                color: "#3498db",
+              }}
+            >
+              {v["Cantidad"]}
+            </td>
+
+            <td
+              style={{
+                padding: "8px 10px",
+                textAlign: "right",
+                color: "#fff",
+                whiteSpace: "nowrap",
+              }}
+            >
+              $ {parseNumero(v["Precio venta"]).toLocaleString("es-AR")}
+            </td>
+
+            <td
+              style={{
+                padding: "8px 10px",
+                color: "#777",
+                fontSize: "0.85em",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {v["Medio de pago"]}
+            </td>
+
+            <td style={{ padding: "8px 10px", textAlign: "center" }}>
+              <button
+                onClick={() => abrirEdicion(v)}
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "#9b59b6",
+                  color: "#fff",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                +
+              </button>
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+
+  {ventasDash.length === 0 && (
+    <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+      <p>No se encontraron ventas con esos filtros.</p>
     </div>
-  </>
-)}
+  )}
+</div>
         {/* MODAL NUEVA VENTA */}
         {showForm && (
           <div
@@ -1666,6 +1964,256 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
             </div>
           </div>
         )}
+{/* MODAL edicion */}
+    {showEditForm && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.8)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1100,
+    }}
+  >
+    <div
+      style={{
+        background: "#1a1a2e",
+        borderRadius: "12px",
+        padding: "25px",
+        maxWidth: "480px",
+        width: "92%",
+        border: "1px solid #f39c12",
+        maxHeight: "92vh",
+        overflowY: "auto",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
+        <h2 style={{ margin: 0, color: "#f39c12", fontSize: "1.1em" }}>
+          ✏️ Editar Venta
+        </h2>
+        <button
+          onClick={() => setShowEditForm(false)}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: "1.3em",
+          }}
+        >
+          ✕
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gap: "16px" }}>
+        <div>
+          <label style={lbl}>📅 Fecha</label>
+          <input
+            type="text"
+            value={editFormData.fecha}
+            disabled
+            style={{ ...inp, opacity: 0.7, cursor: "not-allowed" }}
+          />
+        </div>
+
+        <div>
+          <label style={lbl}>🔍 Buscar Producto</label>
+          <div style={{ position: "relative" }}>
+            <input
+              type="text"
+              placeholder="Escribí nombre o código..."
+              value={editSearchProducto}
+              onChange={(e) => {
+                setEditSearchProducto(e.target.value);
+                setShowEditProductoDrop(true);
+                setEditSelectedProducto(null);
+              }}
+              onFocus={() => setShowEditProductoDrop(true)}
+              style={inp}
+            />
+            {showEditProductoDrop && productosFiltrados.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  background: "#0f3460",
+                  borderRadius: "6px",
+                  marginTop: "3px",
+                  zIndex: 20,
+                  border: "1px solid #f39c12",
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                }}
+              >
+                {productosFiltrados.map((p, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      setEditSelectedProducto(p);
+                      setEditSearchProducto(
+                        `${p["PRODUCTO"]} ${p["TALLE"]} ${p["COLOR"]}`
+                      );
+                      setShowEditProductoDrop(false);
+                    }}
+                    style={{
+                      padding: "10px 12px",
+                      cursor: "pointer",
+                      color: "#fff",
+                      fontSize: "0.85em",
+                      borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <div style={{ fontWeight: "600" }}>{p["PRODUCTO"]}</div>
+                    <div style={{ fontSize: "0.85em", color: "#999" }}>
+                      {p["TALLE"]} · {p["COLOR"]} · Stock: {p["STOCK"]} · $
+                      {parseNumero(p["PRECIO U. EFECTIVO"]).toLocaleString("es-AR")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {editSelectedProducto && (
+          <div
+            style={{
+              background: "rgba(46,204,113,0.1)",
+              border: "1px solid rgba(46,204,113,0.4)",
+              borderRadius: "8px",
+              padding: "12px",
+            }}
+          >
+            <p style={{ margin: "0 0 5px", color: "#2ecc71", fontSize: "0.9em", fontWeight: "600" }}>
+              ✓ {editSelectedProducto["PRODUCTO"]}
+            </p>
+            <p style={{ margin: 0, color: "#999", fontSize: "0.8em" }}>
+              Código: {editSelectedProducto["CÓDIGO"]} · Talle: {editSelectedProducto["TALLE"]} · Color: {editSelectedProducto["COLOR"]}
+            </p>
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "12px",
+          }}
+        >
+          <div>
+            <label style={lbl}>📦 Cantidad</label>
+            <input
+              type="number"
+              min="1"
+              value={editFormData.cantidad}
+              onChange={(e) =>
+                setEditFormData((f) => ({ ...f, cantidad: e.target.value }))
+              }
+              style={inp}
+            />
+          </div>
+          <div>
+            <label style={lbl}>💰 Precio Venta</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={editFormData.precioVenta}
+              onChange={(e) =>
+                setEditFormData((f) => ({
+                  ...f,
+                  precioVenta: e.target.value,
+                }))
+              }
+              style={inp}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label style={lbl}>💳 Medio de Pago</label>
+          <select
+            value={editFormData.medioPago}
+            onChange={(e) =>
+              setEditFormData((f) => ({ ...f, medioPago: e.target.value }))
+            }
+            style={{ ...inp, background: "#0f3460" }}
+          >
+            {[
+              "EFECTIVO",
+              "DEBITO",
+              "TRANSFERENCIA",
+              "QR",
+              "CRED.1 CUOTA",
+              "CRED.3 CUOTAS",
+              "CRED.6 CUOTAS",
+              "CRED.13 CUOTAS",
+            ].map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "12px",
+          marginTop: "20px",
+        }}
+      >
+        <button
+          onClick={() => setShowEditForm(false)}
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            border: "none",
+            background: "rgba(255,255,255,0.1)",
+            color: "#fff",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleGuardarEdicion}
+          disabled={!editSelectedProducto || !editFormData.precioVenta || guardandoEdicion}
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            border: "none",
+            background:
+              editSelectedProducto && editFormData.precioVenta && !guardandoEdicion
+                ? "#2ecc71"
+                : "rgba(46,204,113,0.3)",
+            color: "#fff",
+            fontWeight: "600",
+            cursor:
+              editSelectedProducto && editFormData.precioVenta && !guardandoEdicion
+                ? "pointer"
+                : "not-allowed",
+          }}
+        >
+          {guardandoEdicion ? "Guardando..." : "Guardar Cambios"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );
