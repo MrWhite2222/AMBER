@@ -43,22 +43,21 @@ const agregarFila = async (nombreHoja, fila) => {
   }
 };
 // Actualizar fila
-const actualizarFila = async (nombreHoja, rowNumber, fila) => {
+const agregarFila = async (nombreHoja, fila) => {
   try {
     const response = await fetch(API_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "update",
+        action: "append",
         sheet: nombreHoja,
-        rowNumber,
         fila,
       }),
     });
     const result = await response.json();
-    return result.success;
+    return result;
   } catch (error) {
-    console.error("Error actualizando fila:", error);
-    return false;
+    console.error("Error agregando fila:", error);
+    return { success: false };
   }
 };
 
@@ -495,42 +494,55 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
   
   const fechaFormateada = formatearFecha(formData.fecha);
   
-  const nuevaVenta = {
-    "Fecha": fechaFormateada,
-    "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
-    "Código": selectedProducto["CÓDIGO"],
-    "Tipo de producto": selectedProducto["PRODUCTO"],
-    "Cantidad": cantidad,
-    "Medio de pago": medioPago,
-    "Precio venta": precio,
-    "Costo U.": costo,
-    "Impuesto": iva,
-    "Ganancia Neta": gananciaNeta,
-    "Ganancias con recompra": gananciaRecompra
-  };
-  
-  // 1. Agregar localmente AL INSTANTE
-  setAllVentas(prev => [...prev, nuevaVenta]);
-  
-  // 2. Limpiar formulario y cerrar modal
-  setFormData({
-    fecha: new Date().toISOString().split("T")[0],
-    cantidad: 1,
-    precioVenta: "",
-    medioPago: "EFECTIVO"
-  });
-  setSelectedProducto(null);
-  setSearchProducto("");
-  setShowForm(false);
-  setGuardando(false);
-  
-  // 3. Guardar en Google Sheets EN BACKGROUND
-  agregarFila("Ventas", nuevaVenta).then(exito => {
-    if (!exito) {
-      alert("⚠️ Error al sincronizar con Google Sheets.");
-    }
-  });
+  const tempId = Date.now().toString() + Math.random().toString(36).slice(2);
+
+const nuevaVenta = {
+  _tempId: tempId,
+  "Fecha": fechaFormateada,
+  "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
+  "Código": selectedProducto["CÓDIGO"],
+  "Talle": selectedProducto["TALLE"],
+  "Color": selectedProducto["COLOR"],
+  "Tipo de producto": selectedProducto["PRODUCTO"],
+  "Cantidad": cantidad,
+  "Medio de pago": medioPago,
+  "Precio venta": precio,
+  "Costo U.": costo,
+  "Impuesto": iva,
+  "Ganancia Neta": gananciaNeta,
+  "Ganancias con recompra": gananciaRecompra
 };
+  
+  // 1. Agregar localmente al instante
+setAllVentas((prev) => [...prev, nuevaVenta]);
+
+// 2. Limpiar formulario y cerrar modal
+setFormData({
+  fecha: new Date().toISOString().split("T")[0],
+  cantidad: 1,
+  precioVenta: "",
+  medioPago: "EFECTIVO"
+});
+setSelectedProducto(null);
+setSearchProducto("");
+setShowForm(false);
+setGuardando(false);
+
+// 3. Guardar en Google Sheets y actualizar _rowNumber local
+agregarFila("Ventas", nuevaVenta).then((result) => {
+  if (!result.success) {
+    alert("⚠️ Error al sincronizar con Google Sheets.");
+    return;
+  }
+
+  setAllVentas((prev) =>
+    prev.map((v) =>
+      v._tempId === tempId
+        ? { ...v, _rowNumber: result.rowNumber }
+        : v
+    )
+  );
+});
 
 const handleGuardarEdicion = async () => {
   if (!ventaEditando || !editSelectedProducto || !editFormData.precioVenta) return;
