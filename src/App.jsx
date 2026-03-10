@@ -173,19 +173,19 @@ const abrirEdicion = (venta) => {
   const [showProductoDrop, setShowProductoDrop] = useState(false);
 
   // Estados para editar ventas
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [ventaEditando, setVentaEditando] = useState(null);
-  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+const [showEditForm, setShowEditForm] = useState(false);
+const [ventaEditando, setVentaEditando] = useState(null);
+const [guardandoEdicion, setGuardandoEdicion] = useState(false);
 
-  const [editFormData, setEditFormData] = useState({
-    fecha: "",
-    cantidad: 1,
-    precioVenta: "",
-    medioPago: "EFECTIVO",
-  });
-  const [selectedProducto, setSelectedProducto] = useState(null);
-  const [searchProducto, setSearchProducto] = useState("");
-  const [showProductoDrop, setShowProductoDrop] = useState(false);
+const [editFormData, setEditFormData] = useState({
+  fecha: "",
+  cantidad: 1,
+  precioVenta: "",
+  medioPago: "EFECTIVO",
+});
+const [editSelectedProducto, setEditSelectedProducto] = useState(null);
+const [editSearchProducto, setEditSearchProducto] = useState("");
+const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
   const getMes = () =>
     [
@@ -1650,6 +1650,8 @@ const handleGuardarEdicion = async () => {
     </div>
   )}
 </div>
+</>
+)}
         {/* MODAL NUEVA VENTA */}
         {showForm && (
           <div
