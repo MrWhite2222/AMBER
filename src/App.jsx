@@ -67,7 +67,19 @@ const AmberApp = () => {
   useEffect(() => {
     cargarDatos();
   }, []);
-
+// Autocompletar precio según medio de pago
+useEffect(() => {
+  if (selectedProducto) {
+    const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
+    const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
+    
+    if (formData.medioPago === "EFECTIVO" || formData.medioPago === "TRANSFERENCIA") {
+      setFormData(f => ({ ...f, precioVenta: precioEfectivo.toString() }));
+    } else {
+      setFormData(f => ({ ...f, precioVenta: precioLista.toString() }));
+    }
+  }
+}, [selectedProducto, formData.medioPago]);
   // Dashboard filters
   const [df, setDf] = useState({ startDate: "", endDate: "", producto: "" });
   const [dashSearch, setDashSearch] = useState("");
