@@ -70,7 +70,13 @@ const AmberApp = () => {
   }, []);
 
   // Dashboard filters
-  const [df, setDf] = useState({ startDate: "", endDate: "", producto: "" });
+  const [df, setDf] = useState({
+  startDate: "",
+  endDate: "",
+  producto: "",
+  talle: "",
+  color: "",
+  });
   const [dashSearch, setDashSearch] = useState("");
   const [showDashDrop, setShowDashDrop] = useState(false);
 
@@ -199,17 +205,25 @@ const AmberApp = () => {
 
   // Ventas filtradas para dashboard
   const ventasDash = useMemo(() => {
-    return allVentas.filter((v) => {
-      const f = parseFecha(v["Fecha"]);
-      if (!f) return false;
+  return allVentas.filter((v) => {
+    const f = parseFecha(v["Fecha"]);
+    if (!f) return false;
 
-      const startOk = !df.startDate || f >= new Date(df.startDate);
-      const endOk = !df.endDate || f <= new Date(df.endDate);
-      const prodOk = !df.producto || v["Tipo de producto"] === df.producto;
+    const productoInv = inventario.find((p) => p["CÓDIGO"] === v["Código"]);
+    const talle = (productoInv?.["TALLE"] || "").toUpperCase();
+    const color = (productoInv?.["COLOR"] || "").toUpperCase();
 
-      return startOk && endOk && prodOk;
-    });
-  }, [df, allVentas]);
+    const startOk = !df.startDate || f >= new Date(df.startDate);
+    const endOk = !df.endDate || f <= new Date(df.endDate);
+    const prodOk = !df.producto || v["Tipo de producto"] === df.producto;
+    const talleOk =
+      !df.talle || talle.includes(df.talle.toUpperCase());
+    const colorOk =
+      !df.color || color.includes(df.color.toUpperCase());
+
+    return startOk && endOk && prodOk && talleOk && colorOk;
+  });
+}, [df, allVentas, inventario]);
 
   const analisisDash = useMemo(() => {
     const a = {};
@@ -1138,31 +1152,147 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
 {viewMode === "registros" && (
   <>
     {/* Filtros */}
-    <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "12px", padding: "18px", marginBottom: "20px", border: "1px solid rgba(255,255,255,0.1)" }}>
-      <h2 style={{ margin: "0 0 15px", color: "#f39c12", fontSize: "1.1em" }}>🔍 Filtros</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "12px" }}>
-        <div>
-          <label style={lbl}>📅 Desde</label>
-          <input type="date" value={df.startDate} onChange={e => setDf(f => ({ ...f, startDate: e.target.value }))} style={inp} />
-        </div>
-        <div>
-          <label style={lbl}>📅 Hasta</label>
-          <input type="date" value={df.endDate} onChange={e => setDf(f => ({ ...f, endDate: e.target.value }))} style={inp} />
-        </div>
-        <div>
-          <label style={lbl}>🏷️ Producto</label>
-          <div style={{ position: "relative" }}>
-            <input type="text" placeholder="Buscar..." value={dashSearch} onChange={e => { setDashSearch(e.target.value); setShowDashDrop(true); }} onFocus={() => setShowDashDrop(true)} style={inp} />
-            {showDashDrop && dashNombresFiltrados.length > 0 && (
-              <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#0f3460", borderRadius: "6px", marginTop: "3px", zIndex: 10, border: "1px solid #f39c12" }}>
-                {dashNombresFiltrados.map((n, i) => <div key={i} onClick={() => { setDf(f => ({ ...f, producto: n })); setDashSearch(n); setShowDashDrop(false); }} style={{ padding: "9px 10px", cursor: "pointer", color: "#fff", fontSize: "0.85em", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{n}</div>)}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <button onClick={() => { setDf({ startDate: "", endDate: "", producto: "" }); setDashSearch(""); }} style={{ marginTop: "12px", padding: "7px 18px", borderRadius: "6px", border: "1px solid #f39c12", background: "transparent", color: "#f39c12", fontWeight: "600", cursor: "pointer", fontSize: "0.85em" }}>🔄 Limpiar filtros</button>
+<div
+  style={{
+    background: "rgba(255,255,255,0.05)",
+    borderRadius: "12px",
+    padding: "18px",
+    marginBottom: "20px",
+    border: "1px solid rgba(255,255,255,0.1)",
+  }}
+>
+  <h2 style={{ margin: "0 0 15px", color: "#f39c12", fontSize: "1.1em" }}>
+    🔍 Filtros
+  </h2>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+      gap: "12px",
+    }}
+  >
+    <div>
+      <label style={lbl}>📅 Desde</label>
+      <input
+        type="date"
+        value={df.startDate}
+        onChange={(e) => setDf((f) => ({ ...f, startDate: e.target.value }))}
+        style={inp}
+      />
     </div>
+
+    <div>
+      <label style={lbl}>📅 Hasta</label>
+      <input
+        type="date"
+        value={df.endDate}
+        onChange={(e) => setDf((f) => ({ ...f, endDate: e.target.value }))}
+        style={inp}
+      />
+    </div>
+
+    <div>
+      <label style={lbl}>🏷️ Producto</label>
+      <div style={{ position: "relative" }}>
+        <input
+          type="text"
+          placeholder="Buscar..."
+          value={dashSearch}
+          onChange={(e) => {
+            setDashSearch(e.target.value);
+            setShowDashDrop(true);
+          }}
+          onFocus={() => setShowDashDrop(true)}
+          style={inp}
+        />
+        {showDashDrop && dashNombresFiltrados.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              background: "#0f3460",
+              borderRadius: "6px",
+              marginTop: "3px",
+              zIndex: 10,
+              border: "1px solid #f39c12",
+            }}
+          >
+            {dashNombresFiltrados.map((n, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  setDf((f) => ({ ...f, producto: n }));
+                  setDashSearch(n);
+                  setShowDashDrop(false);
+                }}
+                style={{
+                  padding: "9px 10px",
+                  cursor: "pointer",
+                  color: "#fff",
+                  fontSize: "0.85em",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                {n}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div>
+      <label style={lbl}>👕 Talle</label>
+      <input
+        type="text"
+        placeholder="S, M, L, XL..."
+        value={df.talle}
+        onChange={(e) => setDf((f) => ({ ...f, talle: e.target.value }))}
+        style={inp}
+      />
+    </div>
+
+    <div>
+      <label style={lbl}>🎨 Color</label>
+      <input
+        type="text"
+        placeholder="NEGRO, ROSA..."
+        value={df.color}
+        onChange={(e) => setDf((f) => ({ ...f, color: e.target.value }))}
+        style={inp}
+      />
+    </div>
+  </div>
+
+  <button
+    onClick={() => {
+      setDf({
+        startDate: "",
+        endDate: "",
+        producto: "",
+        talle: "",
+        color: "",
+      });
+      setDashSearch("");
+    }}
+    style={{
+      marginTop: "12px",
+      padding: "7px 18px",
+      borderRadius: "6px",
+      border: "1px solid #f39c12",
+      background: "transparent",
+      color: "#f39c12",
+      fontWeight: "600",
+      cursor: "pointer",
+      fontSize: "0.85em",
+    }}
+  >
+    🔄 Limpiar filtros
+  </button>
+</div>
 
     {/* Tabla de registros */}
     <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "12px", padding: "15px", border: "1px solid rgba(255,255,255,0.1)", overflowX: "auto" }}>
