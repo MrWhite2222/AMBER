@@ -545,7 +545,7 @@ agregarFila("Ventas", nuevaVenta).then((result) => {
     )
   );
 });
-
+};
 const handleGuardarEdicion = async () => {
   if (!ventaEditando || !editSelectedProducto || !editFormData.precioVenta) return;
   if (!ventaEditando._rowNumber) {
