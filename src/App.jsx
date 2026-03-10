@@ -303,27 +303,18 @@ const handleGuardarVenta = async () => {
   const fechaFormateada = formatearFecha(formData.fecha);
   
   const nuevaVenta = {
-    "Fecha": fechaFormateada,
-    "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
-    "Código": selectedProducto["CÓDIGO"],
-    "Tipo de producto": selectedProducto["PRODUCTO"],
-    "Cantidad": cantidad,
-    "Medio de pago": formData.medioPago,
-    "Precio venta": `
-$$
-{precio.toLocaleString("es-AR")}`,
-    "Costo U.": `
-$$
-{costo.toLocaleString("es-AR")}`,
-    "IVA 21%": `
-$$
-{iva.toLocaleString("es-AR")}`,
-    "Ganancia Neta": `
-$$
-{gananciaNeta.toLocaleString("es-AR")}`,
-    "Ganancias con recompra": `$${ganancia.toLocaleString("es-AR")}`,
-    "Estado": ""
-  };
+  "Fecha": fechaFormateada,
+  "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
+  "Código": selectedProducto["CÓDIGO"],
+  "Tipo de producto": selectedProducto["PRODUCTO"],
+  "Cantidad": cantidad,
+  "Medio de pago": formData.medioPago,
+  "Precio venta": precio,
+  "Costo U.": costo,
+  "IVA 21%": iva,
+  "Ganancia Neta": gananciaNeta,
+  "Ganancias con recompra": ganancia
+};
   
   // 1. Agregar localmente AL INSTANTE (sin esperar)
   setAllVentas(prev => [...prev, nuevaVenta]);
