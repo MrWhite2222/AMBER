@@ -73,11 +73,11 @@ useEffect(() => {
     const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
     const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
     
-    if (formData.medioPago === "EFECTIVO" || formData.medioPago === "TRANSFERENCIA") {
-      setFormData(f => ({ ...f, precioVenta: precioEfectivo.toString() }));
-    } else {
-      setFormData(f => ({ ...f, precioVenta: precioLista.toString() }));
-    }
+    // Si es efectivo, transferencia o QR, usa precio efectivo
+    const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(formData.medioPago);
+    const precioFinal = esEfectivo ? precioEfectivo : precioLista;
+    
+    setFormData(f => ({ ...f, precioVenta: String(precioFinal) }));
   }
 }, [selectedProducto, formData.medioPago]);
   // Dashboard filters
@@ -315,23 +315,23 @@ const handleGuardarVenta = async () => {
   // H: Costo U. - del inventario
   const costo = parseNumero(selectedProducto["COSTO U."]);
   
-  // I: Impuesto - calculado según medio de pago (igual que tu fórmula)
-  let iva = 0;
-  if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA") {
-    iva = 0;
-  } else if (medioPago === "DEBITO") {
-    iva = precio * 0.012 * (1 + 0.012);
-  } else if (medioPago === "CRED. 1 CUOTA") {
-    iva = precio * 0.242 * (1 + 0.012);
-  } else if (medioPago === "CRED. 3 CUOTAS") {
-    iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
-  } else if (medioPago === "CRED. 6 CUOTAS") {
-    iva = precio * (0.0242 + 1 - 1/1.2139) + (precio - precio * (0.0242 + 1 - 1/1.2139)) * 0.012;
-  } else if (medioPago === "CRED.13 CUOTAS") {
-    iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
-  } else {
-    iva = precio * 0.012;
-  }
+  // I: IVA 21% - calculado según medio de pago
+let iva = 0;
+if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "QR") {
+  iva = 0;
+} else if (medioPago === "DEBITO") {
+  iva = precio * 0.012 * (1 + 0.012);
+} else if (medioPago === "CRED.1 CUOTA") {
+  iva = precio * 0.242 * (1 + 0.012);
+} else if (medioPago === "CRED.3 CUOTAS") {
+  iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
+} else if (medioPago === "CRED.6 CUOTAS") {
+  iva = precio * (0.0242 + 1 - 1/1.2139) + (precio - precio * (0.0242 + 1 - 1/1.2139)) * 0.012;
+} else if (medioPago === "CRED.13 CUOTAS") {
+  iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
+} else {
+  iva = precio * 0.012;
+}
   
   // J: Ganancia Neta
   const gananciaNeta = precio === 0 ? 0 : Math.round(((precio - iva) * cantidad) * 1000) / 1000;
