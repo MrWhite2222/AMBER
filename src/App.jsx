@@ -286,68 +286,67 @@ const AmberApp = () => {
   };
 
   // Guardar venta
-  const handleGuardarVenta = async () => {
-    if (!selectedProducto || !formData.precioVenta) return;
-
-    setGuardando(true);
-
-    const precio = parseNumero(formData.precioVenta);
-    const costo = parseNumero(selectedProducto["COSTO U."]);
-    const cantidad = Number(formData.cantidad) || 1;
-    const ganancia = (precio - costo) * cantidad;
-
-    // Calcular IVA según medio de pago (ajustá esto según tu lógica)
-    const esConTarjeta =
-      formData.medioPago.includes("CRED") || formData.medioPago === "DEBITO";
-    const iva = esConTarjeta ? precio * 0.21 : 0;
-    const gananciaNeta = ganancia - iva;
-
-    const nuevaVenta = {
-      Fecha: formatearFecha(formData.fecha),
-      "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
-      Código: selectedProducto["CÓDIGO"],
-      "Tipo de producto": selectedProducto["PRODUCTO"],
-      Cantidad: cantidad,
-      "Medio de pago": formData.medioPago,
-      "Precio venta": `
+const handleGuardarVenta = async () => {
+  if (!selectedProducto || !formData.precioVenta) return;
+  
+  setGuardando(true);
+  
+  const precio = parseNumero(formData.precioVenta);
+  const costo = parseNumero(selectedProducto["COSTO U."]);
+  const cantidad = Number(formData.cantidad) || 1;
+  const ganancia = (precio - costo) * cantidad;
+  
+  const esConTarjeta = formData.medioPago.includes("CRED") || formData.medioPago === "DEBITO";
+  const iva = esConTarjeta ? precio * 0.21 : 0;
+  const gananciaNeta = ganancia - iva;
+  
+  const fechaFormateada = formatearFecha(formData.fecha);
+  
+  const nuevaVenta = {
+    "Fecha": fechaFormateada,
+    "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
+    "Código": selectedProducto["CÓDIGO"],
+    "Tipo de producto": selectedProducto["PRODUCTO"],
+    "Cantidad": cantidad,
+    "Medio de pago": formData.medioPago,
+    "Precio venta": `
 $$
 {precio.toLocaleString("es-AR")}`,
-      "Costo U.": `
+    "Costo U.": `
 $$
 {costo.toLocaleString("es-AR")}`,
-      "IVA 21%": `
+    "IVA 21%": `
 $$
 {iva.toLocaleString("es-AR")}`,
-      "Ganancia Neta": `
+    "Ganancia Neta": `
 $$
 {gananciaNeta.toLocaleString("es-AR")}`,
-      "Ganancias con recompra": `$${ganancia.toLocaleString("es-AR")}`,
-      Estado: "",
-    };
-
-    const exito = await agregarFila("Ventas", nuevaVenta);
-
-    if (exito) {
-      // Recargar datos
-      await cargarDatos();
-      // Limpiar formulario
-      setFormData({
-        fecha: new Date().toISOString().split("T")[0],
-        cantidad: 1,
-        precioVenta: "",
-        medioPago: "EFECTIVO",
-      });
-      setSelectedProducto(null);
-      setSearchProducto("");
-      setShowForm(false);
-      alert("✅ Venta guardada correctamente");
-    } else {
-      alert("❌ Error al guardar la venta");
-    }
-
-    setGuardando(false);
+    "Ganancias con recompra": `$${ganancia.toLocaleString("es-AR")}`,
+    "Estado": ""
   };
-
+  
+  // 1. Agregar localmente AL INSTANTE (sin esperar)
+  setAllVentas(prev => [...prev, nuevaVenta]);
+  
+  // 2. Limpiar formulario y cerrar modal INMEDIATAMENTE
+  setFormData({
+    fecha: new Date().toISOString().split("T")[0],
+    cantidad: 1,
+    precioVenta: "",
+    medioPago: "EFECTIVO"
+  });
+  setSelectedProducto(null);
+  setSearchProducto("");
+  setShowForm(false);
+  setGuardando(false);
+  
+  // 3. Guardar en Google Sheets EN BACKGROUND (sin bloquear)
+  agregarFila("Ventas", nuevaVenta).then(exito => {
+    if (!exito) {
+      alert("⚠️ Error al sincronizar con Google Sheets. La venta se guardó localmente.");
+    }
+  });
+};
   // Estilos
   const inp = {
     width: "100%",
