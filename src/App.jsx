@@ -24,24 +24,7 @@ const leerHoja = async (nombreHoja) => {
     return [];
   }
   };
-// Agregar fila a una hoja
-const agregarFila = async (nombreHoja, fila) => {
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "append",
-        sheet: nombreHoja,
-        fila,
-      }),
-    });
-    const result = await response.json();
-    return result.success;
-  } catch (error) {
-    console.error("Error agregando fila:", error);
-    return false;
-  }
-};
+
 // Actualizar fila
 const agregarFila = async (nombreHoja, fila) => {
   try {
