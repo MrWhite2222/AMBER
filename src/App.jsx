@@ -38,48 +38,7 @@ const agregarFila = async (nombreHoja, fila) => {
     return false;
   }
 };
-const AmberApp = () => {
-  const [viewMode, setViewMode] = useState("resumen");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const [allVentas, setAllVentas] = useState([]);
-  const [inventario, setInventario] = useState([]);
-
-  // Cargar datos desde Google Sheets
-  const cargarDatos = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const ventasData = await leerHoja("Ventas");
-      const inventarioData = await leerHoja("Inventario");
-
-      setAllVentas(ventasData);
-      setInventario(inventarioData);
-    } catch (err) {
-      setError("Error al cargar datos");
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-// Autocompletar precio según medio de pago
-useEffect(() => {
-  if (selectedProducto) {
-    const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
-    const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
-    
-    // Si es efectivo, transferencia o QR, usa precio efectivo
-    const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(formData.medioPago);
-    const precioFinal = esEfectivo ? precioEfectivo : precioLista;
-    
-    setFormData(f => ({ ...f, precioVenta: String(precioFinal) }));
-  }
-}, [selectedProducto, formData.medioPago]);
   // Dashboard filters
   const [df, setDf] = useState({ startDate: "", endDate: "", producto: "" });
   const [dashSearch, setDashSearch] = useState("");
@@ -118,6 +77,20 @@ useEffect(() => {
       "Noviembre",
       "Diciembre",
     ][new Date().getMonth()];
+
+// Autocompletar precio según medio de pago
+useEffect(() => {
+  if (selectedProducto) {
+    const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
+    const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
+    
+    // Si es efectivo, transferencia o QR, usa precio efectivo
+    const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(formData.medioPago);
+    const precioFinal = esEfectivo ? precioEfectivo : precioLista;
+    
+    setFormData(f => ({ ...f, precioVenta: String(precioFinal) }));
+  }
+}, [selectedProducto, formData.medioPago]);
 
   // Parsear fecha del formato DD/MM/YYYY
   const parseFecha = (fechaStr) => {
