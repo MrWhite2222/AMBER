@@ -79,7 +79,24 @@ const AmberApp = () => {
   });
   const [dashSearch, setDashSearch] = useState("");
   const [showDashDrop, setShowDashDrop] = useState(false);
+//
 
+  const inventarioUnico = useMemo(() => {
+  const mapa = new Map();
+
+  (Array.isArray(inventario) ? inventario : []).forEach((item) => {
+    if (!item) return;
+
+    const codigo = String(item["CÓDIGO"] ?? "").trim();
+    if (!codigo) return;
+
+    // Si el código se repite, nos quedamos con la última fila
+    mapa.set(codigo, item);
+  });
+
+  return Array.from(mapa.values());
+}, [inventario]);
+  
   // Inventario filters
   const [invSearch, setInvSearch] = useState("");
   const [invTalle, setInvTalle] = useState("");
@@ -250,8 +267,8 @@ const AmberApp = () => {
   }, [ventasDash]);
 
   // Inventario filtrado
-  const inventarioFiltrado = useMemo(() => {
-  let items = inventario;
+ const inventarioFiltrado = useMemo(() => {
+  let items = inventarioUnico;
 
   if (!showSinStock) {
     items = items.filter((i) => parseNumero(i["STOCK"]) > 0);
@@ -278,7 +295,7 @@ const AmberApp = () => {
   }
 
   return items;
-}, [inventario, invSearch, invTalle, invColor, showSinStock]);
+}, [inventarioUnico, invSearch, invTalle, invColor, showSinStock]);
 
   const invStats = useMemo(
     () => ({
@@ -299,7 +316,7 @@ const AmberApp = () => {
   const productosFiltrados = useMemo(() => {
   if (!searchProducto) return [];
 
-  return inventario
+  return inventarioUnico
     .filter((p) => parseNumero(p["STOCK"]) > 0)
     .filter(
       (p) =>
@@ -311,7 +328,7 @@ const AmberApp = () => {
           .includes(searchProducto.toUpperCase())
     )
     .slice(0, 8);
-}, [searchProducto, inventario]);
+}, [searchProducto, inventarioUnico]);
 
   // Calcular ganancia
   const calcularGanancia = () => {
@@ -532,7 +549,7 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
               AMBER Analytics
             </h1>
             <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
-              Control contable · {allVentas.length} ventas · {inventario.length}{" "}
+              Control contable · {allVentas.length} ventas · {inventarioUnico.length}{" "}
               productos
             </p>
           </div>
