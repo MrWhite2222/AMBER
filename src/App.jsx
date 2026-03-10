@@ -1136,7 +1136,7 @@ $$
       <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>📋 Ventas ({ventasDash.length} registros)</h3>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8em" }}>
         <thead><tr style={{ borderBottom: "2px solid rgba(243,156,18,0.4)", background: "rgba(0,0,0,0.2)" }}>
-          {["Fecha", "Producto", "Código", "Cant", "Precio", "Ganancia", "Pago"].map(h => (
+          {["Fecha", "Producto", "Código", "Talle", "Color", "Cant", "Precio", "Pago"].map(h => (
             <th key={h} style={{ padding: "8px 10px", textAlign: ["Precio", "Ganancia", "Cant"].includes(h) ? "right" : "left", color: "#f39c12", whiteSpace: "nowrap" }}>{h}</th>
           ))}
         </tr></thead>
