@@ -303,7 +303,7 @@ const handleGuardarVenta = async () => {
   // H: Costo U. - del inventario
   const costo = parseNumero(selectedProducto["COSTO U."]);
   
-  // I: IVA 21% - calculado según medio de pago (igual que tu fórmula)
+  // I: Impuesto - calculado según medio de pago (igual que tu fórmula)
   let iva = 0;
   if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA") {
     iva = 0;
@@ -338,7 +338,7 @@ const handleGuardarVenta = async () => {
     "Medio de pago": medioPago,
     "Precio venta": precio,
     "Costo U.": costo,
-    "IVA 21%": iva,
+    "Impuesto": iva,
     "Ganancia Neta": gananciaNeta,
     "Ganancias con recompra": gananciaRecompra
   };
