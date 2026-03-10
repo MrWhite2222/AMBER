@@ -1268,30 +1268,20 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
   </div>
 
   <button
-    onClick={() => {
-      setDf({
-        startDate: "",
-        endDate: "",
-        producto: "",
-        talle: "",
-        color: "",
-      });
-      setDashSearch("");
-    }}
-    style={{
-      marginTop: "12px",
-      padding: "7px 18px",
-      borderRadius: "6px",
-      border: "1px solid #f39c12",
-      background: "transparent",
-      color: "#f39c12",
-      fontWeight: "600",
-      cursor: "pointer",
-      fontSize: "0.85em",
-    }}
-  >
-    🔄 Limpiar filtros
-  </button>
+  onClick={() => {
+    setDf({
+      startDate: "",
+      endDate: "",
+      producto: "",
+      talle: "",
+      color: "",
+    });
+    setDashSearch("");
+  }}
+  style={{ marginTop: "12px", padding: "7px 18px", borderRadius: "6px", border: "1px solid #f39c12", background: "transparent", color: "#f39c12", fontWeight: "600", cursor: "pointer", fontSize: "0.85em" }}
+>
+  🔄 Limpiar filtros
+</button>
 </div>
 
     {/* Tabla de registros */}
