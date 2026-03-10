@@ -285,16 +285,24 @@ const AmberApp = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // Guardar venta
+// Guardar venta
 const handleGuardarVenta = async () => {
   if (!selectedProducto || !formData.precioVenta) return;
   
   setGuardando(true);
   
+  // DEBUG: Ver qué valores tenemos
+  console.log("=== DEBUG NUEVA VENTA ===");
+  console.log("formData.precioVenta:", formData.precioVenta);
+  console.log("selectedProducto:", selectedProducto);
+  
   const precio = parseNumero(formData.precioVenta);
   const costo = parseNumero(selectedProducto["COSTO U."]);
   const cantidad = Number(formData.cantidad) || 1;
   const ganancia = (precio - costo) * cantidad;
+  
+  console.log("precio parseado:", precio);
+  console.log("costo parseado:", costo);
   
   const esConTarjeta = formData.medioPago.includes("CRED") || formData.medioPago === "DEBITO";
   const iva = esConTarjeta ? precio * 0.21 : 0;
@@ -303,18 +311,20 @@ const handleGuardarVenta = async () => {
   const fechaFormateada = formatearFecha(formData.fecha);
   
   const nuevaVenta = {
-  "Fecha": fechaFormateada,
-  "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
-  "Código": selectedProducto["CÓDIGO"],
-  "Tipo de producto": selectedProducto["PRODUCTO"],
-  "Cantidad": cantidad,
-  "Medio de pago": formData.medioPago,
-  "Precio venta": precio,
-  "Costo U.": costo,
-  "IVA 21%": iva,
-  "Ganancia Neta": gananciaNeta,
-  "Ganancias con recompra": ganancia
-};
+    "Fecha": fechaFormateada,
+    "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
+    "Código": selectedProducto["CÓDIGO"],
+    "Tipo de producto": selectedProducto["PRODUCTO"],
+    "Cantidad": cantidad,
+    "Medio de pago": formData.medioPago,
+    "Precio venta": precio,
+    "Costo U.": costo,
+    "IVA 21%": iva,
+    "Ganancia Neta": gananciaNeta,
+    "Ganancias con recompra": ganancia
+  };
+  
+  console.log("nuevaVenta completa:", nuevaVenta);
   
   // 1. Agregar localmente AL INSTANTE (sin esperar)
   setAllVentas(prev => [...prev, nuevaVenta]);
@@ -333,6 +343,7 @@ const handleGuardarVenta = async () => {
   
   // 3. Guardar en Google Sheets EN BACKGROUND (sin bloquear)
   agregarFila("Ventas", nuevaVenta).then(exito => {
+    console.log("Resultado de agregarFila:", exito);
     if (!exito) {
       alert("⚠️ Error al sincronizar con Google Sheets. La venta se guardó localmente.");
     }
