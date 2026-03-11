@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -70,7 +70,9 @@ const AmberApp = () => {
 
   const [allVentas, setAllVentas] = useState([]);
   const [inventario, setInventario] = useState([]);
-
+  const pendingVentasSyncRef = useRef(new Map());
+  const allVentasRef = useRef([]);
+  
   // Cargar datos desde Google Sheets
   const cargarDatos = async () => {
     setLoading(true);
@@ -92,6 +94,11 @@ const AmberApp = () => {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  useEffect(() => {
+    allVentasRef.current = allVentas;
+  }, [allVentas]);
+
 
   // Dashboard filters
   const [df, setDf] = useState({
@@ -452,6 +459,30 @@ const editProductosFiltrados = useMemo(() => {
     return `${day}/${month}/${year}`;
   };
 
+  const resolverRowNumberVenta = async (venta) => {
+  if (venta?._rowNumber) return Number(venta._rowNumber);
+
+  if (!venta?._tempId) return null;
+
+  const buscarVentaConRowNumber = () =>
+    allVentasRef.current.find((v) => v?._tempId === venta._tempId && v?._rowNumber);
+
+  const ventaActualizada = buscarVentaConRowNumber();
+  if (ventaActualizada?._rowNumber) return Number(ventaActualizada._rowNumber);
+
+  const syncPendiente = pendingVentasSyncRef.current.get(venta._tempId);
+  if (syncPendiente) {
+    const result = await syncPendiente;
+    if (result?.success && result?.rowNumber) {
+      return Number(result.rowNumber);
+    }
+  }
+
+  const ventaTrasSync = buscarVentaConRowNumber();
+  return ventaTrasSync?._rowNumber ? Number(ventaTrasSync._rowNumber) : null;
+};
+
+
 // Guardar venta
 const handleGuardarVenta = async () => {
   if (!selectedProducto || !formData.precioVenta) return;
@@ -531,25 +562,36 @@ setShowForm(false);
 setGuardando(false);
 
 // 3. Guardar en Google Sheets y actualizar _rowNumber local
-agregarFila("Ventas", nuevaVenta).then((result) => {
-  if (!result.success) {
-    alert("⚠️ Error al sincronizar con Google Sheets.");
-    return;
-  }
+const syncPromise = agregarFila("Ventas", nuevaVenta)
+  .then((result) => {
+    if (!result.success) {
+      setAllVentas((prev) => prev.filter((v) => v._tempId !== tempId));
+      alert("⚠️ Error al sincronizar con Google Sheets. La venta local fue revertida.");
+      return result;
+    }
 
   setAllVentas((prev) =>
-    prev.map((v) =>
-      v._tempId === tempId
-        ? { ...v, _rowNumber: result.rowNumber }
-        : v
-    )
-  );
-});
+      prev.map((v) =>
+        v._tempId === tempId
+          ? { ...v, _rowNumber: result.rowNumber }
+          : v
+      )
+    );
+
+    return result;
+  })
+  .finally(() => {
+    pendingVentasSyncRef.current.delete(tempId);
+  });
+
+pendingVentasSyncRef.current.set(tempId, syncPromise);
 };
 const handleGuardarEdicion = async () => {
   if (!ventaEditando || !editSelectedProducto || !editFormData.precioVenta) return;
-  if (!ventaEditando._rowNumber) {
-    alert("No se puede editar esta venta: falta _rowNumber.");
+  const rowNumber = await resolverRowNumberVenta(ventaEditando);
+
+  if (!rowNumber) {
+    alert("No se puede editar esta venta todavía. Esperá unos segundos a que se sincronice con Google Sheets.");
     return;
   }
 
@@ -603,7 +645,7 @@ const handleGuardarEdicion = async () => {
     "Ganancias con recompra": gananciaRecompra,
   };
 
-  const ok = await actualizarFila("Ventas", ventaEditando._rowNumber, ventaActualizada);
+  const ok = await actualizarFila("Ventas", rowNumber, ventaActualizada);
 
   if (!ok) {
     alert("Error al actualizar la venta.");
@@ -612,11 +654,15 @@ const handleGuardarEdicion = async () => {
   }
 
   setAllVentas((prev) =>
-    prev.map((v) =>
-      v._rowNumber === ventaEditando._rowNumber
-        ? { ...v, ...ventaActualizada, _rowNumber: ventaEditando._rowNumber }
-        : v
-    )
+    prev.map((v) => {
+      const esMismaVenta = ventaEditando._rowNumber
+        ? Number(v._rowNumber) === Number(ventaEditando._rowNumber)
+        : v._tempId && v._tempId === ventaEditando._tempId;
+
+      return esMismaVenta
+        ? { ...v, ...ventaActualizada, _rowNumber: rowNumber }
+        : v;
+    })
   );
 
   setShowEditForm(false);
