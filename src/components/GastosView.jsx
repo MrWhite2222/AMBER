@@ -125,7 +125,7 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
               color: "#3498db",
             }}
           >
-            {gastosMes.length}
+            {gastosFiltrados.length}
           </p>
         </div>
         <div style={card("243,156,18")}>
