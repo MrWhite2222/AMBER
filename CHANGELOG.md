@@ -10,8 +10,9 @@
 - Se activo `InventarioView` desde `src/components/InventarioView.jsx`.
 - Se activo `RegistrosView` desde `src/components/RegistrosView.jsx`.
 - Se activo `NuevaVentaModal` desde `src/components/NuevaVentaModal.jsx`.
+- Se activo `EditarVentaModal` desde `src/components/EditarVentaModal.jsx`.
 
 ## Proximo paso sugerido
 
 - Limpiar los bloques viejos de inventario y registros que quedaron desactivados dentro de `src/App.jsx`.
-- Extraer el modal de edicion.
+- Limpiar los bloques viejos de inventario, registros y modales que quedaron desactivados dentro de `src/App.jsx`.

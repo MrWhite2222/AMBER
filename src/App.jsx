@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import InventarioView from "./components/InventarioView";
+import EditarVentaModal from "./components/EditarVentaModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
 import RegistrosView from "./components/RegistrosView";
 import ResumenView from "./components/ResumenView";
@@ -1907,6 +1908,32 @@ const handleGuardarEdicion = async () => {
         )}
 {/* MODAL edicion */}
     {showEditForm && (
+  <EditarVentaModal
+    editFormData={editFormData}
+    editProductosFiltrados={editProductosFiltrados}
+    editSearchProducto={editSearchProducto}
+    editSelectedProducto={editSelectedProducto}
+    guardandoEdicion={guardandoEdicion}
+    handleGuardarEdicion={handleGuardarEdicion}
+    inp={inp}
+    lbl={lbl}
+    onClose={() => setShowEditForm(false)}
+    onEditFormDataChange={(key, value) =>
+      setEditFormData((f) => ({ ...f, [key]: value }))
+    }
+    onEditSearchProductoChange={(value) => {
+      setEditSearchProducto(value);
+      setShowEditProductoDrop(true);
+      setEditSelectedProducto(null);
+    }}
+    parseNumero={parseNumero}
+    setEditSearchProducto={setEditSearchProducto}
+    setEditSelectedProducto={setEditSelectedProducto}
+    setShowEditProductoDrop={setShowEditProductoDrop}
+    showEditProductoDrop={showEditProductoDrop}
+  />
+)}
+    {false && showEditForm && (
   <div
     style={{
       position: "fixed",
