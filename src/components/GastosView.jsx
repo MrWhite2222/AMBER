@@ -311,7 +311,7 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
                 background: "rgba(0,0,0,0.2)",
               }}
             >
-              {["Año", "Mes", "Fecha", "Tipo", "Concepto", "Total"].map((h) => (
+              {["Año", "Fecha", "Mes", "Tipo", "Concepto", "Total"].map((h) => (
                 <th
                   key={h}
                   style={{
