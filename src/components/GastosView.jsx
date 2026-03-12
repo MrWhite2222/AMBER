@@ -19,6 +19,29 @@ const toInputDate = (date) => {
 };
 
 const parseFechaGasto = (gasto) => {
+  const anio = Number(getValorCampo(gasto, ["Año", "ANO", "AÑO", "Anio", "anio"]));
+  const mesTexto = getValorCampo(gasto, ["MES", "Mes"]);
+  const dia = Number(getValorCampo(gasto, ["DIA", "Dia", "día", "Día"]));
+  const meses = [
+    "ENERO",
+    "FEBRERO",
+    "MARZO",
+    "ABRIL",
+    "MAYO",
+    "JUNIO",
+    "JULIO",
+    "AGOSTO",
+    "SEPTIEMBRE",
+    "OCTUBRE",
+    "NOVIEMBRE",
+    "DICIEMBRE",
+  ];
+  const mesIndex = meses.indexOf(String(mesTexto ?? "").trim().toUpperCase());
+
+  if (anio && mesIndex >= 0 && dia) {
+    return new Date(anio, mesIndex, dia);
+  }
+
   const fecha = getValorCampo(gasto, ["FECHA", "Fecha"]);
   if (!fecha) return null;
 
@@ -26,8 +49,8 @@ const parseFechaGasto = (gasto) => {
   if (!texto) return null;
 
   if (texto.includes("/")) {
-    const [dia, mes, anio] = texto.split("/");
-    return new Date(Number(anio), Number(mes) - 1, Number(dia));
+    const [diaTexto, mesNumero, anioTexto] = texto.split("/");
+    return new Date(Number(anioTexto), Number(mesNumero) - 1, Number(diaTexto));
   }
 
   return new Date(texto);
@@ -70,8 +93,8 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
   }, [filtros.endDate, filtros.startDate, gastos]);
 
   const gastosOrdenados = [...gastosFiltrados].sort((a, b) => {
-    const fechaA = new Date(getValorCampo(a, ["FECHA", "Fecha"]) || 0).getTime();
-    const fechaB = new Date(getValorCampo(b, ["FECHA", "Fecha"]) || 0).getTime();
+    const fechaA = parseFechaGasto(a)?.getTime() ?? 0;
+    const fechaB = parseFechaGasto(b)?.getTime() ?? 0;
     return fechaB - fechaA;
   });
 
@@ -306,7 +329,12 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
           <tbody>
             {gastosOrdenados.map((gasto, i) => {
               const anioValor = getValorCampo(gasto, ["Año", "ANO", "AÑO", "Anio", "anio"]);
-              const fecha = getValorCampo(gasto, ["FECHA", "Fecha"]);
+              const fechaDate = parseFechaGasto(gasto);
+              const fecha = fechaDate
+                ? `${String(fechaDate.getDate()).padStart(2, "0")}/${String(
+                    fechaDate.getMonth() + 1
+                  ).padStart(2, "0")}/${fechaDate.getFullYear()}`
+                : getValorCampo(gasto, ["FECHA", "Fecha"]);
               const mesValor = getValorCampo(gasto, ["MES", "Mes"]);
               const tipo = getValorCampo(gasto, ["TIPO", "Tipo"]);
               const concepto = getValorCampo(gasto, ["CONCEPTO", "Concepto"]);

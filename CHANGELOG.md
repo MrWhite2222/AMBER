@@ -16,6 +16,7 @@
 - Se agrego la seccion `Gastos` con una vista propia y tabla de gastos del mes.
 - Se actualizo el filtro de `Gastos` para usar `Año` y `Mes`, con respaldo desde `Fecha` para registros viejos.
 - La vista `Gastos` ahora abre mostrando el mes actual y permite filtrar por rango de fechas.
+- Se corrigio la interpretacion de fechas en `Gastos` para leer `Año` + `MES` + `DIA` y no depender solo de `FECHA`.
 
 ## Proximo paso sugerido
 

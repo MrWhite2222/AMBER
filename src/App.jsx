@@ -77,6 +77,39 @@ const AmberApp = () => {
     return "";
   };
 
+  const getMesIndex = (mes) => {
+    const meses = [
+      "ENERO",
+      "FEBRERO",
+      "MARZO",
+      "ABRIL",
+      "MAYO",
+      "JUNIO",
+      "JULIO",
+      "AGOSTO",
+      "SEPTIEMBRE",
+      "OCTUBRE",
+      "NOVIEMBRE",
+      "DICIEMBRE",
+    ];
+
+    return meses.indexOf(String(mes ?? "").trim().toUpperCase());
+  };
+
+  const parseFechaGasto = (gasto) => {
+    const anio = Number(getValorGasto(gasto, ["Año", "ANO", "AÑO", "Anio", "anio"]));
+    const mesTexto = getValorGasto(gasto, ["MES", "Mes"]);
+    const dia = Number(getValorGasto(gasto, ["DIA", "Dia", "día", "Día"]));
+    const mesIndex = getMesIndex(mesTexto);
+
+    if (anio && mesIndex >= 0 && dia) {
+      return new Date(anio, mesIndex, dia);
+    }
+
+    const fechaTexto = getValorGasto(gasto, ["FECHA", "Fecha"]);
+    return fechaTexto ? parseFecha(fechaTexto) : null;
+  };
+
   const inventarioUnico = useMemo(() => {
   const mapa = new Map();
 
@@ -221,28 +254,16 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
   }, [allVentas]);
 
   const gastosMes = useMemo(() => {
-    const mesActual = getMes().toUpperCase();
-    const anioActual = String(getAnio());
+    const now = new Date();
+    const mesActual = now.getMonth();
+    const anioActual = now.getFullYear();
     return gastos.filter((g) => {
-      const mes = String(g["MES"] ?? "").trim().toUpperCase();
-      const anio = String(
-        getValorGasto(g, ["Año", "ANO", "AÑO", "Anio", "anio"])
-      ).trim();
-      const fecha = parseFecha(getValorGasto(g, ["FECHA", "Fecha"]));
-
-      const coincideMes = mes
-        ? mes === mesActual
-        : Boolean(
-            fecha &&
-              fecha.getMonth() === new Date().getMonth() &&
-              fecha.getFullYear() === new Date().getFullYear()
-          );
-
-      const coincideAnio = anio
-        ? anio === anioActual
-        : Boolean(fecha && String(fecha.getFullYear()) === anioActual);
-
-      return coincideMes && coincideAnio;
+      const fecha = parseFechaGasto(g);
+      return (
+        fecha &&
+        fecha.getMonth() === mesActual &&
+        fecha.getFullYear() === anioActual
+      );
     });
   }, [gastos]);
 
