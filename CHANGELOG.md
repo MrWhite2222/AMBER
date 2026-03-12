@@ -8,9 +8,9 @@
 - Se agregaron las metricas `Gastos del Mes` y `Resultado Neto`.
 - Se extrajo `ResumenView` a `src/components/ResumenView.jsx`.
 - Se activo `InventarioView` desde `src/components/InventarioView.jsx`.
+- Se activo `RegistrosView` desde `src/components/RegistrosView.jsx`.
 
 ## Proximo paso sugerido
 
-- Limpiar el bloque viejo de inventario que quedo desactivado dentro de `src/App.jsx`.
-- Extraer `RegistrosView`.
+- Limpiar los bloques viejos de inventario y registros que quedaron desactivados dentro de `src/App.jsx`.
 - Empezar a dividir los modales de alta y edicion.

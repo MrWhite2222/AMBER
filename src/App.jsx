@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import InventarioView from "./components/InventarioView";
+import RegistrosView from "./components/RegistrosView";
 import ResumenView from "./components/ResumenView";
 import { actualizarFila, agregarFila, leerHoja } from "./services/sheets";
 import {
@@ -1221,6 +1222,43 @@ const handleGuardarEdicion = async () => {
 
        {/* REGISTROS */}
 {viewMode === "registros" && (
+  <RegistrosView
+    abrirEdicion={abrirEdicion}
+    dashNombresFiltrados={dashNombresFiltrados}
+    dashSearch={dashSearch}
+    df={df}
+    inp={inp}
+    inventarioUnico={inventarioUnico}
+    lbl={lbl}
+    onClearFiltros={() => {
+      setDf({
+        startDate: "",
+        endDate: "",
+        producto: "",
+        talle: "",
+        color: "",
+      });
+      setDashSearch("");
+    }}
+    onDashSearchChange={(value) => {
+      setDashSearch(value);
+      setShowDashDrop(true);
+    }}
+    onDateChange={(key, value) => setDf((f) => ({ ...f, [key]: value }))}
+    onProductoSelect={(producto) => {
+      setDf((f) => ({ ...f, producto }));
+      setDashSearch(producto);
+      setShowDashDrop(false);
+    }}
+    onSetColor={(value) => setDf((f) => ({ ...f, color: value }))}
+    onSetTalle={(value) => setDf((f) => ({ ...f, talle: value }))}
+    parseNumero={parseNumero}
+    setShowDashDrop={setShowDashDrop}
+    showDashDrop={showDashDrop}
+    ventasDash={ventasDash}
+  />
+)}
+{false && viewMode === "registros" && (
   <>
     {/* Filtros */}
 <div
