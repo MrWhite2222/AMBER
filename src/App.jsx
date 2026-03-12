@@ -24,7 +24,6 @@ const AmberApp = () => {
   const [gastos, setGastos] = useState([]);
   const pendingVentasSyncRef = useRef(new Map());
   const allVentasRef = useRef([]);
-  const inventarioRef = useRef([]);
   
   // Cargar datos desde Google Sheets
   const cargarDatos = async () => {
@@ -53,10 +52,6 @@ const AmberApp = () => {
   useEffect(() => {
     allVentasRef.current = allVentas;
   }, [allVentas]);
-
-  useEffect(() => {
-    inventarioRef.current = inventario;
-  }, [inventario]);
 
 
   // Dashboard filters
@@ -150,60 +145,6 @@ const AmberApp = () => {
 
     setAllVentas(ventasConTempId);
     return ventasConTempId;
-  };
-
-  const buscarInventarioPorCodigo = (codigo) =>
-    inventarioRef.current.find(
-      (item) =>
-        item &&
-        String(item["CÃ“DIGO"] ?? "").trim() === String(codigo ?? "").trim()
-    );
-
-  const construirInventarioActualizado = (item, deltaCantidad) => {
-    const entradas = parseNumero(item?.["ENTRADAS"]);
-    const salidasActuales = parseNumero(item?.["SALIDAS"]);
-    const costoUnitario = parseNumero(item?.["COSTO U."]);
-    const nuevasSalidas = Math.max(salidasActuales + deltaCantidad, 0);
-    const nuevoStock = Math.max(entradas - nuevasSalidas, 0);
-
-    return {
-      ...item,
-      "SALIDAS": nuevasSalidas,
-      "STOCK": nuevoStock,
-      "STOCK TOTAL": nuevoStock * costoUnitario,
-    };
-  };
-
-  const aplicarDeltaInventarioLocal = (codigo, deltaCantidad) => {
-    if (!codigo || !deltaCantidad) return;
-
-    setInventario((prev) =>
-      prev.map((item) =>
-        String(item?.["CÃ“DIGO"] ?? "").trim() === String(codigo ?? "").trim()
-          ? construirInventarioActualizado(item, deltaCantidad)
-          : item
-      )
-    );
-  };
-
-  const sincronizarDeltaInventario = async (codigo, deltaCantidad) => {
-    if (!codigo || !deltaCantidad) return true;
-
-    const itemActual = buscarInventarioPorCodigo(codigo);
-    if (!itemActual?._rowNumber) return false;
-
-    const itemActualizado = construirInventarioActualizado(itemActual, deltaCantidad);
-    const ok = await actualizarFila(
-      "Inventario",
-      Number(itemActual._rowNumber),
-      itemActualizado
-    );
-
-    if (!ok) {
-      await cargarDatos();
-    }
-
-    return ok;
   };
 
   const inventarioUnico = useMemo(() => {
@@ -657,7 +598,6 @@ Object.assign(
   
   // 1. Agregar localmente al instante
 setAllVentas((prev) => [...prev, nuevaVenta]);
-aplicarDeltaInventarioLocal(selectedProducto["CÃ“DIGO"], cantidad);
 
 // 2. Limpiar formulario y cerrar modal
 setFormData({
@@ -676,7 +616,6 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
   .then(async (result) => {
     if (!result.success) {
       setAllVentas((prev) => prev.filter((v) => v._tempId !== tempId));
-      aplicarDeltaInventarioLocal(selectedProducto["CÃ“DIGO"], -cantidad);
       alert("⚠️ Error al sincronizar con Google Sheets. La venta local fue revertida.");
       return result;
     }
@@ -690,13 +629,6 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
     );
 
     await refrescarVentas({ ...nuevaVenta, _rowNumber: result.rowNumber });
-    const inventarioOk = await sincronizarDeltaInventario(
-      selectedProducto["CÃ“DIGO"],
-      cantidad
-    );
-    if (!inventarioOk) {
-      alert("La venta se guardÃ³, pero no se pudo sincronizar el inventario automÃ¡ticamente.");
-    }
     return result;
   })
   .finally(() => {
@@ -781,34 +713,6 @@ const handleGuardarEdicion = async () => {
     alert("Error al actualizar la venta.");
     setGuardandoEdicion(false);
     return;
-  }
-
-  const codigoOriginal = ventaEditando["CÃ³digo"];
-  const cantidadOriginal = Number(ventaEditando["Cantidad"]) || 1;
-  const codigoNuevo = editSelectedProducto["CÃ“DIGO"];
-
-  if (String(codigoOriginal ?? "").trim() === String(codigoNuevo ?? "").trim()) {
-    const deltaCantidad = cantidad - cantidadOriginal;
-    if (deltaCantidad !== 0) {
-      aplicarDeltaInventarioLocal(codigoNuevo, deltaCantidad);
-      const inventarioOk = await sincronizarDeltaInventario(codigoNuevo, deltaCantidad);
-      if (!inventarioOk) {
-        alert("La venta se editÃ³, pero no se pudo sincronizar el inventario automÃ¡ticamente.");
-      }
-    }
-  } else {
-    aplicarDeltaInventarioLocal(codigoOriginal, -cantidadOriginal);
-    aplicarDeltaInventarioLocal(codigoNuevo, cantidad);
-
-    const inventarioOriginalOk = await sincronizarDeltaInventario(
-      codigoOriginal,
-      -cantidadOriginal
-    );
-    const inventarioNuevoOk = await sincronizarDeltaInventario(codigoNuevo, cantidad);
-
-    if (!inventarioOriginalOk || !inventarioNuevoOk) {
-      alert("La venta se editÃ³, pero no se pudo sincronizar completamente el inventario.");
-    }
   }
 
   setAllVentas((prev) =>
