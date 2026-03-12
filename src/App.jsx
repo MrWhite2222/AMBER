@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+﻿import { useState, useMemo, useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import GastosView from "./components/GastosView";
 import InventarioView from "./components/InventarioView";
@@ -102,9 +102,9 @@ const AmberApp = () => {
   };
 
   const parseFechaGasto = (gasto) => {
-    const anio = Number(getValorGasto(gasto, ["Año", "ANO", "AÑO", "Anio", "anio"]));
+    const anio = Number(getValorGasto(gasto, ["AÃ±o", "ANO", "AÃ‘O", "Anio", "anio"]));
     const mesTexto = getValorGasto(gasto, ["MES", "Mes"]);
-    const dia = Number(getValorGasto(gasto, ["DIA", "Dia", "día", "Día"]));
+    const dia = Number(getValorGasto(gasto, ["DIA", "Dia", "dÃ­a", "DÃ­a"]));
     const mesIndex = getMesIndex(mesTexto);
 
     if (anio && mesIndex >= 0 && dia) {
@@ -115,11 +115,22 @@ const AmberApp = () => {
     return fechaTexto ? parseFecha(fechaTexto) : null;
   };
 
-  const normalizarTexto = (valor) => String(valor ?? "").trim();
+  const getValorCampo = (objeto, claves) => {
+  for (const clave of claves) {
+    const valor = objeto?.[clave];
+    if (valor !== undefined && valor !== null && String(valor).trim() !== "") {
+      return valor;
+    }
+  }
+
+  return "";
+};
+
+const normalizarTexto = (valor) => String(valor ?? "").trim();
 
   const coincideVenta = (ventaA, ventaB) =>
     normalizarTexto(ventaA?.["Fecha"]) === normalizarTexto(ventaB?.["Fecha"]) &&
-    normalizarTexto(ventaA?.["CÃ³digo"]) === normalizarTexto(ventaB?.["CÃ³digo"]) &&
+    normalizarTexto(getValorCampo(ventaA, ["Código", "CÃ³digo", "CÃƒÂ³digo"])) === normalizarTexto(getValorCampo(ventaB, ["Código", "CÃ³digo", "CÃƒÂ³digo"])) &&
     normalizarTexto(ventaA?.["Tipo de producto"]) ===
       normalizarTexto(ventaB?.["Tipo de producto"]) &&
     Number(ventaA?.["Cantidad"] ?? 0) === Number(ventaB?.["Cantidad"] ?? 0) &&
@@ -156,7 +167,7 @@ const AmberApp = () => {
     inventarioRef.current.find(
       (item) =>
         item &&
-        String(item["CÃ“DIGO"] ?? "").trim() === String(codigo ?? "").trim()
+        normalizarTexto(getValorCampo(item, ["CÓDIGO", "CÃ“DIGO", "CÃƒâ€œDIGO"])) === normalizarTexto(codigo)
     );
 
   const construirInventarioActualizado = (item, deltaCantidad) => {
@@ -179,7 +190,7 @@ const AmberApp = () => {
 
     setInventario((prev) =>
       prev.map((item) =>
-        String(item?.["CÃ“DIGO"] ?? "").trim() === String(codigo ?? "").trim()
+        normalizarTexto(getValorCampo(item, ["CÓDIGO", "CÃ“DIGO", "CÃƒâ€œDIGO"])) === normalizarTexto(codigo)
           ? construirInventarioActualizado(item, deltaCantidad)
           : item
       )
@@ -212,10 +223,10 @@ const AmberApp = () => {
   (Array.isArray(inventario) ? inventario : []).forEach((item) => {
     if (!item) return;
 
-    const codigo = String(item["CÓDIGO"] ?? "").trim();
+    const codigo = String(item["CÃ“DIGO"] ?? "").trim();
     if (!codigo) return;
 
-    // Si el código se repite, nos quedamos con la última fila
+    // Si el cÃ³digo se repite, nos quedamos con la Ãºltima fila
     mapa.set(codigo, item);
   });
 
@@ -226,11 +237,11 @@ const abrirEdicion = (venta) => {
   const productoInv = inventarioUnico.find(
     (p) =>
       p &&
-      String(p["CÓDIGO"] ?? "").trim() === String(venta["Código"] ?? "").trim()
+      String(p["CÃ“DIGO"] ?? "").trim() === String(venta["CÃ³digo"] ?? "").trim()
   );
 
   const productoBase = {
-    "CÓDIGO": venta["Código"] ?? productoInv?.["CÓDIGO"] ?? "",
+    "CÃ“DIGO": venta["CÃ³digo"] ?? productoInv?.["CÃ“DIGO"] ?? "",
     "PRODUCTO": venta["Tipo de producto"] ?? productoInv?.["PRODUCTO"] ?? "",
     "TALLE": venta["Talle"] ?? productoInv?.["TALLE"] ?? "",
     "COLOR": venta["Color"] ?? productoInv?.["COLOR"] ?? "",
@@ -307,7 +318,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
   const getAnio = () => new Date().getFullYear();
 
-// Autocompletar precio según medio de pago
+// Autocompletar precio segÃºn medio de pago
   useEffect(() => {
     if (selectedProducto) {
       setFormData((f) => ({
@@ -363,7 +374,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     });
   }, [gastos]);
 
-  // Análisis resumen
+  // AnÃ¡lisis resumen
   const analisisResumen = useMemo(() => {
     const a = {};
     ventasMes.forEach((v) => {
@@ -399,7 +410,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     [ventasMes, gastosMes]
   );
 
-  // Nombres únicos para filtros
+  // Nombres Ãºnicos para filtros
   const nombresUnicos = useMemo(() => {
     return [
       ...new Set(allVentas.map((v) => v["Tipo de producto"]).filter(Boolean)),
@@ -424,7 +435,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     const productoInv = inventario.find(
       (p) =>
         p &&
-        String(p["CÓDIGO"] ?? "").trim() === String(v["Código"] ?? "").trim()
+        String(p["CÃ“DIGO"] ?? "").trim() === String(v["CÃ³digo"] ?? "").trim()
     );
 
     const talle = String(productoInv?.["TALLE"] ?? "").toUpperCase();
@@ -471,7 +482,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     items = items.filter(
       (i) =>
         String(i["PRODUCTO"] ?? "").toUpperCase().includes(invSearch.toUpperCase()) ||
-        String(i["CÓDIGO"] ?? "").toUpperCase().includes(invSearch.toUpperCase())
+        String(i["CÃ“DIGO"] ?? "").toUpperCase().includes(invSearch.toUpperCase())
     );
   }
 
@@ -516,7 +527,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
         String(p["PRODUCTO"] ?? "")
           .toUpperCase()
           .includes(searchProducto.toUpperCase()) ||
-        String(p["CÓDIGO"] ?? "")
+        String(p["CÃ“DIGO"] ?? "")
           .toUpperCase()
           .includes(searchProducto.toUpperCase())
     )
@@ -534,7 +545,7 @@ const editProductosFiltrados = useMemo(() => {
         String(p["PRODUCTO"] ?? "")
           .toUpperCase()
           .includes(editSearchProducto.toUpperCase()) ||
-        String(p["CÓDIGO"] ?? "")
+        String(p["CÃ“DIGO"] ?? "")
           .toUpperCase()
           .includes(editSearchProducto.toUpperCase())
     )
@@ -590,7 +601,7 @@ const handleGuardarVenta = async () => {
   const cantidad = Number(formData.cantidad) || 1;
   const medioPago = formData.medioPago;
   
-  // G: Precio venta - desde el formulario o del inventario según medio de pago
+  // G: Precio venta - desde el formulario o del inventario segÃºn medio de pago
   const precioManual = parseNumero(formData.precioVenta);
   const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
   const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
@@ -599,7 +610,7 @@ const handleGuardarVenta = async () => {
   // H: Costo U. - del inventario
   const costo = parseNumero(selectedProducto["COSTO U."]);
   
-  // I: IVA 21% - calculado según medio de pago
+  // I: IVA 21% - calculado segÃºn medio de pago
 let iva = 0;
 if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "QR") {
   iva = 0;
@@ -630,8 +641,8 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
 const nuevaVenta = {
   _tempId: tempId,
   "Fecha": fechaFormateada,
-  "Código (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÓDIGO"]}`,
-  "Código": selectedProducto["CÓDIGO"],
+  "CÃ³digo (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${selectedProducto["CÃ“DIGO"]}`,
+  "CÃ³digo": selectedProducto["CÃ“DIGO"],
   "Talle": selectedProducto["TALLE"],
   "Color": selectedProducto["COLOR"],
   "Tipo de producto": selectedProducto["PRODUCTO"],
@@ -657,7 +668,7 @@ Object.assign(
   
   // 1. Agregar localmente al instante
 setAllVentas((prev) => [...prev, nuevaVenta]);
-aplicarDeltaInventarioLocal(selectedProducto["CÃ“DIGO"], cantidad);
+aplicarDeltaInventarioLocal(selectedProducto["CÃƒâ€œDIGO"], cantidad);
 
 // 2. Limpiar formulario y cerrar modal
 setFormData({
@@ -676,8 +687,8 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
   .then(async (result) => {
     if (!result.success) {
       setAllVentas((prev) => prev.filter((v) => v._tempId !== tempId));
-      aplicarDeltaInventarioLocal(selectedProducto["CÃ“DIGO"], -cantidad);
-      alert("⚠️ Error al sincronizar con Google Sheets. La venta local fue revertida.");
+      aplicarDeltaInventarioLocal(selectedProducto["CÃƒâ€œDIGO"], -cantidad);
+      alert("âš ï¸ Error al sincronizar con Google Sheets. La venta local fue revertida.");
       return result;
     }
 
@@ -691,11 +702,11 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
 
     await refrescarVentas({ ...nuevaVenta, _rowNumber: result.rowNumber });
     const inventarioOk = await sincronizarDeltaInventario(
-      selectedProducto["CÃ“DIGO"],
+      selectedProducto["CÃƒâ€œDIGO"],
       cantidad
     );
     if (!inventarioOk) {
-      alert("La venta se guardÃ³, pero no se pudo sincronizar el inventario automÃ¡ticamente.");
+      alert("La venta se guardÃƒÂ³, pero no se pudo sincronizar el inventario automÃƒÂ¡ticamente.");
     }
     return result;
   })
@@ -710,7 +721,7 @@ const handleGuardarEdicion = async () => {
   const rowNumber = await resolverRowNumberVenta(ventaEditando);
 
   if (!rowNumber) {
-    alert("No se puede editar esta venta todavía. Esperá unos segundos a que se sincronice con Google Sheets.");
+    alert("No se puede editar esta venta todavÃ­a. EsperÃ¡ unos segundos a que se sincronice con Google Sheets.");
     return;
   }
 
@@ -750,8 +761,8 @@ const handleGuardarEdicion = async () => {
 
   const ventaActualizada = {
     "Fecha": ventaEditando["Fecha"], // fija
-    "Código (Buscador)": `${editSelectedProducto["PRODUCTO"]} ${editSelectedProducto["TALLE"]} ${editSelectedProducto["COLOR"]} | ${editSelectedProducto["CÓDIGO"]}`,
-    "Código": editSelectedProducto["CÓDIGO"],
+    "CÃ³digo (Buscador)": `${editSelectedProducto["PRODUCTO"]} ${editSelectedProducto["TALLE"]} ${editSelectedProducto["COLOR"]} | ${editSelectedProducto["CÃ“DIGO"]}`,
+    "CÃ³digo": editSelectedProducto["CÃ“DIGO"],
     "Talle": editSelectedProducto["TALLE"],
     "Color": editSelectedProducto["COLOR"],
     "Tipo de producto": editSelectedProducto["PRODUCTO"],
@@ -783,9 +794,9 @@ const handleGuardarEdicion = async () => {
     return;
   }
 
-  const codigoOriginal = ventaEditando["CÃ³digo"];
+  const codigoOriginal = ventaEditando["CÃƒÂ³digo"];
   const cantidadOriginal = Number(ventaEditando["Cantidad"]) || 1;
-  const codigoNuevo = editSelectedProducto["CÃ“DIGO"];
+  const codigoNuevo = editSelectedProducto["CÃƒâ€œDIGO"];
 
   if (String(codigoOriginal ?? "").trim() === String(codigoNuevo ?? "").trim()) {
     const deltaCantidad = cantidad - cantidadOriginal;
@@ -793,7 +804,7 @@ const handleGuardarEdicion = async () => {
       aplicarDeltaInventarioLocal(codigoNuevo, deltaCantidad);
       const inventarioOk = await sincronizarDeltaInventario(codigoNuevo, deltaCantidad);
       if (!inventarioOk) {
-        alert("La venta se editÃ³, pero no se pudo sincronizar el inventario automÃ¡ticamente.");
+        alert("La venta se editÃƒÂ³, pero no se pudo sincronizar el inventario automÃƒÂ¡ticamente.");
       }
     }
   } else {
@@ -807,7 +818,7 @@ const handleGuardarEdicion = async () => {
     const inventarioNuevoOk = await sincronizarDeltaInventario(codigoNuevo, cantidad);
 
     if (!inventarioOriginalOk || !inventarioNuevoOk) {
-      alert("La venta se editÃ³, pero no se pudo sincronizar completamente el inventario.");
+      alert("La venta se editÃƒÂ³, pero no se pudo sincronizar completamente el inventario.");
     }
   }
 
@@ -855,10 +866,10 @@ const handleGuardarEdicion = async () => {
   });
 
   const navBtns = [
-    ["resumen", "📅 Resumen"],
-    ["inventario", "📦 Inventario"],
-    ["registros", "📋 Registros"],
-    ["gastos", "💸 Gastos"],
+    ["resumen", "ðŸ“… Resumen"],
+    ["inventario", "ðŸ“¦ Inventario"],
+    ["registros", "ðŸ“‹ Registros"],
+    ["gastos", "ðŸ’¸ Gastos"],
   ];
 
   // Pantalla de carga
@@ -876,7 +887,7 @@ const handleGuardarEdicion = async () => {
         }}
       >
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "3em", marginBottom: "20px" }}>⏳</div>
+          <div style={{ fontSize: "3em", marginBottom: "20px" }}>â³</div>
           <p style={{ color: "#f39c12", fontSize: "1.2em" }}>
             Cargando datos desde Google Sheets...
           </p>
@@ -900,7 +911,7 @@ const handleGuardarEdicion = async () => {
         }}
       >
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "3em", marginBottom: "20px" }}>❌</div>
+          <div style={{ fontSize: "3em", marginBottom: "20px" }}>âŒ</div>
           <p style={{ color: "#e74c3c", fontSize: "1.2em" }}>{error}</p>
           <button
             onClick={cargarDatos}
@@ -958,8 +969,8 @@ const handleGuardarEdicion = async () => {
               AMBER Analytics
             </h1>
             <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
-              Control contable · {allVentas.length} ventas · {inventarioUnico.length}{" "}
-              productos · {gastos.length} gastos
+              Control contable Â· {allVentas.length} ventas Â· {inventarioUnico.length}{" "}
+              productos Â· {gastos.length} gastos
             </p>
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -1165,3 +1176,4 @@ const handleGuardarEdicion = async () => {
 };
 
 export default AmberApp;
+
