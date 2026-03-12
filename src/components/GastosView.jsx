@@ -104,11 +104,6 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
     0
   );
 
-  const gastoMaximo = gastosFiltrados.reduce((maximo, gasto) => {
-    const total = parseNumero(getValorCampo(gasto, ["TOTAL", "Total"]));
-    return total > maximo ? total : maximo;
-  }, 0);
-
   const usandoMesActual =
     filtros.startDate === rangoInicial.startDate &&
     filtros.endDate === rangoInicial.endDate;
@@ -122,16 +117,6 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
     : `Desde ${filtros.startDate || "-"} hasta ${filtros.endDate || "-"}.`;
 
   const labelTotal = usandoMesActual ? "Total del Mes" : "Total Filtrado";
-  const labelMovimientos = usandoMesActual
-    ? "Movimientos del Mes"
-    : "Movimientos Filtrados";
-  const labelGastoMaximo = usandoMesActual
-    ? "Gasto Maximo"
-    : "Gasto Maximo del Rango";
-  const labelRegistros = usandoMesActual
-    ? "Registros Totales"
-    : "Registros Cargados";
-
   return (
     <>
       <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>
@@ -142,9 +127,7 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
       </p>
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-          gap: "12px",
+          maxWidth: "320px",
           marginBottom: "20px",
         }}
       >
@@ -161,51 +144,6 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
             }}
           >
             $ {totalMes.toLocaleString("es-AR")}
-          </p>
-        </div>
-        <div style={card("52,152,219")}>
-          <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-            {labelMovimientos}
-          </p>
-          <p
-            style={{
-              margin: 0,
-              fontSize: "1.5em",
-              fontWeight: "700",
-              color: "#3498db",
-            }}
-          >
-            {gastosFiltrados.length}
-          </p>
-        </div>
-        <div style={card("243,156,18")}>
-          <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-            {labelGastoMaximo}
-          </p>
-          <p
-            style={{
-              margin: 0,
-              fontSize: "1.5em",
-              fontWeight: "700",
-              color: "#f39c12",
-            }}
-          >
-            $ {gastoMaximo.toLocaleString("es-AR")}
-          </p>
-        </div>
-        <div style={card("46,204,113")}>
-          <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-            {labelRegistros}
-          </p>
-          <p
-            style={{
-              margin: 0,
-              fontSize: "1.5em",
-              fontWeight: "700",
-              color: "#2ecc71",
-            }}
-          >
-            {gastos.length}
           </p>
         </div>
       </div>
