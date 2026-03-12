@@ -1,0 +1,49 @@
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbwWfGHtmiNS-ed3zVemIUlS5KHnzOCq1fq0i9E5S4rZsDFtlknD1gF87zK-dthdtvB-/exec";
+
+export const leerHoja = async (nombreHoja) => {
+  try {
+    const response = await fetch(`${API_URL}?action=read&sheet=${nombreHoja}`);
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    console.error("Error leyendo hoja:", error);
+    return [];
+  }
+};
+
+export const agregarFila = async (nombreHoja, fila) => {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "append",
+        sheet: nombreHoja,
+        fila,
+      }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error agregando fila:", error);
+    return { success: false };
+  }
+};
+
+export const actualizarFila = async (nombreHoja, rowNumber, fila) => {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "update",
+        sheet: nombreHoja,
+        rowNumber,
+        fila,
+      }),
+    });
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error("Error actualizando fila:", error);
+    return false;
+  }
+};

@@ -1,67 +1,14 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { Search, RefreshCw } from "lucide-react";
-
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbwWfGHtmiNS-ed3zVemIUlS5KHnzOCq1fq0i9E5S4rZsDFtlknD1gF87zK-dthdtvB-/exec";
-
-// Leer datos de una hoj
-const leerHoja = async (nombreHoja) => {
-  try {
-    const response = await fetch(`${API_URL}?action=read&sheet=${nombreHoja}`);
-    const result = await response.json();
-    return result.data || [];
-  } catch (error) {
-    console.error("Error leyendo hoja:", error);
-    return [];
-  }
-  };
-
-// agregar fila
-const agregarFila = async (nombreHoja, fila) => {
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "append",
-        sheet: nombreHoja,
-        fila,
-      }),
-    });
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error agregando fila:", error);
-    return { success: false };
-  }
-};
-// actualizar fila
-const actualizarFila = async (nombreHoja, rowNumber, fila) => {
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "update",
-        sheet: nombreHoja,
-        rowNumber,
-        fila,
-      }),
-    });
-    const result = await response.json();
-    return result.success;
-  } catch (error) {
-    console.error("Error actualizando fila:", error);
-    return false;
-  }
-};
+import InventarioView from "./components/InventarioView";
+import ResumenView from "./components/ResumenView";
+import { actualizarFila, agregarFila, leerHoja } from "./services/sheets";
+import {
+  construirVentaPayload,
+  formatearFecha,
+  getPrecioSugerido,
+  parseNumero,
+} from "./utils/ventas";
 
 const AmberApp = () => {
   const [viewMode, setViewMode] = useState("resumen");
@@ -70,6 +17,7 @@ const AmberApp = () => {
 
   const [allVentas, setAllVentas] = useState([]);
   const [inventario, setInventario] = useState([]);
+  const [gastos, setGastos] = useState([]);
   const pendingVentasSyncRef = useRef(new Map());
   const allVentasRef = useRef([]);
   
@@ -81,9 +29,11 @@ const AmberApp = () => {
     try {
       const ventasData = await leerHoja("Ventas");
       const inventarioData = await leerHoja("Inventario");
+      const gastosData = await leerHoja("Gastos");
 
       setAllVentas(ventasData);
       setInventario(inventarioData);
+      setGastos(gastosData);
     } catch (err) {
       setError("Error al cargar datos");
     }
@@ -214,28 +164,18 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 // Autocompletar precio según medio de pago
   useEffect(() => {
     if (selectedProducto) {
-      const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
-      const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
-    
-      // Si es efectivo, transferencia o QR, usa precio efectivo
-      const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(formData.medioPago);
-      const precioFinal = esEfectivo ? precioEfectivo : precioLista;
-    
-     setFormData(f => ({ ...f, precioVenta: String(precioFinal) }));
+      setFormData((f) => ({
+        ...f,
+        precioVenta: getPrecioSugerido(selectedProducto, formData.medioPago),
+      }));
     }
   }, [selectedProducto, formData.medioPago]);
 
   useEffect(() => {
   if (editSelectedProducto) {
-    const precioEfectivo = parseNumero(editSelectedProducto["PRECIO U. EFECTIVO"]);
-    const precioLista = parseNumero(editSelectedProducto["PRECIO U. LISTA"]);
-
-    const esEfectivo = ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(editFormData.medioPago);
-    const precioFinal = esEfectivo ? precioEfectivo : precioLista;
-
     setEditFormData((f) => ({
       ...f,
-      precioVenta: String(precioFinal),
+      precioVenta: getPrecioSugerido(editSelectedProducto, editFormData.medioPago),
     }));
   }
 }, [editSelectedProducto, editFormData.medioPago]);
@@ -250,13 +190,6 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     return new Date(fechaStr);
   };
 
-  // Parsear número (quitar $ y puntos)
-  const parseNumero = (valor) => {
-    if (typeof valor === "number") return valor;
-    if (!valor) return 0;
-    return Number(String(valor).replace(/[$.,]/g, "").replace(",", ".")) || 0;
-  };
-
   // Ventas del mes actual
   const ventasMes = useMemo(() => {
     const now = new Date();
@@ -269,6 +202,14 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
       );
     });
   }, [allVentas]);
+
+  const gastosMes = useMemo(() => {
+    const mesActual = getMes().toUpperCase();
+    return gastos.filter((g) => {
+      const mes = String(g["MES"] ?? "").trim().toUpperCase();
+      return mes === mesActual;
+    });
+  }, [gastos]);
 
   // Análisis resumen
   const analisisResumen = useMemo(() => {
@@ -296,9 +237,14 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
         (s, v) => s + parseNumero(v["Ganancia Neta"]),
         0
       ),
+      gastos: gastosMes.reduce((s, g) => s + parseNumero(g["TOTAL"]), 0),
       ventas: ventasMes.length,
+      movimientosGastos: gastosMes.length,
+      resultado:
+        ventasMes.reduce((s, v) => s + parseNumero(v["Ganancia Neta"]), 0) -
+        gastosMes.reduce((s, g) => s + parseNumero(g["TOTAL"]), 0),
     }),
-    [ventasMes]
+    [ventasMes, gastosMes]
   );
 
   // Nombres únicos para filtros
@@ -453,12 +399,6 @@ const editProductosFiltrados = useMemo(() => {
     return (precio - costo) * cantidad;
   };
 
-  // Formatear fecha para Google Sheets (DD/MM/YYYY)
-  const formatearFecha = (fechaISO) => {
-    const [year, month, day] = fechaISO.split("-");
-    return `${day}/${month}/${year}`;
-  };
-
   const resolverRowNumberVenta = async (venta) => {
   if (venta?._rowNumber) return Number(venta._rowNumber);
 
@@ -545,6 +485,17 @@ const nuevaVenta = {
   "Ganancia Neta": gananciaNeta,
   "Ganancias con recompra": gananciaRecompra
 };
+
+Object.assign(
+  nuevaVenta,
+  construirVentaPayload({
+    producto: selectedProducto,
+    cantidad,
+    medioPago: formData.medioPago,
+    precioVenta: formData.precioVenta,
+    fecha: fechaFormateada,
+  })
+);
   
   // 1. Agregar localmente al instante
 setAllVentas((prev) => [...prev, nuevaVenta]);
@@ -644,6 +595,17 @@ const handleGuardarEdicion = async () => {
     "Ganancia Neta": gananciaNeta,
     "Ganancias con recompra": gananciaRecompra,
   };
+
+  Object.assign(
+    ventaActualizada,
+    construirVentaPayload({
+      producto: editSelectedProducto,
+      cantidad,
+      medioPago: editFormData.medioPago,
+      precioVenta: editFormData.precioVenta,
+      fecha: ventaEditando["Fecha"],
+    })
+  );
 
   const ok = await actualizarFila("Ventas", rowNumber, ventaActualizada);
 
@@ -796,7 +758,7 @@ const handleGuardarEdicion = async () => {
             </h1>
             <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
               Control contable · {allVentas.length} ventas · {inventarioUnico.length}{" "}
-              productos
+              productos · {gastos.length} gastos
             </p>
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -860,207 +822,39 @@ const handleGuardarEdicion = async () => {
 
         {/* RESUMEN */}
         {viewMode === "resumen" && (
-          <>
-            <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>
-              📅 {getMes()}
-            </h2>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-                gap: "12px",
-                marginBottom: "20px",
-              }}
-            >
-              <div style={card("243,156,18")}>
-                <p
-                  style={{
-                    margin: "0 0 5px",
-                    color: "#bbb",
-                    fontSize: "0.8em",
-                  }}
-                >
-                  Ganancia Total
-                </p>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "1.5em",
-                    fontWeight: "700",
-                    color: "#f39c12",
-                  }}
-                >
-                  $ {totalMes.ganancia.toLocaleString("es-AR")}
-                </p>
-              </div>
-              <div style={card("52,152,219")}>
-                <p
-                  style={{
-                    margin: "0 0 5px",
-                    color: "#bbb",
-                    fontSize: "0.8em",
-                  }}
-                >
-                  Cantidad de Ventas
-                </p>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "1.5em",
-                    fontWeight: "700",
-                    color: "#3498db",
-                  }}
-                >
-                  {totalMes.ventas}
-                </p>
-              </div>
-            </div>
-            <div
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                borderRadius: "12px",
-                padding: "15px",
-                marginBottom: "20px",
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 12px",
-                  color: "#2ecc71",
-                  fontSize: "1em",
-                }}
-              >
-                🏆 Top 5 Productos
-              </h3>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={analisisResumen.slice(0, 5)}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.1)"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#999"
-                    angle={-20}
-                    textAnchor="end"
-                    height={65}
-                    tick={{ fontSize: 10 }}
-                  />
-                  <YAxis stroke="#999" tick={{ fontSize: 10 }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "#1a1a2e",
-                      border: "1px solid #2ecc71",
-                      borderRadius: "6px",
-                      color: "#fff",
-                      fontSize: "0.85em",
-                    }}
-                  />
-                  <Bar
-                    dataKey="ganancia"
-                    fill="#f39c12"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                borderRadius: "12px",
-                padding: "15px",
-                border: "1px solid rgba(255,255,255,0.1)",
-                overflowX: "auto",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 12px",
-                  color: "#9b59b6",
-                  fontSize: "1em",
-                }}
-              >
-                Análisis por Producto
-              </h3>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "0.82em",
-                }}
-              >
-                <thead>
-                  <tr
-                    style={{ borderBottom: "2px solid rgba(243,156,18,0.4)" }}
-                  >
-                    {["Producto", "Ventas", "Ganancia Total", "Gan./Venta"].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          style={{
-                            padding: "9px 10px",
-                            textAlign: h === "Producto" ? "left" : "right",
-                            color: "#f39c12",
-                          }}
-                        >
-                          {h}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {analisisResumen.map((p, i) => (
-                    <tr
-                      key={i}
-                      style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                      }}
-                    >
-                      <td style={{ padding: "9px 10px" }}>{p.name}</td>
-                      <td
-                        style={{
-                          padding: "9px 10px",
-                          textAlign: "right",
-                          color: "#3498db",
-                        }}
-                      >
-                        {p.ventas}
-                      </td>
-                      <td
-                        style={{
-                          padding: "9px 10px",
-                          textAlign: "right",
-                          color: "#2ecc71",
-                          fontWeight: "600",
-                        }}
-                      >
-                        $ {p.ganancia.toLocaleString("es-AR")}
-                      </td>
-                      <td
-                        style={{
-                          padding: "9px 10px",
-                          textAlign: "right",
-                          color: "#f39c12",
-                          fontWeight: "600",
-                        }}
-                      >
-                        ${" "}
-                        {p.gp.toLocaleString("es-AR", {
-                          maximumFractionDigits: 0,
-                        })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+          <ResumenView
+            analisisResumen={analisisResumen}
+            card={card}
+            mes={getMes()}
+            totalMes={totalMes}
+          />
         )}
-
         {/* INVENTARIO */}
         {viewMode === "inventario" && (
+          <InventarioView
+            card={card}
+            inp={inp}
+            invColor={invColor}
+            inventarioFiltrado={inventarioFiltrado}
+            invSearch={invSearch}
+            invStats={invStats}
+            invTalle={invTalle}
+            lbl={lbl}
+            onInvColorChange={setInvColor}
+            onInvSearchChange={setInvSearch}
+            onInvTalleChange={setInvTalle}
+            onResetFiltros={() => {
+              setInvSearch("");
+              setInvTalle("");
+              setInvColor("");
+              setShowSinStock(false);
+            }}
+            onShowSinStockChange={setShowSinStock}
+            parseNumero={parseNumero}
+            showSinStock={showSinStock}
+          />
+        )}
+        {false && viewMode === "inventario" && (
           <>
             <div
               style={{
