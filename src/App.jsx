@@ -629,6 +629,7 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
     );
 
     await refrescarVentas({ ...nuevaVenta, _rowNumber: result.rowNumber });
+    setInventario(await leerHoja("Inventario"));
     return result;
   })
   .finally(() => {
