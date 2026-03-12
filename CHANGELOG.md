@@ -11,8 +11,9 @@
 - Se activo `RegistrosView` desde `src/components/RegistrosView.jsx`.
 - Se activo `NuevaVentaModal` desde `src/components/NuevaVentaModal.jsx`.
 - Se activo `EditarVentaModal` desde `src/components/EditarVentaModal.jsx`.
+- Se limpiaron los bloques viejos y desactivados de inventario, registros y modales dentro de `src/App.jsx`.
 
 ## Proximo paso sugerido
 
-- Limpiar los bloques viejos de inventario y registros que quedaron desactivados dentro de `src/App.jsx`.
-- Limpiar los bloques viejos de inventario, registros y modales que quedaron desactivados dentro de `src/App.jsx`.
+- Revisar y corregir el encoding roto en textos visibles de la app.
+- Seguir reduciendo `src/App.jsx` extrayendo helpers y estado compartido.
