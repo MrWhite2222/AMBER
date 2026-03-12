@@ -66,6 +66,17 @@ const AmberApp = () => {
   const [showDashDrop, setShowDashDrop] = useState(false);
 //
 
+  const getValorGasto = (gasto, claves) => {
+    for (const clave of claves) {
+      const valor = gasto?.[clave];
+      if (valor !== undefined && valor !== null && String(valor).trim() !== "") {
+        return valor;
+      }
+    }
+
+    return "";
+  };
+
   const inventarioUnico = useMemo(() => {
   const mapa = new Map();
 
@@ -165,6 +176,8 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
       "Diciembre",
     ][new Date().getMonth()];
 
+  const getAnio = () => new Date().getFullYear();
+
 // Autocompletar precio según medio de pago
   useEffect(() => {
     if (selectedProducto) {
@@ -209,9 +222,27 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
   const gastosMes = useMemo(() => {
     const mesActual = getMes().toUpperCase();
+    const anioActual = String(getAnio());
     return gastos.filter((g) => {
       const mes = String(g["MES"] ?? "").trim().toUpperCase();
-      return mes === mesActual;
+      const anio = String(
+        getValorGasto(g, ["Año", "ANO", "AÑO", "Anio", "anio"])
+      ).trim();
+      const fecha = parseFecha(getValorGasto(g, ["FECHA", "Fecha"]));
+
+      const coincideMes = mes
+        ? mes === mesActual
+        : Boolean(
+            fecha &&
+              fecha.getMonth() === new Date().getMonth() &&
+              fecha.getFullYear() === new Date().getFullYear()
+          );
+
+      const coincideAnio = anio
+        ? anio === anioActual
+        : Boolean(fecha && String(fecha.getFullYear()) === anioActual);
+
+      return coincideMes && coincideAnio;
     });
   }, [gastos]);
 
@@ -905,6 +936,7 @@ const handleGuardarEdicion = async () => {
         {/* GASTOS */}
         {viewMode === "gastos" && (
           <GastosView
+            anio={getAnio()}
             card={card}
             gastos={gastos}
             gastosMes={gastosMes}

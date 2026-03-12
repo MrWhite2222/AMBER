@@ -9,7 +9,7 @@ const getValorCampo = (gasto, claves) => {
   return "";
 };
 
-const GastosView = ({ card, gastos, gastosMes, mes, parseNumero }) => {
+const GastosView = ({ anio, card, gastos, gastosMes, mes, parseNumero }) => {
   const gastosOrdenados = [...gastosMes].sort((a, b) => {
     const fechaA = new Date(getValorCampo(a, ["FECHA", "Fecha"]) || 0).getTime();
     const fechaB = new Date(getValorCampo(b, ["FECHA", "Fecha"]) || 0).getTime();
@@ -28,7 +28,9 @@ const GastosView = ({ card, gastos, gastosMes, mes, parseNumero }) => {
 
   return (
     <>
-      <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>Gastos de {mes}</h2>
+      <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>
+        Gastos de {mes} {anio}
+      </h2>
       <div
         style={{
           display: "grid",
@@ -126,7 +128,7 @@ const GastosView = ({ card, gastos, gastosMes, mes, parseNumero }) => {
                 background: "rgba(0,0,0,0.2)",
               }}
             >
-              {["Fecha", "Mes", "Tipo", "Concepto", "Total"].map((h) => (
+              {["Año", "Mes", "Fecha", "Tipo", "Concepto", "Total"].map((h) => (
                 <th
                   key={h}
                   style={{
@@ -143,6 +145,7 @@ const GastosView = ({ card, gastos, gastosMes, mes, parseNumero }) => {
           </thead>
           <tbody>
             {gastosOrdenados.map((gasto, i) => {
+              const anioValor = getValorCampo(gasto, ["Año", "ANO", "AÑO", "Anio", "anio"]);
               const fecha = getValorCampo(gasto, ["FECHA", "Fecha"]);
               const mesValor = getValorCampo(gasto, ["MES", "Mes"]);
               const tipo = getValorCampo(gasto, ["TIPO", "Tipo"]);
@@ -156,6 +159,9 @@ const GastosView = ({ card, gastos, gastosMes, mes, parseNumero }) => {
                     borderBottom: "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
+                  <td style={{ padding: "9px 10px", color: "#f39c12" }}>
+                    {anioValor || anio}
+                  </td>
                   <td style={{ padding: "9px 10px", color: "#bbb" }}>
                     {fecha || "-"}
                   </td>
@@ -187,7 +193,7 @@ const GastosView = ({ card, gastos, gastosMes, mes, parseNumero }) => {
 
         {gastosMes.length === 0 && (
           <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-            <p>No hay gastos cargados para {mes}.</p>
+            <p>No hay gastos cargados para {mes} {anio}.</p>
           </div>
         )}
       </div>

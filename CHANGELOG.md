@@ -14,6 +14,7 @@
 - Se limpiaron los bloques viejos y desactivados de inventario, registros y modales dentro de `src/App.jsx`.
 - Se agregaron `.editorconfig` y `.gitattributes` para fijar UTF-8 y evitar problemas de encoding en futuras ediciones.
 - Se agrego la seccion `Gastos` con una vista propia y tabla de gastos del mes.
+- Se actualizo el filtro de `Gastos` para usar `Año` y `Mes`, con respaldo desde `Fecha` para registros viejos.
 
 ## Proximo paso sugerido
 
