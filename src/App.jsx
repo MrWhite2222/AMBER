@@ -110,6 +110,43 @@ const AmberApp = () => {
     return fechaTexto ? parseFecha(fechaTexto) : null;
   };
 
+  const normalizarTexto = (valor) => String(valor ?? "").trim();
+
+  const coincideVenta = (ventaA, ventaB) =>
+    normalizarTexto(ventaA?.["Fecha"]) === normalizarTexto(ventaB?.["Fecha"]) &&
+    normalizarTexto(ventaA?.["CÃ³digo"]) === normalizarTexto(ventaB?.["CÃ³digo"]) &&
+    normalizarTexto(ventaA?.["Tipo de producto"]) ===
+      normalizarTexto(ventaB?.["Tipo de producto"]) &&
+    Number(ventaA?.["Cantidad"] ?? 0) === Number(ventaB?.["Cantidad"] ?? 0) &&
+    normalizarTexto(ventaA?.["Medio de pago"]) ===
+      normalizarTexto(ventaB?.["Medio de pago"]) &&
+    parseNumero(ventaA?.["Precio venta"]) ===
+      parseNumero(ventaB?.["Precio venta"]);
+
+  const refrescarVentas = async (ventaPendiente = null) => {
+    const ventasData = await leerHoja("Ventas");
+
+    if (!ventaPendiente?._tempId) {
+      setAllVentas(ventasData);
+      return ventasData;
+    }
+
+    const mejorMatch = ventasData
+      .filter((venta) => coincideVenta(venta, ventaPendiente))
+      .sort((a, b) => Number(b?._rowNumber ?? 0) - Number(a?._rowNumber ?? 0))[0];
+
+    const ventasConTempId = mejorMatch
+      ? ventasData.map((venta) =>
+          Number(venta?._rowNumber) === Number(mejorMatch?._rowNumber)
+            ? { ...venta, _tempId: ventaPendiente._tempId }
+            : venta
+        )
+      : ventasData;
+
+    setAllVentas(ventasConTempId);
+    return ventasConTempId;
+  };
+
   const inventarioUnico = useMemo(() => {
   const mapa = new Map();
 
@@ -474,6 +511,12 @@ const editProductosFiltrados = useMemo(() => {
     }
   }
 
+  const ventasRefrescadas = await refrescarVentas(venta);
+  const ventaRefrescada = ventasRefrescadas.find(
+    (v) => v?._tempId === venta._tempId || coincideVenta(v, venta)
+  );
+  if (ventaRefrescada?._rowNumber) return Number(ventaRefrescada._rowNumber);
+
   const ventaTrasSync = buscarVentaConRowNumber();
   return ventaTrasSync?._rowNumber ? Number(ventaTrasSync._rowNumber) : null;
 };
@@ -570,7 +613,7 @@ setGuardando(false);
 
 // 3. Guardar en Google Sheets y actualizar _rowNumber local
 const syncPromise = agregarFila("Ventas", nuevaVenta)
-  .then((result) => {
+  .then(async (result) => {
     if (!result.success) {
       setAllVentas((prev) => prev.filter((v) => v._tempId !== tempId));
       alert("⚠️ Error al sincronizar con Google Sheets. La venta local fue revertida.");
@@ -585,6 +628,7 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
       )
     );
 
+    await refrescarVentas({ ...nuevaVenta, _rowNumber: result.rowNumber });
     return result;
   })
   .finally(() => {
