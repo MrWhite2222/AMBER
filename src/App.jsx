@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import InventarioView from "./components/InventarioView";
+import NuevaVentaModal from "./components/NuevaVentaModal";
 import RegistrosView from "./components/RegistrosView";
 import ResumenView from "./components/ResumenView";
 import { actualizarFila, agregarFila, leerHoja } from "./services/sheets";
@@ -1565,6 +1566,33 @@ const handleGuardarEdicion = async () => {
 )}
         {/* MODAL NUEVA VENTA */}
         {showForm && (
+          <NuevaVentaModal
+            calcularGanancia={calcularGanancia}
+            formData={formData}
+            guardando={guardando}
+            handleGuardarVenta={handleGuardarVenta}
+            inp={inp}
+            lbl={lbl}
+            onClose={() => setShowForm(false)}
+            onFormDataChange={(key, value) =>
+              setFormData((f) => ({ ...f, [key]: value }))
+            }
+            onSearchProductoChange={(value) => {
+              setSearchProducto(value);
+              setShowProductoDrop(true);
+              setSelectedProducto(null);
+            }}
+            parseNumero={parseNumero}
+            productosFiltrados={productosFiltrados}
+            searchProducto={searchProducto}
+            selectedProducto={selectedProducto}
+            setSelectedProducto={setSelectedProducto}
+            setShowProductoDrop={setShowProductoDrop}
+            setSearchProducto={setSearchProducto}
+            showProductoDrop={showProductoDrop}
+          />
+        )}
+        {false && showForm && (
           <div
             style={{
               position: "fixed",
