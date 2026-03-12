@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
+import GastosView from "./components/GastosView";
 import InventarioView from "./components/InventarioView";
 import EditarVentaModal from "./components/EditarVentaModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
@@ -661,7 +662,12 @@ const handleGuardarEdicion = async () => {
     border: `1px solid rgba(${color},0.3)`,
   });
 
-  const navBtns = [["resumen","📅 Resumen"],["inventario","📦 Inventario"],["registros","📋 Registros"]];
+  const navBtns = [
+    ["resumen", "📅 Resumen"],
+    ["inventario", "📦 Inventario"],
+    ["registros", "📋 Registros"],
+    ["gastos", "💸 Gastos"],
+  ];
 
   // Pantalla de carga
   if (loading) {
@@ -896,6 +902,16 @@ const handleGuardarEdicion = async () => {
     ventasDash={ventasDash}
   />
 )}
+        {/* GASTOS */}
+        {viewMode === "gastos" && (
+          <GastosView
+            card={card}
+            gastos={gastos}
+            gastosMes={gastosMes}
+            mes={getMes()}
+            parseNumero={parseNumero}
+          />
+        )}
         {/* MODAL NUEVA VENTA */}
         {showForm && (
           <NuevaVentaModal
