@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+
 const getValorCampo = (gasto, claves) => {
   for (const clave of claves) {
     const valor = gasto?.[clave];
@@ -9,19 +11,76 @@ const getValorCampo = (gasto, claves) => {
   return "";
 };
 
-const GastosView = ({ anio, card, gastos, gastosMes, mes, parseNumero }) => {
-  const gastosOrdenados = [...gastosMes].sort((a, b) => {
+const toInputDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseFechaGasto = (gasto) => {
+  const fecha = getValorCampo(gasto, ["FECHA", "Fecha"]);
+  if (!fecha) return null;
+
+  const texto = String(fecha).trim();
+  if (!texto) return null;
+
+  if (texto.includes("/")) {
+    const [dia, mes, anio] = texto.split("/");
+    return new Date(Number(anio), Number(mes) - 1, Number(dia));
+  }
+
+  return new Date(texto);
+};
+
+const getRangoInicial = () => {
+  const ahora = new Date();
+  const inicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+  const fin = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0);
+
+  return {
+    startDate: toInputDate(inicio),
+    endDate: toInputDate(fin),
+  };
+};
+
+const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
+  const [filtros, setFiltros] = useState(getRangoInicial);
+
+  const gastosFiltrados = useMemo(() => {
+    const start = filtros.startDate ? new Date(filtros.startDate) : null;
+    const end = filtros.endDate ? new Date(filtros.endDate) : null;
+
+    if (end) {
+      end.setHours(23, 59, 59, 999);
+    }
+
+    return gastos.filter((gasto) => {
+      const fecha = parseFechaGasto(gasto);
+
+      if (!fecha || Number.isNaN(fecha.getTime())) {
+        return false;
+      }
+
+      const startOk = !start || fecha >= start;
+      const endOk = !end || fecha <= end;
+
+      return startOk && endOk;
+    });
+  }, [filtros.endDate, filtros.startDate, gastos]);
+
+  const gastosOrdenados = [...gastosFiltrados].sort((a, b) => {
     const fechaA = new Date(getValorCampo(a, ["FECHA", "Fecha"]) || 0).getTime();
     const fechaB = new Date(getValorCampo(b, ["FECHA", "Fecha"]) || 0).getTime();
     return fechaB - fechaA;
   });
 
-  const totalMes = gastosMes.reduce(
+  const totalMes = gastosFiltrados.reduce(
     (acum, gasto) => acum + parseNumero(getValorCampo(gasto, ["TOTAL", "Total"])),
     0
   );
 
-  const gastoMaximo = gastosMes.reduce((maximo, gasto) => {
+  const gastoMaximo = gastosFiltrados.reduce((maximo, gasto) => {
     const total = parseNumero(getValorCampo(gasto, ["TOTAL", "Total"]));
     return total > maximo ? total : maximo;
   }, 0);
@@ -105,13 +164,114 @@ const GastosView = ({ anio, card, gastos, gastosMes, mes, parseNumero }) => {
         style={{
           background: "rgba(255,255,255,0.05)",
           borderRadius: "12px",
+          padding: "18px",
+          marginBottom: "20px",
+          border: "1px solid rgba(255,255,255,0.1)",
+        }}
+      >
+        <h3 style={{ margin: "0 0 15px", color: "#f39c12", fontSize: "1em" }}>
+          Filtrar por fechas
+        </h3>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+            gap: "12px",
+            alignItems: "end",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                color: "#f39c12",
+                fontSize: "0.85em",
+                fontWeight: "600",
+              }}
+            >
+              Desde
+            </label>
+            <input
+              type="date"
+              value={filtros.startDate}
+              onChange={(e) =>
+                setFiltros((prev) => ({ ...prev, startDate: e.target.value }))
+              }
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "6px",
+                border: "none",
+                background: "rgba(255,255,255,0.1)",
+                color: "#fff",
+                boxSizing: "border-box",
+                fontSize: "0.9em",
+              }}
+            />
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                color: "#f39c12",
+                fontSize: "0.85em",
+                fontWeight: "600",
+              }}
+            >
+              Hasta
+            </label>
+            <input
+              type="date"
+              value={filtros.endDate}
+              onChange={(e) =>
+                setFiltros((prev) => ({ ...prev, endDate: e.target.value }))
+              }
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "6px",
+                border: "none",
+                background: "rgba(255,255,255,0.1)",
+                color: "#fff",
+                boxSizing: "border-box",
+                fontSize: "0.9em",
+              }}
+            />
+          </div>
+
+          <button
+            onClick={() => setFiltros(getRangoInicial())}
+            style={{
+              padding: "10px 16px",
+              borderRadius: "8px",
+              border: "1px solid #f39c12",
+              background: "transparent",
+              color: "#f39c12",
+              fontWeight: "600",
+              cursor: "pointer",
+              fontSize: "0.85em",
+            }}
+          >
+            Volver al mes actual
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: "12px",
           padding: "15px",
           border: "1px solid rgba(255,255,255,0.1)",
           overflowX: "auto",
         }}
       >
         <h3 style={{ margin: "0 0 12px", color: "#e74c3c", fontSize: "1em" }}>
-          Gastos del Mes ({gastosMes.length} registros)
+          Gastos filtrados ({gastosFiltrados.length} registros)
         </h3>
 
         <table
@@ -191,9 +351,9 @@ const GastosView = ({ anio, card, gastos, gastosMes, mes, parseNumero }) => {
           </tbody>
         </table>
 
-        {gastosMes.length === 0 && (
+        {gastosFiltrados.length === 0 && (
           <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-            <p>No hay gastos cargados para {mes} {anio}.</p>
+            <p>No hay gastos en el rango seleccionado.</p>
           </div>
         )}
       </div>

@@ -939,7 +939,6 @@ const handleGuardarEdicion = async () => {
             anio={getAnio()}
             card={card}
             gastos={gastos}
-            gastosMes={gastosMes}
             mes={getMes()}
             parseNumero={parseNumero}
           />
