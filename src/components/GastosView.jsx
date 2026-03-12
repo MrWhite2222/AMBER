@@ -69,6 +69,7 @@ const getRangoInicial = () => {
 
 const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
   const [filtros, setFiltros] = useState(getRangoInicial);
+  const rangoInicial = useMemo(() => getRangoInicial(), []);
 
   const gastosFiltrados = useMemo(() => {
     const start = filtros.startDate ? new Date(filtros.startDate) : null;
@@ -108,11 +109,37 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
     return total > maximo ? total : maximo;
   }, 0);
 
+  const usandoMesActual =
+    filtros.startDate === rangoInicial.startDate &&
+    filtros.endDate === rangoInicial.endDate;
+
+  const tituloPrincipal = usandoMesActual
+    ? `Gastos de ${mes} ${anio}`
+    : "Gastos del rango seleccionado";
+
+  const subtituloPrincipal = usandoMesActual
+    ? "Mostrando el mes actual."
+    : `Desde ${filtros.startDate || "-"} hasta ${filtros.endDate || "-"}.`;
+
+  const labelTotal = usandoMesActual ? "Total del Mes" : "Total Filtrado";
+  const labelMovimientos = usandoMesActual
+    ? "Movimientos del Mes"
+    : "Movimientos Filtrados";
+  const labelGastoMaximo = usandoMesActual
+    ? "Gasto Maximo"
+    : "Gasto Maximo del Rango";
+  const labelRegistros = usandoMesActual
+    ? "Registros Totales"
+    : "Registros Cargados";
+
   return (
     <>
       <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>
-        Gastos de {mes} {anio}
+        {tituloPrincipal}
       </h2>
+      <p style={{ margin: "0 0 18px", color: "#bbb", fontSize: "0.9em" }}>
+        {subtituloPrincipal}
+      </p>
       <div
         style={{
           display: "grid",
@@ -123,7 +150,7 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
       >
         <div style={card("231,76,60")}>
           <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-            Total del Mes
+            {labelTotal}
           </p>
           <p
             style={{
@@ -138,7 +165,7 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
         </div>
         <div style={card("52,152,219")}>
           <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-            Movimientos del Mes
+            {labelMovimientos}
           </p>
           <p
             style={{
@@ -153,7 +180,7 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
         </div>
         <div style={card("243,156,18")}>
           <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-            Gasto Maximo
+            {labelGastoMaximo}
           </p>
           <p
             style={{
@@ -168,7 +195,7 @@ const GastosView = ({ anio, card, gastos, mes, parseNumero }) => {
         </div>
         <div style={card("46,204,113")}>
           <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-            Registros Totales
+            {labelRegistros}
           </p>
           <p
             style={{
