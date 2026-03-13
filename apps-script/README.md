@@ -27,6 +27,8 @@ Para `Ventas`, los campos base son:
 
 - `Fecha`
 - `Codigo (Buscador)` / variante con tilde segun el header real
+- `Codigo` / variante con tilde segun el header real
+- `Tipo de producto`
 - `Cantidad`
 - `Medio de pago`
 - `Estado` (si existiera)

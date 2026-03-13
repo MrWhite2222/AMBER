@@ -6,8 +6,9 @@ const SHEET_NAMES = Object.freeze({
 
 const VENTAS_EDITABLE_COLUMNS = Object.freeze([
   "Fecha",
-  "Codigo (Buscador)",
   "C\u00F3digo (Buscador)",
+  "C\u00F3digo",
+  "Tipo de producto",
   "Cantidad",
   "Medio de pago",
   "Estado",

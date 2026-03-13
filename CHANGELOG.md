@@ -24,6 +24,7 @@
 - La version modular separa API, repositorio de hojas, respuestas y logica especial para `Ventas`.
 - En `Ventas`, las columnas calculadas pueden regenerarse desde formulas del propio Sheet para no depender solo de valores planos.
 - La rama de prueba se apunto temporalmente a una nueva Web App de Apps Script ligada a la copia del Google Sheet.
+- Se ajusto el backend modular para que la edicion de `Ventas` tambien actualice `Codigo` y `Tipo de producto`, evitando que las formulas monetarias queden ligadas a la prenda vieja.
 
 ## Proximo paso sugerido
 

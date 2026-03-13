@@ -28,7 +28,7 @@ function hasOwnValue_(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj || {}, key);
 }
 
-function normalizeHeaderCandidates_(headers, headerName) {
+function getHeaderAliases_(headerName) {
   const candidates = [headerName];
   if (headerName === "Codigo (Buscador)") {
     candidates.push("C\u00F3digo (Buscador)");
@@ -36,7 +36,20 @@ function normalizeHeaderCandidates_(headers, headerName) {
   if (headerName === "C\u00F3digo (Buscador)") {
     candidates.push("Codigo (Buscador)");
   }
+  if (headerName === "Codigo") {
+    candidates.push("C\u00F3digo");
+  }
+  if (headerName === "C\u00F3digo") {
+    candidates.push("Codigo");
+  }
+
   return candidates.filter(function (candidate, index, list) {
+    return list.indexOf(candidate) === index;
+  });
+}
+
+function normalizeHeaderCandidates_(headers, headerName) {
+  return getHeaderAliases_(headerName).filter(function (candidate, index, list) {
     return list.indexOf(candidate) === index && headers.indexOf(candidate) >= 0;
   });
 }
@@ -44,6 +57,24 @@ function normalizeHeaderCandidates_(headers, headerName) {
 function getExistingHeader_(headers, headerName) {
   const candidates = normalizeHeaderCandidates_(headers, headerName);
   return candidates.length ? candidates[0] : null;
+}
+
+function getProvidedValue_(rowData, headerName) {
+  const aliases = getHeaderAliases_(headerName);
+  for (var index = 0; index < aliases.length; index += 1) {
+    var alias = aliases[index];
+    if (hasOwnValue_(rowData, alias)) {
+      return {
+        found: true,
+        value: rowData[alias],
+      };
+    }
+  }
+
+  return {
+    found: false,
+    value: "",
+  };
 }
 
 function readSheetData_(sheet) {
@@ -65,7 +96,8 @@ function readSheetData_(sheet) {
 function appendObjectRow_(sheet, rowData) {
   const headers = getHeaders_(sheet);
   const row = headers.map(function (header) {
-    return hasOwnValue_(rowData, header) ? rowData[header] : "";
+    const provided = getProvidedValue_(rowData, header);
+    return provided.found ? provided.value : "";
   });
 
   sheet.appendRow(row);
@@ -92,12 +124,13 @@ function updateRowFields_(sheet, rowNumber, rowData, allowedHeaders) {
 
   headersToWrite.forEach(function (headerName) {
     const existingHeader = getExistingHeader_(headers, headerName);
-    if (!existingHeader || !hasOwnValue_(rowData, headerName)) {
+    const provided = getProvidedValue_(rowData, headerName);
+    if (!existingHeader || !provided.found) {
       return;
     }
 
     const columnIndex = headerMap[existingHeader];
-    sheet.getRange(rowNumber, columnIndex).setValue(rowData[headerName]);
+    sheet.getRange(rowNumber, columnIndex).setValue(provided.value);
   });
 
   return {
