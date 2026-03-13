@@ -33,6 +33,8 @@ Para `Ventas`, los campos base son:
 - `Medio de pago`
 - `Estado` (si existiera)
 
+Ademas, si `Codigo` no llega bien desde el frontend, el backend intenta derivarlo desde `Codigo (Buscador)` y luego busca `Tipo de producto` en la hoja `Inventario`.
+
 Las columnas calculadas se regeneran desde formulas si el sheet ya tiene una fila plantilla:
 
 - `Precio venta`

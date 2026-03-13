@@ -30,6 +30,12 @@ function hasOwnValue_(obj, key) {
 
 function getHeaderAliases_(headerName) {
   const candidates = [headerName];
+  if (headerName === "CODIGO") {
+    candidates.push("C\u00D3DIGO");
+  }
+  if (headerName === "C\u00D3DIGO") {
+    candidates.push("CODIGO");
+  }
   if (headerName === "Codigo (Buscador)") {
     candidates.push("C\u00F3digo (Buscador)");
   }

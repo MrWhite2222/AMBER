@@ -27,6 +27,7 @@
 - Se ajusto el backend modular para que la edicion de `Ventas` tambien actualice `Codigo` y `Tipo de producto`, evitando que las formulas monetarias queden ligadas a la prenda vieja.
 - La edicion de `Ventas` ahora recompone la fila completa antes de reinyectar formulas monetarias, para evitar que `Codigo` y `Tipo de producto` queden desfasados.
 - Se reforzo el frontend para recordar el `rowNumber` de ventas recien creadas y resolver la edicion inmediata sin depender de una recarga manual.
+- El backend modular ahora puede derivar `Codigo` desde `Codigo (Buscador)` y volver a calcular `Tipo de producto` desde `Inventario`, aun si esos campos no llegan bien en la edicion.
 
 ## Proximo paso sugerido
 
