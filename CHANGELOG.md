@@ -23,6 +23,7 @@
 - Se agrego una propuesta modular del backend de Apps Script en `apps-script/`.
 - La version modular separa API, repositorio de hojas, respuestas y logica especial para `Ventas`.
 - En `Ventas`, las columnas calculadas pueden regenerarse desde formulas del propio Sheet para no depender solo de valores planos.
+- La rama de prueba se apunto temporalmente a una nueva Web App de Apps Script ligada a la copia del Google Sheet.
 
 ## Proximo paso sugerido
 
