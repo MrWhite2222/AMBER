@@ -6,7 +6,12 @@ import EditarVentaModal from "./components/EditarVentaModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
 import RegistrosView from "./components/RegistrosView";
 import ResumenView from "./components/ResumenView";
-import { actualizarFila, agregarFila, leerHoja } from "./services/sheets";
+import {
+  actualizarFila,
+  agregarFila,
+  leerBackendInfo,
+  leerHoja,
+} from "./services/sheets";
 import {
   construirVentaPayload,
   formatearFecha,
@@ -22,6 +27,7 @@ const AmberApp = () => {
   const [allVentas, setAllVentas] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [gastos, setGastos] = useState([]);
+  const [backendInfo, setBackendInfo] = useState(null);
   const pendingVentasSyncRef = useRef(new Map());
   const ventasRowNumberRef = useRef(new Map());
   const allVentasRef = useRef([]);
@@ -32,13 +38,17 @@ const AmberApp = () => {
     setError(null);
 
     try {
-      const ventasData = await leerHoja("Ventas");
-      const inventarioData = await leerHoja("Inventario");
-      const gastosData = await leerHoja("Gastos");
+      const [ventasData, inventarioData, gastosData, backend] = await Promise.all([
+        leerHoja("Ventas"),
+        leerHoja("Inventario"),
+        leerHoja("Gastos"),
+        leerBackendInfo(),
+      ]);
 
       setAllVentas(ventasData);
       setInventario(inventarioData);
       setGastos(gastosData);
+      setBackendInfo(backend?.success ? backend : null);
     } catch (err) {
       setError("Error al cargar datos");
     }
@@ -915,6 +925,12 @@ const handleGuardarEdicion = async () => {
               Control contable · {allVentas.length} ventas · {inventarioUnico.length}{" "}
               productos · {gastos.length} gastos
             </p>
+            {backendInfo?.version && (
+              <p style={{ margin: "6px 0 0", color: "#7ed6df", fontSize: "0.75em" }}>
+                Backend {backendInfo.version}
+                {backendInfo.spreadsheetName ? ` · ${backendInfo.spreadsheetName}` : ""}
+              </p>
+            )}
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {navBtns.map(([m, label]) => (

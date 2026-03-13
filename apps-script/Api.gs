@@ -3,6 +3,15 @@ function doGet(e) {
     const action = String((e && e.parameter && e.parameter.action) || "").trim();
     const sheetName = e && e.parameter ? e.parameter.sheet : "";
 
+    if (action === "health") {
+      const spreadsheet = getSpreadsheet_();
+      return successResponse_({
+        version: APPS_SCRIPT_VERSION,
+        spreadsheetId: SHEET_ID,
+        spreadsheetName: spreadsheet.getName(),
+      });
+    }
+
     if (action === "read") {
       return leerHoja(sheetName);
     }

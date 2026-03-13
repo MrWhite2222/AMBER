@@ -12,6 +12,16 @@ export const leerHoja = async (nombreHoja) => {
   }
 };
 
+export const leerBackendInfo = async () => {
+  try {
+    const response = await fetch(`${API_URL}?action=health`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error leyendo backend info:", error);
+    return { success: false };
+  }
+};
+
 export const agregarFila = async (nombreHoja, fila) => {
   try {
     const response = await fetch(API_URL, {
