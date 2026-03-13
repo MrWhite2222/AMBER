@@ -23,6 +23,7 @@ const AmberApp = () => {
   const [inventario, setInventario] = useState([]);
   const [gastos, setGastos] = useState([]);
   const pendingVentasSyncRef = useRef(new Map());
+  const ventasRowNumberRef = useRef(new Map());
   const allVentasRef = useRef([]);
   
   // Cargar datos desde Google Sheets
@@ -112,9 +113,38 @@ const AmberApp = () => {
 
   const normalizarTexto = (valor) => String(valor ?? "").trim();
 
+  const getVentaCodigo = (venta) =>
+    normalizarTexto(
+      venta?.["Código"] ?? venta?.["CÃ³digo"] ?? venta?.["Codigo"] ?? ""
+    );
+
+  const getVentaCodigoBuscador = (venta) =>
+    normalizarTexto(
+      venta?.["Código (Buscador)"] ??
+        venta?.["CÃ³digo (Buscador)"] ??
+        venta?.["Codigo (Buscador)"] ??
+        ""
+    );
+
+  const getInventarioCodigo = (item) =>
+    normalizarTexto(
+      item?.["CÓDIGO"] ?? item?.["CÃ“DIGO"] ?? item?.["CODIGO"] ?? ""
+    );
+
+  const getVentaMatchKey = (venta) =>
+    [
+      normalizarTexto(venta?.["Fecha"]),
+      getVentaCodigoBuscador(venta),
+      getVentaCodigo(venta),
+      normalizarTexto(venta?.["Tipo de producto"]),
+      Number(venta?.["Cantidad"] ?? 0),
+      normalizarTexto(venta?.["Medio de pago"]),
+      parseNumero(venta?.["Precio venta"]),
+    ].join("|");
+
   const coincideVenta = (ventaA, ventaB) =>
     normalizarTexto(ventaA?.["Fecha"]) === normalizarTexto(ventaB?.["Fecha"]) &&
-    normalizarTexto(ventaA?.["CÃ³digo"]) === normalizarTexto(ventaB?.["CÃ³digo"]) &&
+    getVentaCodigo(ventaA) === getVentaCodigo(ventaB) &&
     normalizarTexto(ventaA?.["Tipo de producto"]) ===
       normalizarTexto(ventaB?.["Tipo de producto"]) &&
     Number(ventaA?.["Cantidad"] ?? 0) === Number(ventaB?.["Cantidad"] ?? 0) &&
@@ -153,7 +183,7 @@ const AmberApp = () => {
   (Array.isArray(inventario) ? inventario : []).forEach((item) => {
     if (!item) return;
 
-    const codigo = String(item["CÓDIGO"] ?? "").trim();
+    const codigo = getInventarioCodigo(item);
     if (!codigo) return;
 
     // Si el código se repite, nos quedamos con la última fila
@@ -167,11 +197,11 @@ const abrirEdicion = (venta) => {
   const productoInv = inventarioUnico.find(
     (p) =>
       p &&
-      String(p["CÓDIGO"] ?? "").trim() === String(venta["Código"] ?? "").trim()
+      getInventarioCodigo(p) === getVentaCodigo(venta)
   );
 
   const productoBase = {
-    "CÓDIGO": venta["Código"] ?? productoInv?.["CÓDIGO"] ?? "",
+    "CÓDIGO": getVentaCodigo(venta) || getInventarioCodigo(productoInv),
     "PRODUCTO": venta["Tipo de producto"] ?? productoInv?.["PRODUCTO"] ?? "",
     "TALLE": venta["Talle"] ?? productoInv?.["TALLE"] ?? "",
     "COLOR": venta["Color"] ?? productoInv?.["COLOR"] ?? "",
@@ -365,7 +395,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     const productoInv = inventario.find(
       (p) =>
         p &&
-        String(p["CÓDIGO"] ?? "").trim() === String(v["Código"] ?? "").trim()
+        getInventarioCodigo(p) === getVentaCodigo(v)
     );
 
     const talle = String(productoInv?.["TALLE"] ?? "").toUpperCase();
@@ -412,7 +442,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     items = items.filter(
       (i) =>
         String(i["PRODUCTO"] ?? "").toUpperCase().includes(invSearch.toUpperCase()) ||
-        String(i["CÓDIGO"] ?? "").toUpperCase().includes(invSearch.toUpperCase())
+        getInventarioCodigo(i).toUpperCase().includes(invSearch.toUpperCase())
     );
   }
 
@@ -457,9 +487,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
         String(p["PRODUCTO"] ?? "")
           .toUpperCase()
           .includes(searchProducto.toUpperCase()) ||
-        String(p["CÓDIGO"] ?? "")
-          .toUpperCase()
-          .includes(searchProducto.toUpperCase())
+        getInventarioCodigo(p).toUpperCase().includes(searchProducto.toUpperCase())
     )
     .slice(0, 8);
 }, [searchProducto, inventarioUnico]);
@@ -475,9 +503,7 @@ const editProductosFiltrados = useMemo(() => {
         String(p["PRODUCTO"] ?? "")
           .toUpperCase()
           .includes(editSearchProducto.toUpperCase()) ||
-        String(p["CÓDIGO"] ?? "")
-          .toUpperCase()
-          .includes(editSearchProducto.toUpperCase())
+        getInventarioCodigo(p).toUpperCase().includes(editSearchProducto.toUpperCase())
     )
     .slice(0, 8);
 }, [editSearchProducto, inventarioUnico]);
@@ -495,6 +521,11 @@ const editProductosFiltrados = useMemo(() => {
   const resolverRowNumberVenta = async (venta) => {
   if (venta?._rowNumber) return Number(venta._rowNumber);
 
+  const matchKey = getVentaMatchKey(venta);
+  if (matchKey && ventasRowNumberRef.current.has(matchKey)) {
+    return Number(ventasRowNumberRef.current.get(matchKey));
+  }
+
   if (!venta?._tempId) return null;
 
   const buscarVentaConRowNumber = () =>
@@ -507,6 +538,9 @@ const editProductosFiltrados = useMemo(() => {
   if (syncPendiente) {
     const result = await syncPendiente;
     if (result?.success && result?.rowNumber) {
+      if (matchKey) {
+        ventasRowNumberRef.current.set(matchKey, Number(result.rowNumber));
+      }
       return Number(result.rowNumber);
     }
   }
@@ -515,7 +549,12 @@ const editProductosFiltrados = useMemo(() => {
   const ventaRefrescada = ventasRefrescadas.find(
     (v) => v?._tempId === venta._tempId || coincideVenta(v, venta)
   );
-  if (ventaRefrescada?._rowNumber) return Number(ventaRefrescada._rowNumber);
+  if (ventaRefrescada?._rowNumber) {
+    if (matchKey) {
+      ventasRowNumberRef.current.set(matchKey, Number(ventaRefrescada._rowNumber));
+    }
+    return Number(ventaRefrescada._rowNumber);
+  }
 
   const ventaTrasSync = buscarVentaConRowNumber();
   return ventaTrasSync?._rowNumber ? Number(ventaTrasSync._rowNumber) : null;
@@ -620,6 +659,11 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
       return result;
     }
 
+  ventasRowNumberRef.current.set(
+      getVentaMatchKey(nuevaVenta),
+      Number(result.rowNumber)
+    );
+
   setAllVentas((prev) =>
       prev.map((v) =>
         v._tempId === tempId
@@ -715,6 +759,11 @@ const handleGuardarEdicion = async () => {
     setGuardandoEdicion(false);
     return;
   }
+
+  ventasRowNumberRef.current.set(
+    getVentaMatchKey(ventaActualizada),
+    Number(rowNumber)
+  );
 
   setAllVentas((prev) =>
     prev.map((v) => {
