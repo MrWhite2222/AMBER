@@ -18,6 +18,12 @@
 - La vista `Gastos` ahora abre mostrando el mes actual y permite filtrar por rango de fechas.
 - Se corrigio la interpretacion de fechas en `Gastos` para leer `Año` + `MES` + `DIA` y no depender solo de `FECHA`.
 
+## 2026-03-13
+
+- Se agrego una propuesta modular del backend de Apps Script en `apps-script/`.
+- La version modular separa API, repositorio de hojas, respuestas y logica especial para `Ventas`.
+- En `Ventas`, las columnas calculadas pueden regenerarse desde formulas del propio Sheet para no depender solo de valores planos.
+
 ## Proximo paso sugerido
 
 - Revisar y corregir el encoding roto en textos visibles de la app.
