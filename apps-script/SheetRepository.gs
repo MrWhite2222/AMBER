@@ -59,6 +59,16 @@ function getExistingHeader_(headers, headerName) {
   return candidates.length ? candidates[0] : null;
 }
 
+function isAllowedHeader_(headerName, allowedHeaders) {
+  if (!Array.isArray(allowedHeaders) || !allowedHeaders.length) {
+    return true;
+  }
+
+  return allowedHeaders.some(function (allowedHeader) {
+    return getHeaderAliases_(allowedHeader).indexOf(headerName) >= 0;
+  });
+}
+
 function getProvidedValue_(rowData, headerName) {
   const aliases = getHeaderAliases_(headerName);
   for (var index = 0; index < aliases.length; index += 1) {
@@ -136,6 +146,26 @@ function updateRowFields_(sheet, rowNumber, rowData, allowedHeaders) {
   return {
     headers: headers,
     headerMap: headerMap,
+  };
+}
+
+function mergeRowDataIntoExistingRow_(sheet, rowNumber, rowData, allowedHeaders) {
+  const headers = getHeaders_(sheet);
+  const currentValues = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+  const mergedRow = headers.map(function (header, index) {
+    if (!isAllowedHeader_(header, allowedHeaders)) {
+      return currentValues[index];
+    }
+
+    const provided = getProvidedValue_(rowData, header);
+    return provided.found ? provided.value : currentValues[index];
+  });
+
+  sheet.getRange(rowNumber, 1, 1, headers.length).setValues([mergedRow]);
+
+  return {
+    headers: headers,
+    headerMap: getHeaderMap_(headers),
   };
 }
 

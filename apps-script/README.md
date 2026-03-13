@@ -43,6 +43,13 @@ Las columnas calculadas se regeneran desde formulas si el sheet ya tiene una fil
 
 Si no se encuentra una fila con formulas, el backend usa los valores que reciba del frontend como fallback, para no romper la operacion.
 
+En la edicion de `Ventas`, la fila se recompone manteniendo los datos que no cambian y sobrescribiendo:
+
+- campos base editables
+- columnas monetarias calculadas que lleguen desde el frontend
+
+Despues, si existe una fila plantilla con formulas, esas columnas monetarias vuelven a formularse.
+
 ## Compatibilidad con el frontend actual
 
 Se mantiene el mismo contrato:

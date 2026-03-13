@@ -9,7 +9,12 @@ function agregarVenta_(sheet, rowData) {
 }
 
 function actualizarVenta_(sheet, rowNumber, rowData) {
-  const writeResult = updateRowFields_(sheet, rowNumber, rowData, VENTAS_EDITABLE_COLUMNS);
+  const writeResult = mergeRowDataIntoExistingRow_(
+    sheet,
+    rowNumber,
+    rowData,
+    VENTAS_EDITABLE_COLUMNS.concat(VENTAS_FORMULA_COLUMNS)
+  );
   ensureVentasCalculatedColumns_(sheet, rowNumber, rowData, writeResult.headers);
 
   return successResponse_({
