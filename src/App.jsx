@@ -263,10 +263,10 @@ const abrirEdicion = (venta) => {
     costoUnitario: "",
     precioEfectivo: "",
     precioLista: "",
-    cantidad: 1,
-    talle: "",
-    color: "",
   });
+  const [cargaPrendaVariantes, setCargaPrendaVariantes] = useState([
+    { talle: "", color: "", cantidad: 1 },
+  ]);
   const [selectedCargaProducto, setSelectedCargaProducto] = useState(null);
   const [searchCargaProducto, setSearchCargaProducto] = useState("");
   const [showCargaProductoDrop, setShowCargaProductoDrop] = useState(false);
@@ -333,9 +333,15 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
         parseNumero(selectedCargaProducto["PRECIO U. EFECTIVO"])
       ),
       precioLista: String(parseNumero(selectedCargaProducto["PRECIO U. LISTA"])),
-      talle: String(selectedCargaProducto["TALLE"] ?? ""),
-      color: String(selectedCargaProducto["COLOR"] ?? ""),
     }));
+
+    setCargaPrendaVariantes([
+      {
+        talle: String(selectedCargaProducto["TALLE"] ?? ""),
+        color: String(selectedCargaProducto["COLOR"] ?? ""),
+        cantidad: 1,
+      },
+    ]);
   }, [selectedCargaProducto]);
 
   const resetCargaPrendaForm = () => {
@@ -345,10 +351,8 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
       costoUnitario: "",
       precioEfectivo: "",
       precioLista: "",
-      cantidad: 1,
-      talle: "",
-      color: "",
     });
+    setCargaPrendaVariantes([{ talle: "", color: "", cantidad: 1 }]);
     setSelectedCargaProducto(null);
     setSearchCargaProducto("");
     setShowCargaProductoDrop(false);
@@ -580,6 +584,63 @@ const productosCargaFiltrados = useMemo(() => {
     .slice(0, 8);
 }, [searchCargaProducto, inventarioUnico]);
 
+const variantesCargaResueltas = useMemo(() => {
+  const productoBase = normalizarTexto(selectedCargaProducto?.["PRODUCTO"]).toUpperCase();
+  const claves = new Set();
+
+  return cargaPrendaVariantes.map((variante, index) => {
+    const talle = normalizarTexto(variante.talle);
+    const color = normalizarTexto(variante.color);
+    const cantidad = Number(variante.cantidad) || 0;
+    const clave = `${productoBase}|${talle.toUpperCase()}|${color.toUpperCase()}`;
+
+    const match = inventarioUnico.find(
+      (item) =>
+        normalizarTexto(item?.["PRODUCTO"]).toUpperCase() === productoBase &&
+        normalizarTexto(item?.["TALLE"]).toUpperCase() === talle.toUpperCase() &&
+        normalizarTexto(item?.["COLOR"]).toUpperCase() === color.toUpperCase()
+    );
+
+    const codigo = match ? getInventarioCodigo(match) : "";
+    const incompleta = !talle || !color || cantidad <= 0;
+    const duplicada = clave !== "||" && claves.has(clave);
+
+    if (clave !== "||") {
+      claves.add(clave);
+    }
+
+    let estado = "ok";
+    if (incompleta) estado = "incompleta";
+    else if (duplicada) estado = "duplicada";
+    else if (!codigo) estado = "sin_match";
+
+    return {
+      ...variante,
+      codigo,
+      estado,
+      index,
+      producto: match?.["PRODUCTO"] ?? selectedCargaProducto?.["PRODUCTO"] ?? "",
+    };
+  });
+}, [cargaPrendaVariantes, inventarioUnico, selectedCargaProducto]);
+
+const variantesCargaActivas = useMemo(
+  () =>
+    variantesCargaResueltas.filter(
+      (variante) =>
+        normalizarTexto(variante.talle) ||
+        normalizarTexto(variante.color) ||
+        Number(variante.cantidad) > 0
+    ),
+  [variantesCargaResueltas]
+);
+
+const puedeGuardarCargaPrenda =
+  Boolean(selectedCargaProducto) &&
+  Boolean(normalizarTexto(cargaPrendaData.temporada)) &&
+  variantesCargaActivas.length > 0 &&
+  variantesCargaActivas.every((variante) => variante.estado === "ok");
+
   
   // Calcular ganancia
   const calcularGanancia = () => {
@@ -758,6 +819,13 @@ pendingVentasSyncRef.current.set(tempId, syncPromise);
 const handleGuardarCargaPrenda = async () => {
   if (!selectedCargaProducto || !cargaPrendaData.temporada) return;
 
+  if (!variantesCargaActivas.length || variantesCargaActivas.some((v) => v.estado !== "ok")) {
+    alert(
+      "Revisa las variantes antes de guardar. Todas deben tener talle, color, cantidad y codigo resuelto."
+    );
+    return;
+  }
+
   setGuardandoPrenda(true);
 
   const fecha = new Date(cargaPrendaData.fecha);
@@ -778,38 +846,46 @@ const handleGuardarCargaPrenda = async () => {
 
   const codigoProducto = getInventarioCodigo(selectedCargaProducto);
   const fechaFormateada = formatearFecha(cargaPrendaData.fecha);
-  const cantidad = Number(cargaPrendaData.cantidad) || 0;
   const costoUnitario = parseNumero(cargaPrendaData.costoUnitario);
   const precioEfectivo = parseNumero(cargaPrendaData.precioEfectivo);
   const precioLista = parseNumero(cargaPrendaData.precioLista);
 
-  const ingresoPayload = {
-    TEMPORADA: cargaPrendaData.temporada.trim(),
-    FECHA: fechaFormateada,
-    DIA: fecha.getDate(),
-    MES: meses[fecha.getMonth()],
-    "CÓDIGO": codigoProducto,
-    CODIGO: codigoProducto,
-    PRODUCTO: selectedCargaProducto["PRODUCTO"],
-    TALLE: cargaPrendaData.talle.trim(),
-    Talle: cargaPrendaData.talle.trim(),
-    COLOR: cargaPrendaData.color.trim(),
-    Color: cargaPrendaData.color.trim(),
-    ENTRADAS: cantidad,
-    Entradas: cantidad,
-    "COSTO U.": costoUnitario,
-    "Precio Efectivo": precioEfectivo,
-    "PRECIO EFECTIVO": precioEfectivo,
-    "Precio lista": precioLista,
-    "PRECIO LISTA": precioLista,
-  };
+  let filasGuardadas = 0;
 
-  const result = await agregarFila("COSTOS", ingresoPayload);
+  for (const variante of variantesCargaActivas) {
+    const ingresoPayload = {
+      TEMPORADA: cargaPrendaData.temporada.trim(),
+      FECHA: fechaFormateada,
+      DIA: fecha.getDate(),
+      MES: meses[fecha.getMonth()],
+      "CÓDIGO": variante.codigo || codigoProducto,
+      CODIGO: variante.codigo || codigoProducto,
+      PRODUCTO: variante.producto || selectedCargaProducto["PRODUCTO"],
+      TALLE: normalizarTexto(variante.talle),
+      Talle: normalizarTexto(variante.talle),
+      COLOR: normalizarTexto(variante.color),
+      Color: normalizarTexto(variante.color),
+      ENTRADAS: Number(variante.cantidad) || 0,
+      Entradas: Number(variante.cantidad) || 0,
+      "COSTO U.": costoUnitario,
+      "Precio Efectivo": precioEfectivo,
+      "PRECIO EFECTIVO": precioEfectivo,
+      "Precio lista": precioLista,
+      "PRECIO LISTA": precioLista,
+    };
 
-  if (!result?.success) {
-    alert("No se pudo guardar la prenda en COSTOS.");
-    setGuardandoPrenda(false);
-    return;
+    const result = await agregarFila("COSTOS", ingresoPayload);
+    if (!result?.success) {
+      alert(
+        filasGuardadas > 0
+          ? `Se guardaron ${filasGuardadas} variantes antes de encontrar un error.`
+          : "No se pudo guardar la carga en COSTOS."
+      );
+      setGuardandoPrenda(false);
+      return;
+    }
+
+    filasGuardadas += 1;
   }
 
   resetCargaPrendaForm();
@@ -1236,14 +1312,36 @@ const handleGuardarEdicion = async () => {
             guardandoPrenda={guardandoPrenda}
             inp={inp}
             lbl={lbl}
+            onAddVariante={() =>
+              setCargaPrendaVariantes((prev) => [
+                ...prev,
+                { talle: "", color: "", cantidad: 1 },
+              ])
+            }
             onCargaPrendaDataChange={(key, value) =>
               setCargaPrendaData((prev) => ({ ...prev, [key]: value }))
+            }
+            onCargaVarianteChange={(index, key, value) =>
+              setCargaPrendaVariantes((prev) =>
+                prev.map((variante, varianteIndex) =>
+                  varianteIndex === index
+                    ? { ...variante, [key]: value }
+                    : variante
+                )
+              )
             }
             onClose={() => {
               resetCargaPrendaForm();
               setShowCargaPrendaForm(false);
             }}
             onGuardarCargaPrenda={handleGuardarCargaPrenda}
+            onRemoveVariante={(index) =>
+              setCargaPrendaVariantes((prev) =>
+                prev.length === 1
+                  ? prev
+                  : prev.filter((_, varianteIndex) => varianteIndex !== index)
+              )
+            }
             onSearchProductoChange={(value) => {
               setSearchCargaProducto(value);
               setShowCargaProductoDrop(true);
@@ -1251,12 +1349,14 @@ const handleGuardarEdicion = async () => {
             }}
             parseNumero={parseNumero}
             productosCargaFiltrados={productosCargaFiltrados}
+            puedeGuardarCargaPrenda={puedeGuardarCargaPrenda}
             searchCargaProducto={searchCargaProducto}
             selectedCargaProducto={selectedCargaProducto}
             setSelectedCargaProducto={setSelectedCargaProducto}
             setSearchCargaProducto={setSearchCargaProducto}
             setShowCargaProductoDrop={setShowCargaProductoDrop}
             showCargaProductoDrop={showCargaProductoDrop}
+            variantesCargaResueltas={variantesCargaResueltas}
           />
         )}
 {/* MODAL edicion */}

@@ -31,6 +31,8 @@
 - Se agrego un chequeo de backend (`action=health`) para ver en la app la version publicada del Apps Script y el nombre de la planilla conectada.
 - Se agrego el flujo `Cargar Prenda` dentro de `Inventario`, con modal propio y guardado en la hoja `COSTOS`.
 - Al guardar una prenda nueva en `COSTOS`, la app vuelve a leer `Inventario` para reflejar el stock sin recargar manualmente.
+- `Cargar Prenda` ahora permite cargar un lote de variantes de una misma prenda, reutilizando temporada y precios comunes.
+- Cada variante resuelve su `Codigo` automaticamente por coincidencia de `Producto` + `Talle` + `Color` contra `Inventario`.
 
 ## Proximo paso sugerido
 

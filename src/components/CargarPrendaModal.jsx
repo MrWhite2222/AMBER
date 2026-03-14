@@ -1,20 +1,32 @@
+const statusStyles = {
+  ok: { label: "Codigo encontrado", color: "#2ecc71", background: "rgba(46,204,113,0.12)" },
+  incompleta: { label: "Completar fila", color: "#f39c12", background: "rgba(243,156,18,0.12)" },
+  duplicada: { label: "Variante duplicada", color: "#e67e22", background: "rgba(230,126,34,0.12)" },
+  sin_match: { label: "Sin codigo", color: "#e74c3c", background: "rgba(231,76,60,0.12)" },
+};
+
 const CargarPrendaModal = ({
   cargaPrendaData,
   guardandoPrenda,
   inp,
   lbl,
+  onAddVariante,
   onCargaPrendaDataChange,
+  onCargaVarianteChange,
   onClose,
   onGuardarCargaPrenda,
+  onRemoveVariante,
   onSearchProductoChange,
   parseNumero,
   productosCargaFiltrados,
+  puedeGuardarCargaPrenda,
   searchCargaProducto,
   selectedCargaProducto,
   setSelectedCargaProducto,
   setSearchCargaProducto,
   setShowCargaProductoDrop,
   showCargaProductoDrop,
+  variantesCargaResueltas,
 }) => (
   <div
     style={{
@@ -32,8 +44,8 @@ const CargarPrendaModal = ({
         background: "#1a1a2e",
         borderRadius: "12px",
         padding: "25px",
-        maxWidth: "520px",
-        width: "92%",
+        maxWidth: "880px",
+        width: "94%",
         border: "1px solid #f39c12",
         maxHeight: "92vh",
         overflowY: "auto",
@@ -47,9 +59,14 @@ const CargarPrendaModal = ({
           marginBottom: "20px",
         }}
       >
-        <h2 style={{ margin: 0, color: "#f39c12", fontSize: "1.1em" }}>
-          Cargar Prenda
-        </h2>
+        <div>
+          <h2 style={{ margin: 0, color: "#f39c12", fontSize: "1.1em" }}>
+            Cargar Prenda
+          </h2>
+          <p style={{ margin: "4px 0 0", color: "#999", fontSize: "0.82em" }}>
+            Modo 1: renovacion de stock para productos ya existentes en inventario
+          </p>
+        </div>
         <button
           onClick={onClose}
           style={{
@@ -65,33 +82,41 @@ const CargarPrendaModal = ({
       </div>
 
       <div style={{ display: "grid", gap: "16px" }}>
-        <div>
-          <label style={lbl}>Fecha</label>
-          <input
-            type="text"
-            value={cargaPrendaData.fecha}
-            disabled
-            style={{ ...inp, opacity: 0.7, cursor: "not-allowed" }}
-          />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "12px",
+          }}
+        >
+          <div>
+            <label style={lbl}>Fecha</label>
+            <input
+              type="text"
+              value={cargaPrendaData.fecha}
+              disabled
+              style={{ ...inp, opacity: 0.7, cursor: "not-allowed" }}
+            />
+          </div>
+
+          <div>
+            <label style={lbl}>Temporada</label>
+            <input
+              type="text"
+              placeholder="Ej: Otono Invierno 2026"
+              value={cargaPrendaData.temporada}
+              onChange={(e) => onCargaPrendaDataChange("temporada", e.target.value)}
+              style={inp}
+            />
+          </div>
         </div>
 
         <div>
-          <label style={lbl}>Temporada</label>
-          <input
-            type="text"
-            placeholder="Ej: Otono Invierno 2026"
-            value={cargaPrendaData.temporada}
-            onChange={(e) => onCargaPrendaDataChange("temporada", e.target.value)}
-            style={inp}
-          />
-        </div>
-
-        <div>
-          <label style={lbl}>Buscar Producto</label>
+          <label style={lbl}>Producto base</label>
           <div style={{ position: "relative" }}>
             <input
               type="text"
-              placeholder="Escribi codigo o tipo de prenda..."
+              placeholder="Busca por codigo o tipo de prenda..."
               value={searchCargaProducto}
               onChange={(e) => onSearchProductoChange(e.target.value)}
               onFocus={() => setShowCargaProductoDrop(true)}
@@ -163,7 +188,7 @@ const CargarPrendaModal = ({
               {selectedCargaProducto["PRODUCTO"]}
             </p>
             <p style={{ margin: 0, color: "#999", fontSize: "0.8em" }}>
-              Codigo: {selectedCargaProducto["CÓDIGO"] ?? selectedCargaProducto["CÃ“DIGO"]}
+              Codigo base: {selectedCargaProducto["CÓDIGO"] ?? selectedCargaProducto["CÃ“DIGO"]}
               {" · "}Talle: {selectedCargaProducto["TALLE"]}
               {" · "}Color: {selectedCargaProducto["COLOR"]}
             </p>
@@ -214,40 +239,152 @@ const CargarPrendaModal = ({
 
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: "12px",
+            background: "rgba(255,255,255,0.05)",
+            borderRadius: "12px",
+            padding: "16px",
+            border: "1px solid rgba(255,255,255,0.08)",
           }}
         >
-          <div>
-            <label style={lbl}>Cantidad de prendas</label>
-            <input
-              type="number"
-              min="1"
-              value={cargaPrendaData.cantidad}
-              onChange={(e) => onCargaPrendaDataChange("cantidad", e.target.value)}
-              style={inp}
-            />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "14px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, color: "#f39c12", fontSize: "1em" }}>
+                Variantes
+              </h3>
+              <p style={{ margin: "4px 0 0", color: "#999", fontSize: "0.8em" }}>
+                El codigo se resuelve automaticamente por producto + talle + color.
+              </p>
+            </div>
+            <button
+              onClick={onAddVariante}
+              style={{
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#9b59b6",
+                color: "#fff",
+                fontWeight: "600",
+                cursor: "pointer",
+                fontSize: "0.82em",
+              }}
+            >
+              + Agregar variante
+            </button>
           </div>
-          <div>
-            <label style={lbl}>Talle</label>
-            <input
-              type="text"
-              placeholder="S, M, L..."
-              value={cargaPrendaData.talle}
-              onChange={(e) => onCargaPrendaDataChange("talle", e.target.value)}
-              style={inp}
-            />
-          </div>
-          <div>
-            <label style={lbl}>Color</label>
-            <input
-              type="text"
-              placeholder="Negro, Rosa..."
-              value={cargaPrendaData.color}
-              onChange={(e) => onCargaPrendaDataChange("color", e.target.value)}
-              style={inp}
-            />
+
+          <div style={{ display: "grid", gap: "10px" }}>
+            {variantesCargaResueltas.map((variante, index) => {
+              const status = statusStyles[variante.estado] || statusStyles.incompleta;
+
+              return (
+                <div
+                  key={index}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 0.8fr 1.1fr 1fr auto",
+                    gap: "10px",
+                    alignItems: "end",
+                    background: "rgba(0,0,0,0.15)",
+                    borderRadius: "10px",
+                    padding: "12px",
+                  }}
+                >
+                  <div>
+                    <label style={lbl}>Talle</label>
+                    <input
+                      type="text"
+                      placeholder="S, M, L..."
+                      value={variante.talle}
+                      onChange={(e) =>
+                        onCargaVarianteChange(index, "talle", e.target.value)
+                      }
+                      style={inp}
+                    />
+                  </div>
+                  <div>
+                    <label style={lbl}>Color</label>
+                    <input
+                      type="text"
+                      placeholder="Negro, Petroleo..."
+                      value={variante.color}
+                      onChange={(e) =>
+                        onCargaVarianteChange(index, "color", e.target.value)
+                      }
+                      style={inp}
+                    />
+                  </div>
+                  <div>
+                    <label style={lbl}>Cantidad</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={variante.cantidad}
+                      onChange={(e) =>
+                        onCargaVarianteChange(index, "cantidad", e.target.value)
+                      }
+                      style={inp}
+                    />
+                  </div>
+                  <div>
+                    <label style={lbl}>Codigo</label>
+                    <input
+                      type="text"
+                      value={variante.codigo}
+                      disabled
+                      placeholder="Se completa solo"
+                      style={{ ...inp, opacity: 0.8 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={lbl}>Estado</label>
+                    <div
+                      style={{
+                        minHeight: "42px",
+                        borderRadius: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0 10px",
+                        background: status.background,
+                        color: status.color,
+                        fontWeight: "600",
+                        fontSize: "0.78em",
+                        textAlign: "center",
+                      }}
+                    >
+                      {status.label}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onRemoveVariante(index)}
+                    disabled={variantesCargaResueltas.length === 1}
+                    style={{
+                      height: "42px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background:
+                        variantesCargaResueltas.length === 1
+                          ? "rgba(255,255,255,0.08)"
+                          : "rgba(231,76,60,0.18)",
+                      color: variantesCargaResueltas.length === 1 ? "#666" : "#e74c3c",
+                      fontWeight: "700",
+                      cursor:
+                        variantesCargaResueltas.length === 1 ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    x
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -276,41 +413,24 @@ const CargarPrendaModal = ({
         </button>
         <button
           onClick={onGuardarCargaPrenda}
-          disabled={
-            !selectedCargaProducto ||
-            !cargaPrendaData.temporada ||
-            !cargaPrendaData.cantidad ||
-            !cargaPrendaData.talle ||
-            !cargaPrendaData.color ||
-            guardandoPrenda
-          }
+          disabled={!puedeGuardarCargaPrenda || guardandoPrenda}
           style={{
             padding: "12px",
             borderRadius: "8px",
             border: "none",
             background:
-              selectedCargaProducto &&
-              cargaPrendaData.temporada &&
-              cargaPrendaData.cantidad &&
-              cargaPrendaData.talle &&
-              cargaPrendaData.color &&
-              !guardandoPrenda
+              puedeGuardarCargaPrenda && !guardandoPrenda
                 ? "#2ecc71"
                 : "rgba(46,204,113,0.3)",
             color: "#fff",
             fontWeight: "600",
             cursor:
-              selectedCargaProducto &&
-              cargaPrendaData.temporada &&
-              cargaPrendaData.cantidad &&
-              cargaPrendaData.talle &&
-              cargaPrendaData.color &&
-              !guardandoPrenda
+              puedeGuardarCargaPrenda && !guardandoPrenda
                 ? "pointer"
                 : "not-allowed",
           }}
         >
-          {guardandoPrenda ? "Guardando..." : "Guardar ingreso"}
+          {guardandoPrenda ? "Guardando..." : "Guardar lote"}
         </button>
       </div>
     </div>
