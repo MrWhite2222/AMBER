@@ -29,6 +29,8 @@
 - Se reforzo el frontend para recordar el `rowNumber` de ventas recien creadas y resolver la edicion inmediata sin depender de una recarga manual.
 - El backend modular ahora puede derivar `Codigo` desde `Codigo (Buscador)` y volver a calcular `Tipo de producto` desde `Inventario`, aun si esos campos no llegan bien en la edicion.
 - Se agrego un chequeo de backend (`action=health`) para ver en la app la version publicada del Apps Script y el nombre de la planilla conectada.
+- Se agrego el flujo `Cargar Prenda` dentro de `Inventario`, con modal propio y guardado en la hoja `COSTOS`.
+- Al guardar una prenda nueva en `COSTOS`, la app vuelve a leer `Inventario` para reflejar el stock sin recargar manualmente.
 
 ## Proximo paso sugerido
 

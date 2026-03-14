@@ -12,6 +12,7 @@ const InventarioView = ({
   onInvColorChange,
   onInvSearchChange,
   onInvTalleChange,
+  onOpenCargaPrenda,
   onResetFiltros,
   onShowSinStockChange,
   parseNumero,
@@ -175,6 +176,21 @@ const InventarioView = ({
           }}
         >
           Limpiar
+        </button>
+        <button
+          onClick={onOpenCargaPrenda}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "6px",
+            border: "none",
+            background: "#2ecc71",
+            color: "#fff",
+            fontWeight: "600",
+            cursor: "pointer",
+            fontSize: "0.82em",
+          }}
+        >
+          + Cargar Prenda
         </button>
       </div>
     </div>

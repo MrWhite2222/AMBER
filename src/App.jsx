@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import GastosView from "./components/GastosView";
 import InventarioView from "./components/InventarioView";
+import CargarPrendaModal from "./components/CargarPrendaModal";
 import EditarVentaModal from "./components/EditarVentaModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
 import RegistrosView from "./components/RegistrosView";
@@ -254,6 +255,21 @@ const abrirEdicion = (venta) => {
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [searchProducto, setSearchProducto] = useState("");
   const [showProductoDrop, setShowProductoDrop] = useState(false);
+  const [showCargaPrendaForm, setShowCargaPrendaForm] = useState(false);
+  const [guardandoPrenda, setGuardandoPrenda] = useState(false);
+  const [cargaPrendaData, setCargaPrendaData] = useState({
+    fecha: new Date().toISOString().split("T")[0],
+    temporada: "",
+    costoUnitario: "",
+    precioEfectivo: "",
+    precioLista: "",
+    cantidad: 1,
+    talle: "",
+    color: "",
+  });
+  const [selectedCargaProducto, setSelectedCargaProducto] = useState(null);
+  const [searchCargaProducto, setSearchCargaProducto] = useState("");
+  const [showCargaProductoDrop, setShowCargaProductoDrop] = useState(false);
 
   // Estados para editar ventas
 const [showEditForm, setShowEditForm] = useState(false);
@@ -306,6 +322,38 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     }));
   }
 }, [editSelectedProducto, editFormData.medioPago]);
+
+  useEffect(() => {
+    if (!selectedCargaProducto) return;
+
+    setCargaPrendaData((prev) => ({
+      ...prev,
+      costoUnitario: String(parseNumero(selectedCargaProducto["COSTO U."])),
+      precioEfectivo: String(
+        parseNumero(selectedCargaProducto["PRECIO U. EFECTIVO"])
+      ),
+      precioLista: String(parseNumero(selectedCargaProducto["PRECIO U. LISTA"])),
+      talle: String(selectedCargaProducto["TALLE"] ?? ""),
+      color: String(selectedCargaProducto["COLOR"] ?? ""),
+    }));
+  }, [selectedCargaProducto]);
+
+  const resetCargaPrendaForm = () => {
+    setCargaPrendaData({
+      fecha: new Date().toISOString().split("T")[0],
+      temporada: "",
+      costoUnitario: "",
+      precioEfectivo: "",
+      precioLista: "",
+      cantidad: 1,
+      talle: "",
+      color: "",
+    });
+    setSelectedCargaProducto(null);
+    setSearchCargaProducto("");
+    setShowCargaProductoDrop(false);
+    setGuardandoPrenda(false);
+  };
 
   // Parsear fecha del formato DD/MM/YYYY
   const parseFecha = (fechaStr) => {
@@ -518,6 +566,20 @@ const editProductosFiltrados = useMemo(() => {
     .slice(0, 8);
 }, [editSearchProducto, inventarioUnico]);
 
+const productosCargaFiltrados = useMemo(() => {
+  if (!searchCargaProducto) return [];
+
+  return inventarioUnico
+    .filter(
+      (p) =>
+        String(p["PRODUCTO"] ?? "")
+          .toUpperCase()
+          .includes(searchCargaProducto.toUpperCase()) ||
+        getInventarioCodigo(p).toUpperCase().includes(searchCargaProducto.toUpperCase())
+    )
+    .slice(0, 8);
+}, [searchCargaProducto, inventarioUnico]);
+
   
   // Calcular ganancia
   const calcularGanancia = () => {
@@ -691,6 +753,68 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
   });
 
 pendingVentasSyncRef.current.set(tempId, syncPromise);
+};
+
+const handleGuardarCargaPrenda = async () => {
+  if (!selectedCargaProducto || !cargaPrendaData.temporada) return;
+
+  setGuardandoPrenda(true);
+
+  const fecha = new Date(cargaPrendaData.fecha);
+  const meses = [
+    "ENERO",
+    "FEBRERO",
+    "MARZO",
+    "ABRIL",
+    "MAYO",
+    "JUNIO",
+    "JULIO",
+    "AGOSTO",
+    "SEPTIEMBRE",
+    "OCTUBRE",
+    "NOVIEMBRE",
+    "DICIEMBRE",
+  ];
+
+  const codigoProducto = getInventarioCodigo(selectedCargaProducto);
+  const fechaFormateada = formatearFecha(cargaPrendaData.fecha);
+  const cantidad = Number(cargaPrendaData.cantidad) || 0;
+  const costoUnitario = parseNumero(cargaPrendaData.costoUnitario);
+  const precioEfectivo = parseNumero(cargaPrendaData.precioEfectivo);
+  const precioLista = parseNumero(cargaPrendaData.precioLista);
+
+  const ingresoPayload = {
+    TEMPORADA: cargaPrendaData.temporada.trim(),
+    FECHA: fechaFormateada,
+    DIA: fecha.getDate(),
+    MES: meses[fecha.getMonth()],
+    "CÓDIGO": codigoProducto,
+    CODIGO: codigoProducto,
+    PRODUCTO: selectedCargaProducto["PRODUCTO"],
+    TALLE: cargaPrendaData.talle.trim(),
+    Talle: cargaPrendaData.talle.trim(),
+    COLOR: cargaPrendaData.color.trim(),
+    Color: cargaPrendaData.color.trim(),
+    ENTRADAS: cantidad,
+    Entradas: cantidad,
+    "COSTO U.": costoUnitario,
+    "Precio Efectivo": precioEfectivo,
+    "PRECIO EFECTIVO": precioEfectivo,
+    "Precio lista": precioLista,
+    "PRECIO LISTA": precioLista,
+  };
+
+  const result = await agregarFila("COSTOS", ingresoPayload);
+
+  if (!result?.success) {
+    alert("No se pudo guardar la prenda en COSTOS.");
+    setGuardandoPrenda(false);
+    return;
+  }
+
+  resetCargaPrendaForm();
+  setShowCargaPrendaForm(false);
+  setInventario(await leerHoja("Inventario"));
 };
 const handleGuardarEdicion = async () => {
   if (!ventaEditando || !editSelectedProducto || !editFormData.precioVenta) return;
@@ -1014,6 +1138,10 @@ const handleGuardarEdicion = async () => {
             onInvColorChange={setInvColor}
             onInvSearchChange={setInvSearch}
             onInvTalleChange={setInvTalle}
+            onOpenCargaPrenda={() => {
+              resetCargaPrendaForm();
+              setShowCargaPrendaForm(true);
+            }}
             onResetFiltros={() => {
               setInvSearch("");
               setInvTalle("");
@@ -1100,6 +1228,35 @@ const handleGuardarEdicion = async () => {
             setShowProductoDrop={setShowProductoDrop}
             setSearchProducto={setSearchProducto}
             showProductoDrop={showProductoDrop}
+          />
+        )}
+        {showCargaPrendaForm && (
+          <CargarPrendaModal
+            cargaPrendaData={cargaPrendaData}
+            guardandoPrenda={guardandoPrenda}
+            inp={inp}
+            lbl={lbl}
+            onCargaPrendaDataChange={(key, value) =>
+              setCargaPrendaData((prev) => ({ ...prev, [key]: value }))
+            }
+            onClose={() => {
+              resetCargaPrendaForm();
+              setShowCargaPrendaForm(false);
+            }}
+            onGuardarCargaPrenda={handleGuardarCargaPrenda}
+            onSearchProductoChange={(value) => {
+              setSearchCargaProducto(value);
+              setShowCargaProductoDrop(true);
+              setSelectedCargaProducto(null);
+            }}
+            parseNumero={parseNumero}
+            productosCargaFiltrados={productosCargaFiltrados}
+            searchCargaProducto={searchCargaProducto}
+            selectedCargaProducto={selectedCargaProducto}
+            setSelectedCargaProducto={setSelectedCargaProducto}
+            setSearchCargaProducto={setSearchCargaProducto}
+            setShowCargaProductoDrop={setShowCargaProductoDrop}
+            showCargaProductoDrop={showCargaProductoDrop}
           />
         )}
 {/* MODAL edicion */}
