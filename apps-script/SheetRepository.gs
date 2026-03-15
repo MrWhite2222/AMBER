@@ -123,6 +123,32 @@ function appendObjectRow_(sheet, rowData) {
   };
 }
 
+function appendSparseObjectRow_(sheet, rowData, allowedHeaders) {
+  const headers = getHeaders_(sheet);
+  const headerMap = getHeaderMap_(headers);
+  const headersToWrite = Array.isArray(allowedHeaders) && allowedHeaders.length
+    ? allowedHeaders
+    : headers;
+  const rowNumber = Math.max(sheet.getLastRow() + 1, 2);
+
+  headersToWrite.forEach(function (headerName) {
+    const existingHeader = getExistingHeader_(headers, headerName);
+    const provided = getProvidedValue_(rowData, headerName);
+    if (!existingHeader || !provided.found) {
+      return;
+    }
+
+    const columnIndex = headerMap[existingHeader];
+    sheet.getRange(rowNumber, columnIndex).setValue(provided.value);
+  });
+
+  return {
+    rowNumber: rowNumber,
+    headers: headers,
+    headerMap: headerMap,
+  };
+}
+
 function parseRowNumberOrThrow_(sheet, rowNumber) {
   const parsed = Number(rowNumber);
   if (!parsed || parsed < 2 || parsed > sheet.getLastRow()) {

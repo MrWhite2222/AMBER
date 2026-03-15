@@ -16,7 +16,7 @@ La idea recomendada es:
 - `Responses.gs`: helpers para respuestas JSON.
 - `SheetRepository.gs`: utilidades comunes para abrir hojas, leer headers y actualizar filas.
 - `VentasService.gs`: logica especial de `Ventas`, preservando o regenerando columnas con formulas.
-- `InventarioService.gs`: logica especial de `Inventario`, copiando formulas desde una fila plantilla al crear codigos nuevos.
+- `InventarioService.gs`: logica especial de `Inventario`, escribiendo solo el `Codigo` en una fila nueva para convivir bien con `ARRAYFORMULA`.
 - `SheetService.gs`: servicios publicos `leerHoja`, `agregarFila` y `actualizarFila`.
 - `Api.gs`: entrypoints `doGet` y `doPost`.
 
@@ -65,9 +65,9 @@ No hace falta cambiar el frontend para probar este backend.
 
 ## Cambio importante en `Inventario`
 
-Cuando el frontend agrega una fila nueva en `Inventario`, este backend puede copiar automaticamente las formulas de una fila plantilla ya existente.
+Cuando el frontend agrega una fila nueva en `Inventario`, este backend escribe solo el `CODIGO` / `CÓDIGO` en la fila nueva.
 
-La condicion minima es:
+Esto esta pensado para hojas donde el resto de las columnas se resuelve con `ARRAYFORMULA` desde la fila 2.
 
 - que la hoja `Inventario` tenga al menos una fila con formulas correctas en las columnas calculadas
 - que el nuevo registro llegue con `CODIGO` o `CÓDIGO`
@@ -87,3 +87,5 @@ Con eso, al insertar un nuevo codigo en la columna A, el backend replica las for
 - `MARGEN UNITARIO EFECTIVO`
 - `MARGEN UNITARIO TARJETA`
 - `Etiqueta`
+
+Nota: si la hoja `Inventario` ya usa `ARRAYFORMULA` desde la fila 2, no conviene copiar formulas fila por fila. En ese caso, el backend debe escribir solo el `CODIGO` / `CÓDIGO` en la nueva fila y dejar que el Sheet complete el resto automaticamente.
