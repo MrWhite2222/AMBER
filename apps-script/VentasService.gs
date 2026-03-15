@@ -18,7 +18,7 @@ function buscarProductoPorCodigo_(codigo) {
 
   const inventarioSheet = getSheetOrThrow_("Inventario");
   const headers = getHeaders_(inventarioSheet);
-  const codigoHeader = getExistingHeader_(headers, "C\u00D3DIGO");
+  const codigoHeader = getExistingHeader_(headers, "CODIGO");
   const productoHeader = getExistingHeader_(headers, "PRODUCTO");
 
   if (!codigoHeader || !productoHeader || inventarioSheet.getLastRow() < 2) {
@@ -41,15 +41,15 @@ function buscarProductoPorCodigo_(codigo) {
 
 function normalizeVentaRowData_(rowData) {
   const normalized = Object.assign({}, rowData || {});
-  const codigoBuscador = String(getRowDataValue_(normalized, "C\u00F3digo (Buscador)") || "").trim();
-  var codigo = String(getRowDataValue_(normalized, "C\u00F3digo") || "").trim();
+  const codigoBuscador = String(getRowDataValue_(normalized, "Codigo (Buscador)") || "").trim();
+  var codigo = String(getRowDataValue_(normalized, "Codigo") || "").trim();
 
   if (!codigo && codigoBuscador) {
     codigo = extractCodigoFromBuscador_(codigoBuscador);
   }
 
   if (codigo) {
-    normalized["C\u00F3digo"] = codigo;
+    normalized.Codigo = codigo;
     const producto = buscarProductoPorCodigo_(codigo);
     if (producto) {
       normalized["Tipo de producto"] = producto;

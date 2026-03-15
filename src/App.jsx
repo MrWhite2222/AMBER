@@ -15,7 +15,6 @@ import {
   leerHoja,
 } from "./services/sheets";
 import {
-  construirVentaPayload,
   formatearFecha,
   getProductoCosto,
   getProductoPrecioEfectivo,
@@ -1130,19 +1129,25 @@ const nuevaVenta = {
   "Ganancias con recompra": gananciaRecompra
 };
 
-Object.assign(
-  nuevaVenta,
-  construirVentaPayload({
-    producto: selectedProducto,
-    cantidad,
-    medioPago: formData.medioPago,
-    precioVenta: formData.precioVenta,
-    fecha: fechaFormateada,
-  })
-);
+const nuevaVentaLimpia = {
+  _tempId: tempId,
+  Fecha: fechaFormateada,
+  "Codigo (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${getInventarioCodigo(selectedProducto)}`.trim(),
+  Codigo: getInventarioCodigo(selectedProducto),
+  Talle: selectedProducto["TALLE"],
+  Color: selectedProducto["COLOR"],
+  "Tipo de producto": selectedProducto["PRODUCTO"],
+  Cantidad: cantidad,
+  "Medio de pago": medioPago,
+  "Precio venta": precio,
+  "Costo U.": costo,
+  Impuesto: iva,
+  "Ganancia Neta": gananciaNeta,
+  "Ganancias con recompra": gananciaRecompra,
+};
   
   // 1. Agregar localmente al instante
-setAllVentas((prev) => [...prev, nuevaVenta]);
+setAllVentas((prev) => [...prev, nuevaVentaLimpia]);
 
 // 2. Limpiar formulario y cerrar modal
 setFormData({
@@ -1157,7 +1162,7 @@ setShowForm(false);
 setGuardando(false);
 
 // 3. Guardar en Google Sheets y actualizar _rowNumber local
-const syncPromise = agregarFila("Ventas", nuevaVenta)
+const syncPromise = agregarFila("Ventas", nuevaVentaLimpia)
   .then(async (result) => {
     if (!result.success) {
       setAllVentas((prev) => prev.filter((v) => v._tempId !== tempId));
@@ -1166,7 +1171,7 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
     }
 
   ventasRowNumberRef.current.set(
-      getVentaMatchKey(nuevaVenta),
+      getVentaMatchKey(nuevaVentaLimpia),
       Number(result.rowNumber)
     );
 
@@ -1178,7 +1183,7 @@ const syncPromise = agregarFila("Ventas", nuevaVenta)
       )
     );
 
-    await refrescarVentas({ ...nuevaVenta, _rowNumber: result.rowNumber });
+    await refrescarVentas({ ...nuevaVentaLimpia, _rowNumber: result.rowNumber });
     setInventario(await leerHoja("Inventario"));
     return result;
   })
@@ -1436,8 +1441,8 @@ const handleGuardarEdicion = async () => {
   const productoActualizado = getInventarioProducto(editSelectedProducto);
   const talleActualizado = getInventarioTalle(editSelectedProducto);
   const colorActualizado = getInventarioColor(editSelectedProducto);
-  const codigoHeader = "C\u00F3digo";
-  const codigoBuscadorHeader = "C\u00F3digo (Buscador)";
+  const codigoHeader = "Codigo";
+  const codigoBuscadorHeader = "Codigo (Buscador)";
 
   const ventaActualizada = {
     "Fecha": ventaEditando["Fecha"], // fija
@@ -1454,17 +1459,6 @@ const handleGuardarEdicion = async () => {
     "Ganancia Neta": gananciaNeta,
     "Ganancias con recompra": gananciaRecompra,
   };
-
-  Object.assign(
-    ventaActualizada,
-    construirVentaPayload({
-      producto: editSelectedProducto,
-      cantidad,
-      medioPago: editFormData.medioPago,
-      precioVenta: editFormData.precioVenta,
-      fecha: ventaEditando["Fecha"],
-    })
-  );
 
   Object.assign(ventaActualizada, {
     "CÃ³digo (Buscador)": `${editSelectedProducto["PRODUCTO"]} ${editSelectedProducto["TALLE"]} ${editSelectedProducto["COLOR"]} | ${codigoActualizado}`.trim(),

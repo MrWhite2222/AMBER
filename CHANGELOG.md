@@ -47,6 +47,7 @@
 - La edicion de ventas ahora detecta prendas de `Inventario` con datos incompletos, las marca en el buscador y guarda un reporte local para diagnostico rapido.
 - La edicion de ventas ahora fuerza los headers reales `Codigo` y `Codigo (Buscador)` antes de guardar, evitando fallos intermitentes de validacion en Apps Script para ciertos reemplazos.
 - La edicion ahora arma un payload final limpio con solo los headers validos de `Ventas`, para que Google Sheets no reciba variantes rotas de `Codigo`.
+- Se inicio la migracion para preferir headers sin tilde (`Codigo`, `Codigo (Buscador)`, `CODIGO`) en frontend y Apps Script, manteniendo compatibilidad temporal con los nombres viejos.
 
 ## Proximo paso sugerido
 

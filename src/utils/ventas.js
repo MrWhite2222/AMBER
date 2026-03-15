@@ -4,6 +4,12 @@ export const parseNumero = (valor) => {
   return Number(String(valor).replace(/[$.,]/g, "").replace(",", ".")) || 0;
 };
 
+export const VENTA_HEADER_CODIGO = "Codigo";
+export const VENTA_HEADER_CODIGO_BUSCADOR = "Codigo (Buscador)";
+export const INVENTARIO_HEADER_CODIGO = "CODIGO";
+
+export const normalizarTexto = (valor) => String(valor ?? "").trim();
+
 export const formatearFecha = (fechaISO) => {
   const [year, month, day] = fechaISO.split("-");
   return `${day}/${month}/${year}`;
