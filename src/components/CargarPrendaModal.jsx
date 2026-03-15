@@ -1,3 +1,5 @@
+import { getProductoPrecioEfectivo } from "../utils/ventas";
+
 const statusStyles = {
   ok: { label: "Lista para guardar", color: "#2ecc71", background: "rgba(46,204,113,0.12)" },
   incompleta: { label: "Completar fila", color: "#f39c12", background: "rgba(243,156,18,0.12)" },
@@ -225,7 +227,7 @@ const CargarPrendaModal = ({
                     <div style={{ fontWeight: "600" }}>{producto["PRODUCTO"]}</div>
                     <div style={{ fontSize: "0.85em", color: "#999" }}>
                       {producto["TALLE"]} · {producto["COLOR"]} · $
-                      {parseNumero(producto["PRECIO U. EFECTIVO"]).toLocaleString("es-AR")}
+                      {getProductoPrecioEfectivo(producto).toLocaleString("es-AR")}
                     </div>
                   </div>
                 ))}

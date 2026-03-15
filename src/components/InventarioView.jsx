@@ -1,4 +1,9 @@
 import { Search } from "lucide-react";
+import {
+  getProductoCosto,
+  getProductoPrecioEfectivo,
+  getProductoPrecioLista,
+} from "../utils/ventas";
 
 const InventarioView = ({
   card,
@@ -319,7 +324,7 @@ const InventarioView = ({
                   }}
                 >
                   ${" "}
-                  {parseNumero(item["COSTO U."]).toLocaleString("es-AR")}
+                  {getProductoCosto(item).toLocaleString("es-AR")}
                 </td>
                 <td
                   style={{
@@ -330,7 +335,7 @@ const InventarioView = ({
                   }}
                 >
                   ${" "}
-                  {parseNumero(item["PRECIO U. EFECTIVO"]).toLocaleString(
+                  {getProductoPrecioEfectivo(item).toLocaleString(
                     "es-AR"
                   )}
                 </td>
@@ -343,7 +348,7 @@ const InventarioView = ({
                   }}
                 >
                   ${" "}
-                  {parseNumero(item["PRECIO U. LISTA"]).toLocaleString("es-AR")}
+                  {getProductoPrecioLista(item).toLocaleString("es-AR")}
                 </td>
               </tr>
             );

@@ -38,6 +38,7 @@
 - En `Modo 2`, despues de guardar en `COSTOS`, la app crea tambien la fila correspondiente en `Inventario` usando el `Codigo` de cada variante.
 - El backend modular de Apps Script ahora puede copiar las formulas de `Inventario` desde una fila plantilla cuando entra un codigo nuevo.
 - Si `Inventario` ya usa `ARRAYFORMULA`, el backend modular ahora escribe solo el `Codigo` en la fila nueva y deja que el Sheet complete el resto.
+- La app ahora tolera alias de headers como `P. Efectivo` y `P. Lista` al leer precios y costo desde `Inventario`.
 
 ## Proximo paso sugerido
 

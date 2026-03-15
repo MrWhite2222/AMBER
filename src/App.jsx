@@ -16,6 +16,9 @@ import {
 import {
   construirVentaPayload,
   formatearFecha,
+  getProductoCosto,
+  getProductoPrecioEfectivo,
+  getProductoPrecioLista,
   getPrecioSugerido,
   parseNumero,
 } from "./utils/ventas";
@@ -225,9 +228,11 @@ const abrirEdicion = (venta) => {
     "PRODUCTO": venta["Tipo de producto"] ?? productoInv?.["PRODUCTO"] ?? "",
     "TALLE": venta["Talle"] ?? productoInv?.["TALLE"] ?? "",
     "COLOR": venta["Color"] ?? productoInv?.["COLOR"] ?? "",
-    "COSTO U.": venta["Costo U."] ?? productoInv?.["COSTO U."] ?? 0,
-    "PRECIO U. EFECTIVO": productoInv?.["PRECIO U. EFECTIVO"] ?? venta["Precio venta"] ?? 0,
-    "PRECIO U. LISTA": productoInv?.["PRECIO U. LISTA"] ?? venta["Precio venta"] ?? 0,
+    "COSTO U.": venta["Costo U."] ?? getProductoCosto(productoInv),
+    "PRECIO U. EFECTIVO":
+      getProductoPrecioEfectivo(productoInv) || venta["Precio venta"] || 0,
+    "PRECIO U. LISTA":
+      getProductoPrecioLista(productoInv) || venta["Precio venta"] || 0,
   };
 
   setVentaEditando(venta);
@@ -345,11 +350,9 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
     setCargaPrendaData((prev) => ({
       ...prev,
-      costoUnitario: String(parseNumero(selectedCargaProducto["COSTO U."])),
-      precioEfectivo: String(
-        parseNumero(selectedCargaProducto["PRECIO U. EFECTIVO"])
-      ),
-      precioLista: String(parseNumero(selectedCargaProducto["PRECIO U. LISTA"])),
+      costoUnitario: String(getProductoCosto(selectedCargaProducto)),
+      precioEfectivo: String(getProductoPrecioEfectivo(selectedCargaProducto)),
+      precioLista: String(getProductoPrecioLista(selectedCargaProducto)),
     }));
 
     setCargaPrendaVariantes([
@@ -807,12 +810,12 @@ const handleGuardarVenta = async () => {
   
   // G: Precio venta - desde el formulario o del inventario según medio de pago
   const precioManual = parseNumero(formData.precioVenta);
-  const precioEfectivo = parseNumero(selectedProducto["PRECIO U. EFECTIVO"]);
-  const precioLista = parseNumero(selectedProducto["PRECIO U. LISTA"]);
+  const precioEfectivo = getProductoPrecioEfectivo(selectedProducto);
+  const precioLista = getProductoPrecioLista(selectedProducto);
   const precio = precioManual > 0 ? precioManual : (medioPago === "EFECTIVO" ? precioEfectivo : precioLista);
   
   // H: Costo U. - del inventario
-  const costo = parseNumero(selectedProducto["COSTO U."]);
+  const costo = getProductoCosto(selectedProducto);
   
   // I: IVA 21% - calculado según medio de pago
 let iva = 0;
@@ -1039,11 +1042,11 @@ const handleGuardarEdicion = async () => {
   const medioPago = editFormData.medioPago;
 
   const precioManual = parseNumero(editFormData.precioVenta);
-  const precioEfectivo = parseNumero(editSelectedProducto["PRECIO U. EFECTIVO"]);
-  const precioLista = parseNumero(editSelectedProducto["PRECIO U. LISTA"]);
+  const precioEfectivo = getProductoPrecioEfectivo(editSelectedProducto);
+  const precioLista = getProductoPrecioLista(editSelectedProducto);
   const precio = precioManual > 0 ? precioManual : (medioPago === "EFECTIVO" ? precioEfectivo : precioLista);
 
-  const costo = parseNumero(editSelectedProducto["COSTO U."]);
+  const costo = getProductoCosto(editSelectedProducto);
 
   let iva = 0;
   if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "QR") {

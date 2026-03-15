@@ -1,3 +1,9 @@
+import {
+  getProductoCosto,
+  getProductoPrecioEfectivo,
+  getProductoPrecioLista,
+} from "../utils/ventas";
+
 const NuevaVentaModal = ({
   calcularGanancia,
   formData,
@@ -124,7 +130,7 @@ const NuevaVentaModal = ({
                     <div style={{ fontWeight: "600" }}>{p["PRODUCTO"]}</div>
                     <div style={{ fontSize: "0.85em", color: "#999" }}>
                       {p["TALLE"]} · {p["COLOR"]} · Stock: {p["STOCK"]} · $
-                      {parseNumero(p["PRECIO U. EFECTIVO"]).toLocaleString(
+                      {getProductoPrecioEfectivo(p).toLocaleString(
                         "es-AR"
                       )}
                     </div>
@@ -159,15 +165,15 @@ const NuevaVentaModal = ({
               {selectedProducto["TALLE"]} · Color: {selectedProducto["COLOR"]}
             </p>
             <p style={{ margin: "5px 0 0", color: "#bbb", fontSize: "0.8em" }}>
-              Costo: ${parseNumero(selectedProducto["COSTO U."]).toLocaleString(
+              Costo: ${getProductoCosto(selectedProducto).toLocaleString(
                 "es-AR"
               )}{" "}
               · P. Efectivo: $
-              {parseNumero(selectedProducto["PRECIO U. EFECTIVO"]).toLocaleString(
+              {getProductoPrecioEfectivo(selectedProducto).toLocaleString(
                 "es-AR"
               )}{" "}
               · P. Lista: $
-              {parseNumero(selectedProducto["PRECIO U. LISTA"]).toLocaleString(
+              {getProductoPrecioLista(selectedProducto).toLocaleString(
                 "es-AR"
               )}
             </p>

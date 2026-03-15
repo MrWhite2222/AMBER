@@ -12,11 +12,58 @@ export const formatearFecha = (fechaISO) => {
 export const esPrecioEfectivo = (medioPago) =>
   ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(medioPago);
 
+const getProductoValor = (producto, claves) => {
+  for (const clave of claves) {
+    const valor = producto?.[clave];
+    if (valor !== undefined && valor !== null && String(valor).trim() !== "") {
+      return valor;
+    }
+  }
+
+  return "";
+};
+
+export const getProductoCodigo = (producto) =>
+  String(
+    getProductoValor(producto, [
+      "CÓDIGO",
+      "CÃ“DIGO",
+      "CÃƒâ€œDIGO",
+      "CODIGO",
+    ]) ?? ""
+  ).trim();
+
+export const getProductoCosto = (producto) =>
+  parseNumero(
+    getProductoValor(producto, ["COSTO U.", "Costo U.", "Costo Unitario"])
+  );
+
+export const getProductoPrecioEfectivo = (producto) =>
+  parseNumero(
+    getProductoValor(producto, [
+      "PRECIO U. EFECTIVO",
+      "P. Efectivo",
+      "Precio Efectivo",
+      "PRECIO EFECTIVO",
+    ])
+  );
+
+export const getProductoPrecioLista = (producto) =>
+  parseNumero(
+    getProductoValor(producto, [
+      "PRECIO U. LISTA",
+      "P. Lista",
+      "Precio Lista",
+      "Precio lista",
+      "PRECIO LISTA",
+    ])
+  );
+
 export const getPrecioSugerido = (producto, medioPago) => {
   if (!producto) return "";
 
-  const precioEfectivo = parseNumero(producto["PRECIO U. EFECTIVO"]);
-  const precioLista = parseNumero(producto["PRECIO U. LISTA"]);
+  const precioEfectivo = getProductoPrecioEfectivo(producto);
+  const precioLista = getProductoPrecioLista(producto);
 
   return String(esPrecioEfectivo(medioPago) ? precioEfectivo : precioLista);
 };
@@ -55,15 +102,15 @@ export const construirVentaPayload = ({
   fecha,
 }) => {
   const precioManual = parseNumero(precioVenta);
-  const precioEfectivo = parseNumero(producto["PRECIO U. EFECTIVO"]);
-  const precioLista = parseNumero(producto["PRECIO U. LISTA"]);
+  const precioEfectivo = getProductoPrecioEfectivo(producto);
+  const precioLista = getProductoPrecioLista(producto);
   const precio =
     precioManual > 0
       ? precioManual
       : esPrecioEfectivo(medioPago)
       ? precioEfectivo
       : precioLista;
-  const costo = parseNumero(producto["COSTO U."]);
+  const costo = getProductoCosto(producto);
   const iva = calcularIva(precio, medioPago);
   const gananciaNeta =
     precio === 0 ? 0 : Math.round((precio - iva) * cantidad * 1000) / 1000;

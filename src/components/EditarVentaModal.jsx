@@ -1,3 +1,5 @@
+import { getProductoPrecioEfectivo } from "../utils/ventas";
+
 const EditarVentaModal = ({
   editFormData,
   editProductosFiltrados,
@@ -123,7 +125,7 @@ const EditarVentaModal = ({
                     <div style={{ fontWeight: "600" }}>{p["PRODUCTO"]}</div>
                     <div style={{ fontSize: "0.85em", color: "#999" }}>
                       {p["TALLE"]} · {p["COLOR"]} · Stock: {p["STOCK"]} · $
-                      {parseNumero(p["PRECIO U. EFECTIVO"]).toLocaleString(
+                      {getProductoPrecioEfectivo(p).toLocaleString(
                         "es-AR"
                       )}
                     </div>
