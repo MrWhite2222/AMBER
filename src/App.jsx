@@ -1485,7 +1485,24 @@ const handleGuardarEdicion = async () => {
   delete ventaActualizada["C\u00C3\u0192\u00C2\u00B3digo (Buscador)"];
   delete ventaActualizada["C\u00C3\u0192\u00C2\u00B3digo"];
 
-  const updateResult = await actualizarFila("Ventas", rowNumber, ventaActualizada);
+  const ventaActualizadaLimpia = {
+    "Fecha": ventaActualizada["Fecha"],
+    [codigoBuscadorHeader]: ventaActualizada[codigoBuscadorHeader],
+    [codigoHeader]: ventaActualizada[codigoHeader],
+    "Talle": ventaActualizada["Talle"],
+    "Color": ventaActualizada["Color"],
+    "Tipo de producto": ventaActualizada["Tipo de producto"],
+    "Cantidad": ventaActualizada["Cantidad"],
+    "Medio de pago": ventaActualizada["Medio de pago"],
+    "Precio venta": ventaActualizada["Precio venta"],
+    "Costo U.": ventaActualizada["Costo U."],
+    "Impuesto": ventaActualizada["Impuesto"],
+    "Ganancia Neta": ventaActualizada["Ganancia Neta"],
+    "Ganancias con recompra": ventaActualizada["Ganancias con recompra"],
+    "Estado": ventaActualizada["Estado"] ?? "",
+  };
+
+  const updateResult = await actualizarFila("Ventas", rowNumber, ventaActualizadaLimpia);
 
   if (!updateResult?.success) {
     guardarDiagnosticoEdicion({
@@ -1502,7 +1519,7 @@ const handleGuardarEdicion = async () => {
         color: getInventarioColor(editSelectedProducto),
       },
       problemasProducto,
-      payload: ventaActualizada,
+      payload: ventaActualizadaLimpia,
       error: updateResult?.error ?? "Error desconocido",
     });
 
@@ -1516,7 +1533,7 @@ const handleGuardarEdicion = async () => {
   }
 
   ventasRowNumberRef.current.set(
-    getVentaMatchKey(ventaActualizada),
+    getVentaMatchKey(ventaActualizadaLimpia),
     Number(rowNumber)
   );
 
@@ -1527,7 +1544,7 @@ const handleGuardarEdicion = async () => {
         : v._tempId && v._tempId === ventaEditando._tempId;
 
       return esMismaVenta
-        ? { ...v, ...ventaActualizada, _rowNumber: rowNumber }
+        ? { ...v, ...ventaActualizadaLimpia, _rowNumber: rowNumber }
         : v;
     })
   );
