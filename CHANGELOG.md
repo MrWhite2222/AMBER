@@ -35,6 +35,8 @@
 - Cada variante resuelve su `Codigo` automaticamente por coincidencia de `Producto` + `Talle` + `Color` contra `Inventario`.
 - `Cargar Prenda` ahora suma un `Modo 2` para dar de alta productos nuevos con nombre de producto comun y codigo manual por variante.
 - En `Modo 2`, la app valida que cada codigo nuevo no exista ya en `Inventario` y que no se repita dentro del mismo lote.
+- En `Modo 2`, despues de guardar en `COSTOS`, la app crea tambien la fila correspondiente en `Inventario` usando el `Codigo` de cada variante.
+- El backend modular de Apps Script ahora puede copiar las formulas de `Inventario` desde una fila plantilla cuando entra un codigo nuevo.
 
 ## Proximo paso sugerido
 

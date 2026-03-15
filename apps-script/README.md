@@ -16,6 +16,7 @@ La idea recomendada es:
 - `Responses.gs`: helpers para respuestas JSON.
 - `SheetRepository.gs`: utilidades comunes para abrir hojas, leer headers y actualizar filas.
 - `VentasService.gs`: logica especial de `Ventas`, preservando o regenerando columnas con formulas.
+- `InventarioService.gs`: logica especial de `Inventario`, copiando formulas desde una fila plantilla al crear codigos nuevos.
 - `SheetService.gs`: servicios publicos `leerHoja`, `agregarFila` y `actualizarFila`.
 - `Api.gs`: entrypoints `doGet` y `doPost`.
 
@@ -61,3 +62,28 @@ Se mantiene el mismo contrato:
 - `POST { action: "update", sheet, rowNumber, fila }`
 
 No hace falta cambiar el frontend para probar este backend.
+
+## Cambio importante en `Inventario`
+
+Cuando el frontend agrega una fila nueva en `Inventario`, este backend puede copiar automaticamente las formulas de una fila plantilla ya existente.
+
+La condicion minima es:
+
+- que la hoja `Inventario` tenga al menos una fila con formulas correctas en las columnas calculadas
+- que el nuevo registro llegue con `CODIGO` o `CÓDIGO`
+
+Con eso, al insertar un nuevo codigo en la columna A, el backend replica las formulas en:
+
+- `PRODUCTO`
+- `TALLE`
+- `COLOR`
+- `ENTRADAS`
+- `SALIDAS`
+- `STOCK`
+- `COSTO U.`
+- `STOCK TOTAL`
+- `PRECIO U. EFECTIVO`
+- `PRECIO U. LISTA`
+- `MARGEN UNITARIO EFECTIVO`
+- `MARGEN UNITARIO TARJETA`
+- `Etiqueta`

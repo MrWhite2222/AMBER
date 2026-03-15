@@ -16,7 +16,9 @@ function agregarFila(sheetName, rowData) {
       return agregarVenta_(sheet, payload);
     }
 
-    const result = appendObjectRow_(sheet, payload);
+    const result = sheetName === SHEET_NAMES.INVENTARIO
+      ? agregarInventario_(sheet, payload)
+      : appendObjectRow_(sheet, payload);
     return successResponse_({
       mensaje: "Fila agregada",
       rowNumber: result.rowNumber,

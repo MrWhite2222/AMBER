@@ -1003,6 +1003,20 @@ const handleGuardarCargaPrenda = async () => {
       return;
     }
 
+    if (!esModoExistente) {
+      const inventarioResult = await agregarFila("Inventario", {
+        CODIGO: codigoFila,
+      });
+
+      if (!inventarioResult?.success) {
+        alert(
+          `La variante ${codigoFila} se guardo en COSTOS, pero no se pudo crear su fila en INVENTARIO.`
+        );
+        setGuardandoPrenda(false);
+        return;
+      }
+    }
+
     filasGuardadas += 1;
   }
 
