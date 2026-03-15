@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import GastosView from "./components/GastosView";
 import InventarioView from "./components/InventarioView";
 import CargarPrendaModal from "./components/CargarPrendaModal";
+import ModificarPreciosModal from "./components/ModificarPreciosModal";
 import EditarVentaModal from "./components/EditarVentaModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
 import RegistrosView from "./components/RegistrosView";
@@ -154,6 +155,9 @@ const AmberApp = () => {
   const getInventarioColor = (item) =>
     normalizarTexto(item?.["COLOR"] ?? item?.["Color"] ?? "");
 
+  const getInventarioTipoBase = (item) =>
+    normalizarTexto(getInventarioProducto(item)).split(/\s+/).filter(Boolean)[0] ?? "";
+
   const getVentaMatchKey = (venta) =>
     [
       normalizarTexto(venta?.["Fecha"]),
@@ -292,6 +296,18 @@ const abrirEdicion = (venta) => {
   const [selectedCargaProducto, setSelectedCargaProducto] = useState(null);
   const [searchCargaProducto, setSearchCargaProducto] = useState("");
   const [showCargaProductoDrop, setShowCargaProductoDrop] = useState(false);
+  const [showModificarPreciosForm, setShowModificarPreciosForm] = useState(false);
+  const [guardandoPrecios, setGuardandoPrecios] = useState(false);
+  const [alcancePrecio, setAlcancePrecio] = useState("producto");
+  const [precioData, setPrecioData] = useState({
+    fecha: new Date().toISOString().split("T")[0],
+    referencia: "ACTUALIZACION PRECIOS",
+    precioEfectivo: "",
+    precioLista: "",
+  });
+  const [searchPrecioObjetivo, setSearchPrecioObjetivo] = useState("");
+  const [selectedPrecioObjetivo, setSelectedPrecioObjetivo] = useState(null);
+  const [showPrecioObjetivoDrop, setShowPrecioObjetivoDrop] = useState(false);
 
   // Estados para editar ventas
 const [showEditForm, setShowEditForm] = useState(false);
@@ -392,6 +408,32 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     setSearchCargaProducto("");
     setShowCargaProductoDrop(false);
     setGuardandoPrenda(false);
+  };
+
+  const resetModificarPreciosForm = () => {
+    setGuardandoPrecios(false);
+    setAlcancePrecio("producto");
+    setPrecioData({
+      fecha: new Date().toISOString().split("T")[0],
+      referencia: "ACTUALIZACION PRECIOS",
+      precioEfectivo: "",
+      precioLista: "",
+    });
+    setSearchPrecioObjetivo("");
+    setSelectedPrecioObjetivo(null);
+    setShowPrecioObjetivoDrop(false);
+  };
+
+  const handleAlcancePrecioChange = (nextScope) => {
+    setAlcancePrecio(nextScope);
+    setSearchPrecioObjetivo("");
+    setSelectedPrecioObjetivo(null);
+    setShowPrecioObjetivoDrop(false);
+    setPrecioData((prev) => ({
+      ...prev,
+      precioEfectivo: "",
+      precioLista: "",
+    }));
   };
 
   // Parsear fecha del formato DD/MM/YYYY
@@ -619,6 +661,93 @@ const productosCargaFiltrados = useMemo(() => {
     .slice(0, 8);
 }, [searchCargaProducto, inventarioUnico]);
 
+const objetivosPrecioDisponibles = useMemo(() => {
+  const mapa = new Map();
+
+  inventarioUnico.forEach((item) => {
+    const producto = getInventarioProducto(item);
+    const tipo = getInventarioTipoBase(item);
+    const clave = alcancePrecio === "tipo" ? tipo : producto;
+
+    if (!clave) return;
+
+    if (!mapa.has(clave)) {
+      mapa.set(clave, {
+        id: `${alcancePrecio}:${clave}`,
+        label: clave,
+        value: clave,
+        count: 0,
+      });
+    }
+
+    mapa.get(clave).count += 1;
+  });
+
+  return Array.from(mapa.values()).sort((a, b) =>
+    a.label.localeCompare(b.label, "es", { sensitivity: "base" })
+  );
+}, [alcancePrecio, inventarioUnico]);
+
+const objetivosPrecioFiltrados = useMemo(() => {
+  const termino = normalizarTexto(searchPrecioObjetivo).toUpperCase();
+  const base = !termino
+    ? objetivosPrecioDisponibles
+    : objetivosPrecioDisponibles.filter((objetivo) =>
+        objetivo.label.toUpperCase().includes(termino)
+      );
+
+  return base.slice(0, 8);
+}, [objetivosPrecioDisponibles, searchPrecioObjetivo]);
+
+const afectadosPrecioSeleccion = useMemo(() => {
+  if (!selectedPrecioObjetivo?.value) return [];
+
+  const items = inventarioUnico.filter((item) => {
+    if (alcancePrecio === "tipo") {
+      return getInventarioTipoBase(item) === selectedPrecioObjetivo.value;
+    }
+
+    return getInventarioProducto(item) === selectedPrecioObjetivo.value;
+  });
+
+  return items
+    .map((item) => ({
+      ...item,
+      codigo: getInventarioCodigo(item),
+      producto: getInventarioProducto(item),
+      talle: getInventarioTalle(item),
+      color: getInventarioColor(item),
+      costoActual: getProductoCosto(item),
+      precioEfectivoActual: getProductoPrecioEfectivo(item),
+      precioListaActual: getProductoPrecioLista(item),
+    }))
+    .sort((a, b) =>
+      `${a.producto} ${a.talle} ${a.color}`.localeCompare(
+        `${b.producto} ${b.talle} ${b.color}`,
+        "es",
+        { sensitivity: "base" }
+      )
+    );
+}, [alcancePrecio, inventarioUnico, selectedPrecioObjetivo]);
+
+useEffect(() => {
+  if (!selectedPrecioObjetivo) return;
+
+  const preciosEfectivo = Array.from(
+    new Set(afectadosPrecioSeleccion.map((item) => Number(item.precioEfectivoActual || 0)))
+  );
+  const preciosLista = Array.from(
+    new Set(afectadosPrecioSeleccion.map((item) => Number(item.precioListaActual || 0)))
+  );
+
+  setPrecioData((prev) => ({
+    ...prev,
+    precioEfectivo:
+      preciosEfectivo.length === 1 ? String(preciosEfectivo[0]) : "",
+    precioLista: preciosLista.length === 1 ? String(preciosLista[0]) : "",
+  }));
+}, [afectadosPrecioSeleccion, selectedPrecioObjetivo]);
+
 const variantesCargaResueltas = useMemo(() => {
   const productoBase = getInventarioProducto(selectedCargaProducto).toUpperCase();
   const productoManual = normalizarTexto(cargaPrendaData.productoManual);
@@ -745,6 +874,20 @@ const puedeGuardarCargaPrenda = useMemo(() => {
   selectedCargaProducto,
   variantesCargaActivas,
 ]);
+
+const puedeGuardarPrecios = useMemo(
+  () =>
+    Boolean(selectedPrecioObjetivo?.value) &&
+    afectadosPrecioSeleccion.length > 0 &&
+    parseNumero(precioData.precioEfectivo) > 0 &&
+    parseNumero(precioData.precioLista) > 0,
+  [
+    afectadosPrecioSeleccion.length,
+    precioData.precioEfectivo,
+    precioData.precioLista,
+    selectedPrecioObjetivo,
+  ]
+);
 
   
   // Calcular ganancia
@@ -1025,6 +1168,76 @@ const handleGuardarCargaPrenda = async () => {
 
   resetCargaPrendaForm();
   setShowCargaPrendaForm(false);
+  setInventario(await leerHoja("Inventario"));
+};
+
+const handleGuardarPrecios = async () => {
+  if (!puedeGuardarPrecios || !selectedPrecioObjetivo?.value) return;
+
+  setGuardandoPrecios(true);
+
+  const fecha = new Date(precioData.fecha);
+  const meses = [
+    "ENERO",
+    "FEBRERO",
+    "MARZO",
+    "ABRIL",
+    "MAYO",
+    "JUNIO",
+    "JULIO",
+    "AGOSTO",
+    "SEPTIEMBRE",
+    "OCTUBRE",
+    "NOVIEMBRE",
+    "DICIEMBRE",
+  ];
+  const fechaFormateada = formatearFecha(precioData.fecha);
+  const referencia =
+    normalizarTexto(precioData.referencia) || "ACTUALIZACION PRECIOS";
+  const precioEfectivo = parseNumero(precioData.precioEfectivo);
+  const precioLista = parseNumero(precioData.precioLista);
+
+  let filasGuardadas = 0;
+
+  for (const item of afectadosPrecioSeleccion) {
+    const payload = {
+      TEMPORADA: referencia,
+      FECHA: fechaFormateada,
+      DIA: fecha.getDate(),
+      MES: meses[fecha.getMonth()],
+      "CÓDIGO": item.codigo,
+      CODIGO: item.codigo,
+      PRODUCTO: item.producto,
+      TALLE: item.talle,
+      Talle: item.talle,
+      COLOR: item.color,
+      Color: item.color,
+      ENTRADAS: 0,
+      Entradas: 0,
+      "COSTO U.": item.costoActual,
+      "Precio Efectivo": precioEfectivo,
+      "PRECIO EFECTIVO": precioEfectivo,
+      "Precio lista": precioLista,
+      "PRECIO LISTA": precioLista,
+    };
+
+    const result = await agregarFila("COSTOS", payload);
+
+    if (!result?.success) {
+      alert(
+        filasGuardadas > 0
+          ? `Se actualizaron ${filasGuardadas} variantes antes de encontrar un error.`
+          : "No se pudieron guardar los nuevos precios."
+      );
+      setGuardandoPrecios(false);
+      return;
+    }
+
+    filasGuardadas += 1;
+  }
+
+  resetModificarPreciosForm();
+  setShowModificarPreciosForm(false);
   setInventario(await leerHoja("Inventario"));
 };
 const handleGuardarEdicion = async () => {
@@ -1353,6 +1566,10 @@ const handleGuardarEdicion = async () => {
               resetCargaPrendaForm();
               setShowCargaPrendaForm(true);
             }}
+            onOpenModificarPrecios={() => {
+              resetModificarPreciosForm();
+              setShowModificarPreciosForm(true);
+            }}
             onResetFiltros={() => {
               setInvSearch("");
               setInvTalle("");
@@ -1494,6 +1711,38 @@ const handleGuardarEdicion = async () => {
             setShowCargaProductoDrop={setShowCargaProductoDrop}
             showCargaProductoDrop={showCargaProductoDrop}
             variantesCargaResueltas={variantesCargaResueltas}
+          />
+        )}
+        {showModificarPreciosForm && (
+          <ModificarPreciosModal
+            afectadosPrecioSeleccion={afectadosPrecioSeleccion}
+            alcancePrecio={alcancePrecio}
+            guardandoPrecios={guardandoPrecios}
+            inp={inp}
+            lbl={lbl}
+            objetivosPrecioFiltrados={objetivosPrecioFiltrados}
+            onAlcancePrecioChange={handleAlcancePrecioChange}
+            onClose={() => {
+              resetModificarPreciosForm();
+              setShowModificarPreciosForm(false);
+            }}
+            onGuardarPrecios={handleGuardarPrecios}
+            onPrecioDataChange={(key, value) =>
+              setPrecioData((prev) => ({ ...prev, [key]: value }))
+            }
+            onSearchPrecioObjetivoChange={(value) => {
+              setSearchPrecioObjetivo(value);
+              setShowPrecioObjetivoDrop(true);
+              setSelectedPrecioObjetivo(null);
+            }}
+            puedeGuardarPrecios={puedeGuardarPrecios}
+            precioData={precioData}
+            searchPrecioObjetivo={searchPrecioObjetivo}
+            selectedPrecioObjetivo={selectedPrecioObjetivo}
+            setSearchPrecioObjetivo={setSearchPrecioObjetivo}
+            setSelectedPrecioObjetivo={setSelectedPrecioObjetivo}
+            setShowPrecioObjetivoDrop={setShowPrecioObjetivoDrop}
+            showPrecioObjetivoDrop={showPrecioObjetivoDrop}
           />
         )}
 {/* MODAL edicion */}

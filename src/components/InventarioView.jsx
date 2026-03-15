@@ -18,6 +18,7 @@ const InventarioView = ({
   onInvSearchChange,
   onInvTalleChange,
   onOpenCargaPrenda,
+  onOpenModificarPrecios,
   onResetFiltros,
   onShowSinStockChange,
   parseNumero,
@@ -196,6 +197,21 @@ const InventarioView = ({
           }}
         >
           + Cargar Prenda
+        </button>
+        <button
+          onClick={onOpenModificarPrecios}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "6px",
+            border: "none",
+            background: "#3498db",
+            color: "#fff",
+            fontWeight: "600",
+            cursor: "pointer",
+            fontSize: "0.82em",
+          }}
+        >
+          Modificar precios
         </button>
       </div>
     </div>
