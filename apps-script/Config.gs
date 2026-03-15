@@ -1,5 +1,5 @@
 const SHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
-const APPS_SCRIPT_VERSION = "amber-test-2026-03-15-02";
+const APPS_SCRIPT_VERSION = "amber-test-2026-03-15-03";
 
 const SHEET_NAMES = Object.freeze({
   VENTAS: "Ventas",

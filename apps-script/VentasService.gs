@@ -62,7 +62,6 @@ function normalizeVentaRowData_(rowData) {
 function agregarVenta_(sheet, rowData) {
   const normalizedRowData = normalizeVentaRowData_(rowData);
   const result = appendObjectRow_(sheet, normalizedRowData);
-  ensureVentasCalculatedColumns_(sheet, result.rowNumber, normalizedRowData, result.headers);
 
   return successResponse_({
     mensaje: "Fila agregada",
@@ -72,18 +71,36 @@ function agregarVenta_(sheet, rowData) {
 
 function actualizarVenta_(sheet, rowNumber, rowData) {
   const normalizedRowData = normalizeVentaRowData_(rowData);
-  const writeResult = mergeRowDataIntoExistingRow_(
+  mergeRowDataIntoExistingRow_(
     sheet,
     rowNumber,
     normalizedRowData,
     VENTAS_EDITABLE_COLUMNS.concat(VENTAS_FORMULA_COLUMNS)
   );
-  ensureVentasCalculatedColumns_(sheet, rowNumber, normalizedRowData, writeResult.headers);
 
   return successResponse_({
     mensaje: "Fila actualizada",
     rowNumber: rowNumber,
   });
+}
+
+function congelarVentasHistoricas() {
+  const sheet = getSheetOrThrow_(SHEET_NAMES.VENTAS);
+  const headers = getHeaders_(sheet);
+  const formulaColumnIndexes = getFormulaColumnIndexes_(headers, VENTAS_FORMULA_COLUMNS);
+  const totalRows = sheet.getLastRow() - 1;
+
+  if (totalRows <= 0 || !formulaColumnIndexes.length) {
+    return "No hay filas para congelar en Ventas.";
+  }
+
+  formulaColumnIndexes.forEach(function (columnIndex) {
+    const range = sheet.getRange(2, columnIndex, totalRows, 1);
+    range.setValues(range.getValues());
+  });
+
+  SpreadsheetApp.flush();
+  return "Ventas historicas congeladas correctamente.";
 }
 
 function ensureVentasCalculatedColumns_(sheet, rowNumber, rowData, headers) {

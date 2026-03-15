@@ -41,6 +41,8 @@
 - La app ahora tolera alias de headers como `P. Efectivo` y `P. Lista` al leer precios y costo desde `Inventario`.
 - `Inventario` ahora suma un modal `Modificar precios` que permite actualizar precios por tipo o por producto especifico, creando nuevas filas historicas en `COSTOS` con `ENTRADAS = 0`.
 - `Modificar precios` ahora diferencia entre `Por producto` y `Por producto especifico`, permite excluir variantes puntuales del lote y sumar un nuevo `Costo Unitario` al cambio de precios.
+- El backend modular de `Ventas` deja de reinyectar formulas en columnas monetarias, para que las ventas nuevas y editadas conserven sus importes historicos.
+- Se agrego la funcion `congelarVentasHistoricas()` en Apps Script para fijar como valores las ventas viejas que aun tengan formulas activas.
 
 ## Proximo paso sugerido
 
