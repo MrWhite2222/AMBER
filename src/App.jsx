@@ -1480,20 +1480,21 @@ const handleGuardarEdicion = async () => {
   delete ventaActualizada["C\u00C3\u0192\u00C2\u00B3digo"];
 
   const ventaActualizadaLimpia = {
-    "Fecha": ventaActualizada["Fecha"],
-    [codigoBuscadorHeader]: ventaActualizada[codigoBuscadorHeader],
-    [codigoHeader]: ventaActualizada[codigoHeader],
-    "Talle": ventaActualizada["Talle"],
-    "Color": ventaActualizada["Color"],
-    "Tipo de producto": ventaActualizada["Tipo de producto"],
-    "Cantidad": ventaActualizada["Cantidad"],
-    "Medio de pago": ventaActualizada["Medio de pago"],
-    "Precio venta": ventaActualizada["Precio venta"],
-    "Costo U.": ventaActualizada["Costo U."],
-    "Impuesto": ventaActualizada["Impuesto"],
-    "Ganancia Neta": ventaActualizada["Ganancia Neta"],
-    "Ganancias con recompra": ventaActualizada["Ganancias con recompra"],
-    "Estado": ventaActualizada["Estado"] ?? "",
+    Fecha: ventaEditando["Fecha"],
+    [codigoBuscadorHeader]:
+      `${productoActualizado} ${talleActualizado} ${colorActualizado} | ${codigoActualizado}`.trim(),
+    [codigoHeader]: codigoActualizado,
+    Talle: talleActualizado,
+    Color: colorActualizado,
+    "Tipo de producto": productoActualizado,
+    Cantidad: cantidad,
+    "Medio de pago": medioPago,
+    "Precio venta": precio,
+    "Costo U.": costo,
+    Impuesto: iva,
+    "Ganancia Neta": gananciaNeta,
+    "Ganancias con recompra": gananciaRecompra,
+    Estado: ventaEditando["Estado"] ?? "",
   };
 
   const updateResult = await actualizarFila("Ventas", rowNumber, ventaActualizadaLimpia);
