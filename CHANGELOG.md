@@ -40,6 +40,7 @@
 - Si `Inventario` ya usa `ARRAYFORMULA`, el backend modular ahora escribe solo el `Codigo` en la fila nueva y deja que el Sheet complete el resto.
 - La app ahora tolera alias de headers como `P. Efectivo` y `P. Lista` al leer precios y costo desde `Inventario`.
 - `Inventario` ahora suma un modal `Modificar precios` que permite actualizar precios por tipo o por producto especifico, creando nuevas filas historicas en `COSTOS` con `ENTRADAS = 0`.
+- `Modificar precios` ahora diferencia entre `Por producto` y `Por producto especifico`, permite excluir variantes puntuales del lote y sumar un nuevo `Costo Unitario` al cambio de precios.
 
 ## Proximo paso sugerido
 

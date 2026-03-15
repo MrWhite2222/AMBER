@@ -6,6 +6,8 @@ const formatoMonto = (valor) =>
 const ModificarPreciosModal = ({
   afectadosPrecioSeleccion,
   alcancePrecio,
+  coincidenciasPrecioSeleccion,
+  codigosPrecioExcluidos,
   guardandoPrecios,
   inp,
   lbl,
@@ -14,19 +16,26 @@ const ModificarPreciosModal = ({
   onClose,
   onGuardarPrecios,
   onPrecioDataChange,
+  onSelectPrecioObjetivo,
   onSearchPrecioObjetivoChange,
+  onToggleCodigoPrecioExcluido,
   puedeGuardarPrecios,
   precioData,
   searchPrecioObjetivo,
   selectedPrecioObjetivo,
-  setSelectedPrecioObjetivo,
-  setSearchPrecioObjetivo,
   setShowPrecioObjetivoDrop,
   showPrecioObjetivoDrop,
 }) => {
   const cantidadProductos = new Set(
-    afectadosPrecioSeleccion.map((item) => String(item?.PRODUCTO ?? "").trim())
+    afectadosPrecioSeleccion.map((item) => String(item?.producto ?? "").trim())
   ).size;
+  const costos = Array.from(
+    new Set(
+      afectadosPrecioSeleccion
+        .map((item) => Number(item?.costoActual ?? 0))
+        .filter((valor) => Number.isFinite(valor))
+    )
+  ).sort((a, b) => a - b);
   const preciosEfectivo = Array.from(
     new Set(
       afectadosPrecioSeleccion
@@ -50,6 +59,8 @@ const ModificarPreciosModal = ({
     )}`;
   };
 
+  const esProductoEspecifico = alcancePrecio === "producto_especifico";
+
   return (
     <div
       style={{
@@ -67,7 +78,7 @@ const ModificarPreciosModal = ({
           background: "#1a1a2e",
           borderRadius: "12px",
           padding: "25px",
-          maxWidth: "920px",
+          maxWidth: "960px",
           width: "94%",
           border: "1px solid #f39c12",
           maxHeight: "92vh",
@@ -115,35 +126,14 @@ const ModificarPreciosModal = ({
             }}
           >
             <button
-              onClick={() => onAlcancePrecioChange("tipo")}
+              onClick={() => onAlcancePrecioChange("producto")}
               style={{
                 padding: "10px 14px",
                 borderRadius: "10px",
                 border: "1px solid rgba(52,152,219,0.45)",
                 background:
-                  alcancePrecio === "tipo"
-                    ? "rgba(52,152,219,0.22)"
-                    : "rgba(255,255,255,0.05)",
-                color: "#fff",
-                fontWeight: "600",
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              Por tipo
-              <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: "4px" }}>
-                Ej: todas las CALZAS
-              </div>
-            </button>
-            <button
-              onClick={() => onAlcancePrecioChange("producto")}
-              style={{
-                padding: "10px 14px",
-                borderRadius: "10px",
-                border: "1px solid rgba(155,89,182,0.45)",
-                background:
                   alcancePrecio === "producto"
-                    ? "rgba(155,89,182,0.22)"
+                    ? "rgba(52,152,219,0.22)"
                     : "rgba(255,255,255,0.05)",
                 color: "#fff",
                 fontWeight: "600",
@@ -153,7 +143,28 @@ const ModificarPreciosModal = ({
             >
               Por producto
               <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: "4px" }}>
-                Ej: solo CALZA ALMA
+                Ej: todas las variantes de CALZA ALMA
+              </div>
+            </button>
+            <button
+              onClick={() => onAlcancePrecioChange("producto_especifico")}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "10px",
+                border: "1px solid rgba(155,89,182,0.45)",
+                background:
+                  alcancePrecio === "producto_especifico"
+                    ? "rgba(155,89,182,0.22)"
+                    : "rgba(255,255,255,0.05)",
+                color: "#fff",
+                fontWeight: "600",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              Por producto especifico
+              <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: "4px" }}>
+                Ej: CALZA ALMA M NEGRO | 10752MN
               </div>
             </button>
           </div>
@@ -188,16 +199,16 @@ const ModificarPreciosModal = ({
 
           <div>
             <label style={lbl}>
-              {alcancePrecio === "tipo"
-                ? "Buscar tipo de producto"
-                : "Buscar producto especifico"}
+              {esProductoEspecifico
+                ? "Buscar producto especifico o codigo"
+                : "Buscar producto"}
             </label>
             <div style={{ position: "relative" }}>
               <input
                 type="text"
                 placeholder={
-                  alcancePrecio === "tipo"
-                    ? "Ej: CALZA"
+                  esProductoEspecifico
+                    ? "Ej: CALZA ALMA M NEGRO o 10752MN"
                     : "Ej: CALZA ALMA"
                 }
                 value={searchPrecioObjetivo}
@@ -224,11 +235,7 @@ const ModificarPreciosModal = ({
                   {objetivosPrecioFiltrados.map((objetivo) => (
                     <div
                       key={objetivo.id}
-                      onClick={() => {
-                        setSelectedPrecioObjetivo(objetivo);
-                        setSearchPrecioObjetivo(objetivo.label);
-                        setShowPrecioObjetivoDrop(false);
-                      }}
+                      onClick={() => onSelectPrecioObjetivo(objetivo)}
                       style={{
                         padding: "10px 12px",
                         cursor: "pointer",
@@ -239,7 +246,9 @@ const ModificarPreciosModal = ({
                     >
                       <div style={{ fontWeight: "600" }}>{objetivo.label}</div>
                       <div style={{ fontSize: "0.82em", color: "#bbb" }}>
-                        {objetivo.count} variantes alcanzadas
+                        {esProductoEspecifico
+                          ? objetivo.subLabel
+                          : `${objetivo.count} variantes encontradas`}
                       </div>
                     </div>
                   ))}
@@ -268,7 +277,7 @@ const ModificarPreciosModal = ({
               >
                 <div>
                   <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.78em" }}>
-                    Variantes alcanzadas
+                    Variantes a modificar
                   </p>
                   <p style={{ margin: 0, color: "#3498db", fontWeight: "700" }}>
                     {afectadosPrecioSeleccion.length}
@@ -280,6 +289,14 @@ const ModificarPreciosModal = ({
                   </p>
                   <p style={{ margin: 0, color: "#9b59b6", fontWeight: "700" }}>
                     {cantidadProductos}
+                  </p>
+                </div>
+                <div>
+                  <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.78em" }}>
+                    Costo actual
+                  </p>
+                  <p style={{ margin: 0, color: "#95a5a6", fontWeight: "700" }}>
+                    {rangoTexto(costos)}
                   </p>
                 </div>
                 <div>
@@ -302,42 +319,68 @@ const ModificarPreciosModal = ({
 
               <div>
                 <p style={{ margin: "0 0 8px", color: "#fff", fontSize: "0.82em" }}>
-                  Codigos alcanzados
+                  {esProductoEspecifico
+                    ? "Prenda seleccionada"
+                    : "Variantes encontradas"}
                 </p>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {afectadosPrecioSeleccion.slice(0, 10).map((item) => (
-                    <span
-                      key={item.codigo}
-                      style={{
-                        padding: "5px 8px",
-                        borderRadius: "999px",
-                        background: "rgba(255,255,255,0.08)",
-                        color: "#fff",
-                        fontSize: "0.76em",
-                      }}
-                    >
-                      {item.codigo}
-                    </span>
-                  ))}
-                  {afectadosPrecioSeleccion.length > 10 && (
-                    <span
-                      style={{
-                        padding: "5px 8px",
-                        borderRadius: "999px",
-                        background: "rgba(255,255,255,0.08)",
-                        color: "#bbb",
-                        fontSize: "0.76em",
-                      }}
-                    >
-                      +{afectadosPrecioSeleccion.length - 10} mas
-                    </span>
-                  )}
+                <div style={{ display: "grid", gap: "8px" }}>
+                  {coincidenciasPrecioSeleccion.map((item) => {
+                    const excluido = codigosPrecioExcluidos.includes(item.codigo);
+                    const activo = !excluido;
+
+                    return (
+                      <div
+                        key={item.codigo}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: esProductoEspecifico
+                            ? "1fr auto"
+                            : "1fr auto",
+                          gap: "10px",
+                          alignItems: "center",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          background: activo
+                            ? "rgba(255,255,255,0.06)"
+                            : "rgba(231,76,60,0.12)",
+                          border: `1px solid ${
+                            activo
+                              ? "rgba(255,255,255,0.08)"
+                              : "rgba(231,76,60,0.24)"
+                          }`,
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: "600", color: "#fff" }}>
+                            {item.producto} {item.talle} {item.color}
+                          </div>
+                          <div style={{ fontSize: "0.8em", color: "#bbb" }}>
+                            {item.codigo} · Costo {formatoMonto(item.costoActual)} ·
+                            Efectivo {formatoMonto(item.precioEfectivoActual)} · Lista{" "}
+                            {formatoMonto(item.precioListaActual)}
+                          </div>
+                        </div>
+                        {!esProductoEspecifico && (
+                          <button
+                            onClick={() => onToggleCodigoPrecioExcluido(item.codigo)}
+                            style={{
+                              padding: "7px 12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              background: activo
+                                ? "rgba(231,76,60,0.18)"
+                                : "rgba(46,204,113,0.22)",
+                              color: activo ? "#e74c3c" : "#2ecc71",
+                              fontWeight: "700",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {activo ? "Quitar" : "Incluir"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -346,10 +389,21 @@ const ModificarPreciosModal = ({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "1fr 1fr 1fr",
               gap: "12px",
             }}
           >
+            <div>
+              <label style={lbl}>Nuevo Costo Unitario</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Opcional"
+                value={precioData.costoUnitario}
+                onChange={(e) => onPrecioDataChange("costoUnitario", e.target.value)}
+                style={inp}
+              />
+            </div>
             <div>
               <label style={lbl}>Nuevo Precio Efectivo</label>
               <input
