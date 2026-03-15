@@ -5,6 +5,7 @@ const EditarVentaModal = ({
   editProductosFiltrados,
   editSearchProducto,
   editSelectedProducto,
+  productosConflictivosEdicion,
   guardandoEdicion,
   handleGuardarEdicion,
   inp,
@@ -79,6 +80,11 @@ const EditarVentaModal = ({
 
         <div>
           <label style={lbl}>Buscar Producto</label>
+          <p style={{ margin: "4px 0 8px", color: "#bbb", fontSize: "0.78em" }}>
+            {productosConflictivosEdicion > 0
+              ? `${productosConflictivosEdicion} prendas del inventario tienen datos incompletos para reemplazo.`
+              : "Busca por nombre o codigo para reemplazar la venta."}
+          </p>
           <div style={{ position: "relative" }}>
             <input
               type="text"
@@ -129,6 +135,17 @@ const EditarVentaModal = ({
                         "es-AR"
                       )}
                     </div>
+                    {p._editWarnings?.length > 0 && (
+                      <div
+                        style={{
+                          marginTop: "4px",
+                          fontSize: "0.75em",
+                          color: "#ff9f43",
+                        }}
+                      >
+                        Incompleto para reemplazo: {p._editWarnings.join(", ")}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -160,6 +177,19 @@ const EditarVentaModal = ({
               {editSelectedProducto["TALLE"]} · Color:{" "}
               {editSelectedProducto["COLOR"]}
             </p>
+            {editSelectedProducto._editWarnings?.length > 0 && (
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  color: "#ff9f43",
+                  fontSize: "0.78em",
+                  lineHeight: 1.4,
+                }}
+              >
+                Esta prenda no esta lista para reemplazo. Faltan:{" "}
+                {editSelectedProducto._editWarnings.join(", ")}.
+              </p>
+            )}
           </div>
         )}
 
@@ -243,19 +273,30 @@ const EditarVentaModal = ({
         </button>
         <button
           onClick={handleGuardarEdicion}
-          disabled={!editSelectedProducto || !editFormData.precioVenta || guardandoEdicion}
+          disabled={
+            !editSelectedProducto ||
+            !editFormData.precioVenta ||
+            guardandoEdicion ||
+            editSelectedProducto?._editWarnings?.length > 0
+          }
           style={{
             padding: "12px",
             borderRadius: "8px",
             border: "none",
             background:
-              editSelectedProducto && editFormData.precioVenta && !guardandoEdicion
+              editSelectedProducto &&
+              editFormData.precioVenta &&
+              !guardandoEdicion &&
+              !(editSelectedProducto?._editWarnings?.length > 0)
                 ? "#2ecc71"
                 : "rgba(46,204,113,0.3)",
             color: "#fff",
             fontWeight: "600",
             cursor:
-              editSelectedProducto && editFormData.precioVenta && !guardandoEdicion
+              editSelectedProducto &&
+              editFormData.precioVenta &&
+              !guardandoEdicion &&
+              !(editSelectedProducto?._editWarnings?.length > 0)
                 ? "pointer"
                 : "not-allowed",
           }}

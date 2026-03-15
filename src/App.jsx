@@ -155,6 +155,47 @@ const AmberApp = () => {
   const getInventarioColor = (item) =>
     normalizarTexto(item?.["COLOR"] ?? item?.["Color"] ?? "");
 
+  const getProblemasProductoEdicion = (producto) => {
+    const problemas = [];
+
+    if (!getInventarioCodigo(producto)) problemas.push("codigo");
+    if (!getInventarioProducto(producto)) problemas.push("producto");
+    if (!getInventarioTalle(producto)) problemas.push("talle");
+    if (!getInventarioColor(producto)) problemas.push("color");
+    if (getProductoCosto(producto) <= 0) problemas.push("costo");
+    if (getProductoPrecioEfectivo(producto) <= 0) problemas.push("precio efectivo");
+    if (getProductoPrecioLista(producto) <= 0) problemas.push("precio lista");
+
+    return problemas;
+  };
+
+  const guardarDiagnosticoEdicion = (diagnostico) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        "amber_edit_debug",
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          ...diagnostico,
+        })
+      );
+    }
+
+    console.error("Amber edit debug", diagnostico);
+  };
+
+  const guardarReporteProblemasEdicion = (productos) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        "amber_edit_inventory_issues",
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          total: productos.length,
+          productos,
+        })
+      );
+    }
+  };
+
   const getVentaMatchKey = (venta) =>
     [
       normalizarTexto(venta?.["Fecha"]),
@@ -235,6 +276,7 @@ const abrirEdicion = (venta) => {
     "PRECIO U. LISTA":
       getProductoPrecioLista(productoInv) || venta["Precio venta"] || 0,
   };
+  productoBase._editWarnings = getProblemasProductoEdicion(productoBase);
 
   setVentaEditando(venta);
   setEditSelectedProducto(productoBase);
@@ -664,8 +706,39 @@ const editProductosFiltrados = useMemo(() => {
           .includes(editSearchProducto.toUpperCase()) ||
         getInventarioCodigo(p).toUpperCase().includes(editSearchProducto.toUpperCase())
     )
+    .map((p) => ({
+      ...p,
+      _editWarnings: getProblemasProductoEdicion(p),
+    }))
     .slice(0, 8);
 }, [editSearchProducto, inventarioUnico]);
+
+const productosConflictivosEdicion = useMemo(() => {
+  return inventarioUnico
+    .map((item) => ({
+      ...item,
+      _editWarnings: getProblemasProductoEdicion(item),
+    }))
+    .filter((item) => item._editWarnings.length > 0)
+    .map((item) => ({
+      codigo: getInventarioCodigo(item),
+      producto: getInventarioProducto(item),
+      talle: getInventarioTalle(item),
+      color: getInventarioColor(item),
+      problemas: item._editWarnings,
+    }))
+    .sort((a, b) =>
+      `${a.producto} ${a.talle} ${a.color}`.localeCompare(
+        `${b.producto} ${b.talle} ${b.color}`,
+        "es",
+        { sensitivity: "base" }
+      )
+    );
+}, [inventarioUnico]);
+
+useEffect(() => {
+  guardarReporteProblemasEdicion(productosConflictivosEdicion);
+}, [productosConflictivosEdicion]);
 
 const productosCargaFiltrados = useMemo(() => {
   if (!searchCargaProducto) return [];
@@ -1296,9 +1369,33 @@ const handleGuardarPrecios = async () => {
 const handleGuardarEdicion = async () => {
   if (!ventaEditando || !editSelectedProducto || !editFormData.precioVenta) return;
   const rowNumber = await resolverRowNumberVenta(ventaEditando);
+  const problemasProducto = getProblemasProductoEdicion(editSelectedProducto);
 
   if (!rowNumber) {
     alert("No se puede editar esta venta todavía. Esperá unos segundos a que se sincronice con Google Sheets.");
+    return;
+  }
+
+  if (problemasProducto.length) {
+    guardarDiagnosticoEdicion({
+      fase: "validacion_previa",
+      ventaOriginal: {
+        rowNumber,
+        codigo: getVentaCodigo(ventaEditando),
+        producto: ventaEditando["Tipo de producto"],
+      },
+      reemplazo: {
+        codigo: getInventarioCodigo(editSelectedProducto),
+        producto: getInventarioProducto(editSelectedProducto),
+        talle: getInventarioTalle(editSelectedProducto),
+        color: getInventarioColor(editSelectedProducto),
+      },
+      problemasProducto,
+    });
+
+    alert(
+      `No se puede usar esta prenda para reemplazo porque en Inventario faltan: ${problemasProducto.join(", ")}.`
+    );
     return;
   }
 
@@ -1373,9 +1470,27 @@ const handleGuardarEdicion = async () => {
   const updateResult = await actualizarFila("Ventas", rowNumber, ventaActualizada);
 
   if (!updateResult?.success) {
+    guardarDiagnosticoEdicion({
+      fase: "update_error",
+      ventaOriginal: {
+        rowNumber,
+        codigo: getVentaCodigo(ventaEditando),
+        producto: ventaEditando["Tipo de producto"],
+      },
+      reemplazo: {
+        codigo: codigoActualizado,
+        producto: getInventarioProducto(editSelectedProducto),
+        talle: getInventarioTalle(editSelectedProducto),
+        color: getInventarioColor(editSelectedProducto),
+      },
+      problemasProducto,
+      payload: ventaActualizada,
+      error: updateResult?.error ?? "Error desconocido",
+    });
+
     alert(
       updateResult?.error
-        ? `Error al actualizar la venta: ${updateResult.error}`
+        ? `Error al actualizar la venta: ${updateResult.error}\nProducto: ${getInventarioProducto(editSelectedProducto)} | ${codigoActualizado}\nDiagnostico guardado en amber_edit_debug.`
         : "Error al actualizar la venta."
     );
     setGuardandoEdicion(false);
@@ -1819,6 +1934,7 @@ const handleGuardarEdicion = async () => {
     editProductosFiltrados={editProductosFiltrados}
     editSearchProducto={editSearchProducto}
     editSelectedProducto={editSelectedProducto}
+    productosConflictivosEdicion={productosConflictivosEdicion.length}
     guardandoEdicion={guardandoEdicion}
     handleGuardarEdicion={handleGuardarEdicion}
     inp={inp}

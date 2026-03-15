@@ -44,6 +44,7 @@
 - El backend modular de `Ventas` deja de reinyectar formulas en columnas monetarias, para que las ventas nuevas y editadas conserven sus importes historicos.
 - Se agrego la funcion `congelarVentasHistoricas()` en Apps Script para fijar como valores las ventas viejas que aun tengan formulas activas.
 - La actualizacion de `Ventas` ahora escribe campo por campo en Apps Script y el frontend muestra el error real del backend si una edicion vuelve a fallar.
+- La edicion de ventas ahora detecta prendas de `Inventario` con datos incompletos, las marca en el buscador y guarda un reporte local para diagnostico rapido.
 
 ## Proximo paso sugerido
 
