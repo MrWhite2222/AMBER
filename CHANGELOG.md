@@ -43,6 +43,7 @@
 - `Modificar precios` ahora diferencia entre `Por producto` y `Por producto especifico`, permite excluir variantes puntuales del lote y sumar un nuevo `Costo Unitario` al cambio de precios.
 - El backend modular de `Ventas` deja de reinyectar formulas en columnas monetarias, para que las ventas nuevas y editadas conserven sus importes historicos.
 - Se agrego la funcion `congelarVentasHistoricas()` en Apps Script para fijar como valores las ventas viejas que aun tengan formulas activas.
+- La actualizacion de `Ventas` ahora escribe campo por campo en Apps Script y el frontend muestra el error real del backend si una edicion vuelve a fallar.
 
 ## Proximo paso sugerido
 

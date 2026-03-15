@@ -71,7 +71,7 @@ function agregarVenta_(sheet, rowData) {
 
 function actualizarVenta_(sheet, rowNumber, rowData) {
   const normalizedRowData = normalizeVentaRowData_(rowData);
-  mergeRowDataIntoExistingRow_(
+  updateRowFields_(
     sheet,
     rowNumber,
     normalizedRowData,

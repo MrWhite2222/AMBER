@@ -50,10 +50,9 @@ export const actualizarFila = async (nombreHoja, rowNumber, fila) => {
         fila,
       }),
     });
-    const result = await response.json();
-    return result.success;
+    return await response.json();
   } catch (error) {
     console.error("Error actualizando fila:", error);
-    return false;
+    return { success: false, error: String(error) };
   }
 };

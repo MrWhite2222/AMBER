@@ -1363,10 +1363,14 @@ const handleGuardarEdicion = async () => {
     })
   );
 
-  const ok = await actualizarFila("Ventas", rowNumber, ventaActualizada);
+  const updateResult = await actualizarFila("Ventas", rowNumber, ventaActualizada);
 
-  if (!ok) {
-    alert("Error al actualizar la venta.");
+  if (!updateResult?.success) {
+    alert(
+      updateResult?.error
+        ? `Error al actualizar la venta: ${updateResult.error}`
+        : "Error al actualizar la venta."
+    );
     setGuardandoEdicion(false);
     return;
   }
