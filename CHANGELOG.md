@@ -45,6 +45,7 @@
 - Se agrego la funcion `congelarVentasHistoricas()` en Apps Script para fijar como valores las ventas viejas que aun tengan formulas activas.
 - La actualizacion de `Ventas` ahora escribe campo por campo en Apps Script y el frontend muestra el error real del backend si una edicion vuelve a fallar.
 - La edicion de ventas ahora detecta prendas de `Inventario` con datos incompletos, las marca en el buscador y guarda un reporte local para diagnostico rapido.
+- La edicion de ventas ahora fuerza los headers reales `Codigo` y `Codigo (Buscador)` antes de guardar, evitando fallos intermitentes de validacion en Apps Script para ciertos reemplazos.
 
 ## Proximo paso sugerido
 

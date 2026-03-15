@@ -1433,6 +1433,11 @@ const handleGuardarEdicion = async () => {
 
   const gananciaRecompra = (precio - costo - iva) * cantidad;
   const codigoActualizado = getInventarioCodigo(editSelectedProducto);
+  const productoActualizado = getInventarioProducto(editSelectedProducto);
+  const talleActualizado = getInventarioTalle(editSelectedProducto);
+  const colorActualizado = getInventarioColor(editSelectedProducto);
+  const codigoHeader = "C\u00F3digo";
+  const codigoBuscadorHeader = "C\u00F3digo (Buscador)";
 
   const ventaActualizada = {
     "Fecha": ventaEditando["Fecha"], // fija
@@ -1466,6 +1471,19 @@ const handleGuardarEdicion = async () => {
     "CÃ³digo": codigoActualizado,
     "Estado": ventaEditando["Estado"] ?? "",
   });
+
+  // Fuerza los headers reales del Sheet para evitar fallos de validacion por claves rotas.
+  ventaActualizada[codigoBuscadorHeader] =
+    `${productoActualizado} ${talleActualizado} ${colorActualizado} | ${codigoActualizado}`.trim();
+  ventaActualizada[codigoHeader] = codigoActualizado;
+  ventaActualizada["Talle"] = talleActualizado;
+  ventaActualizada["Color"] = colorActualizado;
+  ventaActualizada["Tipo de producto"] = productoActualizado;
+  ventaActualizada["Estado"] = ventaEditando["Estado"] ?? "";
+  delete ventaActualizada["C\u00C3\u00B3digo (Buscador)"];
+  delete ventaActualizada["C\u00C3\u00B3digo"];
+  delete ventaActualizada["C\u00C3\u0192\u00C2\u00B3digo (Buscador)"];
+  delete ventaActualizada["C\u00C3\u0192\u00C2\u00B3digo"];
 
   const updateResult = await actualizarFila("Ventas", rowNumber, ventaActualizada);
 
