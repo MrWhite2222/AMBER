@@ -1,8 +1,9 @@
 const statusStyles = {
-  ok: { label: "Codigo encontrado", color: "#2ecc71", background: "rgba(46,204,113,0.12)" },
+  ok: { label: "Lista para guardar", color: "#2ecc71", background: "rgba(46,204,113,0.12)" },
   incompleta: { label: "Completar fila", color: "#f39c12", background: "rgba(243,156,18,0.12)" },
-  duplicada: { label: "Variante duplicada", color: "#e67e22", background: "rgba(230,126,34,0.12)" },
+  duplicada: { label: "Codigo o variante duplicada", color: "#e67e22", background: "rgba(230,126,34,0.12)" },
   sin_match: { label: "Sin codigo", color: "#e74c3c", background: "rgba(231,76,60,0.12)" },
+  codigo_existente: { label: "Codigo ya existe", color: "#e74c3c", background: "rgba(231,76,60,0.12)" },
 };
 
 const CargarPrendaModal = ({
@@ -10,11 +11,13 @@ const CargarPrendaModal = ({
   guardandoPrenda,
   inp,
   lbl,
+  modoCargaPrenda,
   onAddVariante,
   onCargaPrendaDataChange,
   onCargaVarianteChange,
   onClose,
   onGuardarCargaPrenda,
+  onModoCargaPrendaChange,
   onRemoveVariante,
   onSearchProductoChange,
   parseNumero,
@@ -27,7 +30,15 @@ const CargarPrendaModal = ({
   setShowCargaProductoDrop,
   showCargaProductoDrop,
   variantesCargaResueltas,
-}) => (
+}) => {
+  const modoEsNuevo = modoCargaPrenda === "nuevo";
+  const codigoBase =
+    selectedCargaProducto?.["C\u00D3DIGO"] ??
+    selectedCargaProducto?.["CÃ“DIGO"] ??
+    selectedCargaProducto?.CODIGO ??
+    "";
+
+  return (
   <div
     style={{
       position: "fixed",
@@ -64,7 +75,9 @@ const CargarPrendaModal = ({
             Cargar Prenda
           </h2>
           <p style={{ margin: "4px 0 0", color: "#999", fontSize: "0.82em" }}>
-            Modo 1: renovacion de stock para productos ya existentes en inventario
+            {modoEsNuevo
+              ? "Modo 2: alta de producto nuevo que todavia no existe en inventario"
+              : "Modo 1: renovacion de stock para productos ya existentes en inventario"}
           </p>
         </div>
         <button
@@ -82,6 +95,57 @@ const CargarPrendaModal = ({
       </div>
 
       <div style={{ display: "grid", gap: "16px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "10px",
+          }}
+        >
+          <button
+            onClick={() => onModoCargaPrendaChange("existente")}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "10px",
+              border: "1px solid rgba(52,152,219,0.45)",
+              background:
+                modoCargaPrenda === "existente"
+                  ? "rgba(52,152,219,0.22)"
+                  : "rgba(255,255,255,0.05)",
+              color: "#fff",
+              fontWeight: "600",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Modo 1
+            <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: "4px" }}>
+              Producto ya existente
+            </div>
+          </button>
+          <button
+            onClick={() => onModoCargaPrendaChange("nuevo")}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "10px",
+              border: "1px solid rgba(155,89,182,0.45)",
+              background:
+                modoCargaPrenda === "nuevo"
+                  ? "rgba(155,89,182,0.22)"
+                  : "rgba(255,255,255,0.05)",
+              color: "#fff",
+              fontWeight: "600",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Modo 2
+            <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: "4px" }}>
+              Producto nuevo
+            </div>
+          </button>
+        </div>
+
         <div
           style={{
             display: "grid",
@@ -111,6 +175,8 @@ const CargarPrendaModal = ({
           </div>
         </div>
 
+        {!modoEsNuevo && (
+        <>
         <div>
           <label style={lbl}>Producto base</label>
           <div style={{ position: "relative" }}>
@@ -194,6 +260,21 @@ const CargarPrendaModal = ({
             </p>
           </div>
         )}
+        </>
+        )}
+
+        {modoEsNuevo && (
+          <div>
+            <label style={lbl}>Tipo de prenda</label>
+            <input
+              type="text"
+              placeholder="Ej: CALZA ALMA"
+              value={cargaPrendaData.productoManual}
+              onChange={(e) => onCargaPrendaDataChange("productoManual", e.target.value)}
+              style={inp}
+            />
+          </div>
+        )}
 
         <div
           style={{
@@ -260,7 +341,9 @@ const CargarPrendaModal = ({
                 Variantes
               </h3>
               <p style={{ margin: "4px 0 0", color: "#999", fontSize: "0.8em" }}>
-                El codigo se resuelve automaticamente por producto + talle + color.
+                {modoEsNuevo
+                  ? "Cada variante necesita su codigo propio y no puede repetir uno ya existente."
+                  : "El codigo se resuelve automaticamente por producto + talle + color."}
               </p>
             </div>
             <button
@@ -289,7 +372,9 @@ const CargarPrendaModal = ({
                   key={index}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr 0.8fr 1.1fr 1fr auto",
+                    gridTemplateColumns: modoEsNuevo
+                      ? "1.1fr 1fr 1fr 0.8fr 1fr auto"
+                      : "1fr 1fr 0.8fr 1.1fr 1fr auto",
                     gap: "10px",
                     alignItems: "end",
                     background: "rgba(0,0,0,0.15)",
@@ -297,52 +382,112 @@ const CargarPrendaModal = ({
                     padding: "12px",
                   }}
                 >
-                  <div>
-                    <label style={lbl}>Talle</label>
-                    <input
-                      type="text"
-                      placeholder="S, M, L..."
-                      value={variante.talle}
-                      onChange={(e) =>
-                        onCargaVarianteChange(index, "talle", e.target.value)
-                      }
-                      style={inp}
-                    />
-                  </div>
-                  <div>
-                    <label style={lbl}>Color</label>
-                    <input
-                      type="text"
-                      placeholder="Negro, Petroleo..."
-                      value={variante.color}
-                      onChange={(e) =>
-                        onCargaVarianteChange(index, "color", e.target.value)
-                      }
-                      style={inp}
-                    />
-                  </div>
-                  <div>
-                    <label style={lbl}>Cantidad</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={variante.cantidad}
-                      onChange={(e) =>
-                        onCargaVarianteChange(index, "cantidad", e.target.value)
-                      }
-                      style={inp}
-                    />
-                  </div>
-                  <div>
-                    <label style={lbl}>Codigo</label>
-                    <input
-                      type="text"
-                      value={variante.codigo}
-                      disabled
-                      placeholder="Se completa solo"
-                      style={{ ...inp, opacity: 0.8 }}
-                    />
-                  </div>
+                  {modoEsNuevo ? (
+                    <div>
+                      <label style={lbl}>Codigo</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: 10752SN"
+                        value={variante.codigo}
+                        onChange={(e) =>
+                          onCargaVarianteChange(index, "codigo", e.target.value)
+                        }
+                        style={inp}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={lbl}>Talle</label>
+                      <input
+                        type="text"
+                        placeholder="S, M, L..."
+                        value={variante.talle}
+                        onChange={(e) =>
+                          onCargaVarianteChange(index, "talle", e.target.value)
+                        }
+                        style={inp}
+                      />
+                    </div>
+                  )}
+                  {modoEsNuevo ? (
+                    <div>
+                      <label style={lbl}>Talle</label>
+                      <input
+                        type="text"
+                        placeholder="S, M, L..."
+                        value={variante.talle}
+                        onChange={(e) =>
+                          onCargaVarianteChange(index, "talle", e.target.value)
+                        }
+                        style={inp}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={lbl}>Color</label>
+                      <input
+                        type="text"
+                        placeholder="Negro, Petroleo..."
+                        value={variante.color}
+                        onChange={(e) =>
+                          onCargaVarianteChange(index, "color", e.target.value)
+                        }
+                        style={inp}
+                      />
+                    </div>
+                  )}
+                  {modoEsNuevo ? (
+                    <div>
+                      <label style={lbl}>Color</label>
+                      <input
+                        type="text"
+                        placeholder="Negro, Petroleo..."
+                        value={variante.color}
+                        onChange={(e) =>
+                          onCargaVarianteChange(index, "color", e.target.value)
+                        }
+                        style={inp}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={lbl}>Cantidad</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={variante.cantidad}
+                        onChange={(e) =>
+                          onCargaVarianteChange(index, "cantidad", e.target.value)
+                        }
+                        style={inp}
+                      />
+                    </div>
+                  )}
+                  {modoEsNuevo ? (
+                    <div>
+                      <label style={lbl}>Cantidad</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={variante.cantidad}
+                        onChange={(e) =>
+                          onCargaVarianteChange(index, "cantidad", e.target.value)
+                        }
+                        style={inp}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={lbl}>Codigo</label>
+                      <input
+                        type="text"
+                        value={variante.codigo}
+                        disabled
+                        placeholder="Se completa solo"
+                        style={{ ...inp, opacity: 0.8 }}
+                      />
+                    </div>
+                  )}
                   <div>
                     <label style={lbl}>Estado</label>
                     <div
@@ -435,6 +580,7 @@ const CargarPrendaModal = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default CargarPrendaModal;

@@ -33,6 +33,8 @@
 - Al guardar una prenda nueva en `COSTOS`, la app vuelve a leer `Inventario` para reflejar el stock sin recargar manualmente.
 - `Cargar Prenda` ahora permite cargar un lote de variantes de una misma prenda, reutilizando temporada y precios comunes.
 - Cada variante resuelve su `Codigo` automaticamente por coincidencia de `Producto` + `Talle` + `Color` contra `Inventario`.
+- `Cargar Prenda` ahora suma un `Modo 2` para dar de alta productos nuevos con nombre de producto comun y codigo manual por variante.
+- En `Modo 2`, la app valida que cada codigo nuevo no exista ya en `Inventario` y que no se repita dentro del mismo lote.
 
 ## Proximo paso sugerido
 
