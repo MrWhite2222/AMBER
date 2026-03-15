@@ -1335,6 +1335,7 @@ const handleGuardarEdicion = async () => {
     precio === 0 ? 0 : Math.round(((precio - iva) * cantidad) * 1000) / 1000;
 
   const gananciaRecompra = (precio - costo - iva) * cantidad;
+  const codigoActualizado = getInventarioCodigo(editSelectedProducto);
 
   const ventaActualizada = {
     "Fecha": ventaEditando["Fecha"], // fija
@@ -1362,6 +1363,12 @@ const handleGuardarEdicion = async () => {
       fecha: ventaEditando["Fecha"],
     })
   );
+
+  Object.assign(ventaActualizada, {
+    "CÃ³digo (Buscador)": `${editSelectedProducto["PRODUCTO"]} ${editSelectedProducto["TALLE"]} ${editSelectedProducto["COLOR"]} | ${codigoActualizado}`.trim(),
+    "CÃ³digo": codigoActualizado,
+    "Estado": ventaEditando["Estado"] ?? "",
+  });
 
   const updateResult = await actualizarFila("Ventas", rowNumber, ventaActualizada);
 
