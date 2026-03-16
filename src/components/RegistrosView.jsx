@@ -1,3 +1,23 @@
+const formatearFechaRegistro = (valor) => {
+  const texto = String(valor ?? "").trim();
+  if (!texto) return "-";
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+    return texto;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto) || texto.includes("T")) {
+    const fecha = new Date(texto);
+    if (!Number.isNaN(fecha.getTime())) {
+      return new Intl.DateTimeFormat("es-AR", {
+        timeZone: "UTC",
+      }).format(fecha);
+    }
+  }
+
+  return texto;
+};
+
 const RegistrosView = ({
   abrirEdicion,
   dashNombresFiltrados,
@@ -225,7 +245,7 @@ const RegistrosView = ({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {v["Fecha"]}
+                  {formatearFechaRegistro(v["Fecha"])}
                 </td>
                 <td style={{ padding: "8px 10px", color: "#fff" }}>
                   {v["Tipo de producto"]}
