@@ -48,6 +48,8 @@
 - La edicion de ventas ahora fuerza los headers reales `Codigo` y `Codigo (Buscador)` antes de guardar, evitando fallos intermitentes de validacion en Apps Script para ciertos reemplazos.
 - La edicion ahora arma un payload final limpio con solo los headers validos de `Ventas`, para que Google Sheets no reciba variantes rotas de `Codigo`.
 - Se inicio la migracion para preferir headers sin tilde (`Codigo`, `Codigo (Buscador)`, `CODIGO`) en frontend y Apps Script, manteniendo compatibilidad temporal con los nombres viejos.
+- Se reforzo la migracion para que el frontend use `Codigo` como clave real en matches de ventas y derive `Codigo (Buscador)` como texto auxiliar desde `Producto + Talle + Color + Codigo`.
+- `Inventario` ahora se normaliza en memoria para exponer siempre `CODIGO`, `PRODUCTO`, `TALLE` y `COLOR`, aunque la hoja o el historial traigan variantes viejas del header.
 
 ## Proximo paso sugerido
 

@@ -15,10 +15,15 @@ import {
   leerHoja,
 } from "./services/sheets";
 import {
+  construirCodigoBuscador,
   formatearFecha,
+  getCodigoSeguro,
   getProductoCosto,
+  getProductoColorSeguro,
+  getProductoNombreSeguro,
   getProductoPrecioEfectivo,
   getProductoPrecioLista,
+  getProductoTalleSeguro,
   getPrecioSugerido,
   parseNumero,
 } from "./utils/ventas";
@@ -154,6 +159,24 @@ const AmberApp = () => {
   const getInventarioColor = (item) =>
     normalizarTexto(item?.["COLOR"] ?? item?.["Color"] ?? "");
 
+  const normalizarItemInventario = (item) => {
+    const codigo = getCodigoSeguro(item);
+    const producto = getProductoNombreSeguro(item);
+    const talle = getProductoTalleSeguro(item);
+    const color = getProductoColorSeguro(item);
+
+    return {
+      ...item,
+      CODIGO: codigo,
+      ["C\u00d3DIGO"]: codigo,
+      ["C\u00c3\u201cDIGO"]: codigo,
+      ["C\u00c3\u0192\u00e2\u20ac\u0153DIGO"]: codigo,
+      PRODUCTO: producto,
+      TALLE: talle,
+      COLOR: color,
+    };
+  };
+
   const getProblemasProductoEdicion = (producto) => {
     const problemas = [];
 
@@ -198,9 +221,10 @@ const AmberApp = () => {
   const getVentaMatchKey = (venta) =>
     [
       normalizarTexto(venta?.["Fecha"]),
-      getVentaCodigoBuscador(venta),
       getVentaCodigo(venta),
       normalizarTexto(venta?.["Tipo de producto"]),
+      normalizarTexto(venta?.["Talle"]),
+      normalizarTexto(venta?.["Color"]),
       Number(venta?.["Cantidad"] ?? 0),
       normalizarTexto(venta?.["Medio de pago"]),
       parseNumero(venta?.["Precio venta"]),
@@ -211,6 +235,8 @@ const AmberApp = () => {
     getVentaCodigo(ventaA) === getVentaCodigo(ventaB) &&
     normalizarTexto(ventaA?.["Tipo de producto"]) ===
       normalizarTexto(ventaB?.["Tipo de producto"]) &&
+    normalizarTexto(ventaA?.["Talle"]) === normalizarTexto(ventaB?.["Talle"]) &&
+    normalizarTexto(ventaA?.["Color"]) === normalizarTexto(ventaB?.["Color"]) &&
     Number(ventaA?.["Cantidad"] ?? 0) === Number(ventaB?.["Cantidad"] ?? 0) &&
     normalizarTexto(ventaA?.["Medio de pago"]) ===
       normalizarTexto(ventaB?.["Medio de pago"]) &&
@@ -247,11 +273,12 @@ const AmberApp = () => {
   (Array.isArray(inventario) ? inventario : []).forEach((item) => {
     if (!item) return;
 
-    const codigo = getInventarioCodigo(item);
+    const itemNormalizado = normalizarItemInventario(item);
+    const codigo = getInventarioCodigo(itemNormalizado);
     if (!codigo) return;
 
     // Si el código se repite, nos quedamos con la última fila
-    mapa.set(codigo, item);
+    mapa.set(codigo, itemNormalizado);
   });
 
   return Array.from(mapa.values());
@@ -275,6 +302,16 @@ const abrirEdicion = (venta) => {
     "PRECIO U. LISTA":
       getProductoPrecioLista(productoInv) || venta["Precio venta"] || 0,
   };
+  productoBase.CODIGO = getVentaCodigo(venta) || getInventarioCodigo(productoInv);
+  productoBase.PRODUCTO = normalizarTexto(
+    venta["Tipo de producto"] ?? getProductoNombreSeguro(productoInv)
+  );
+  productoBase.TALLE = normalizarTexto(
+    venta["Talle"] ?? getProductoTalleSeguro(productoInv)
+  );
+  productoBase.COLOR = normalizarTexto(
+    venta["Color"] ?? getProductoColorSeguro(productoInv)
+  );
   productoBase._editWarnings = getProblemasProductoEdicion(productoBase);
 
   setVentaEditando(venta);
@@ -1109,6 +1146,16 @@ if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "
   const gananciaRecompra = (precio - costo - iva) * cantidad;
   
   const fechaFormateada = formatearFecha(formData.fecha);
+  const codigoVenta = getCodigoSeguro(selectedProducto);
+  const productoVenta = getProductoNombreSeguro(selectedProducto);
+  const talleVenta = getProductoTalleSeguro(selectedProducto);
+  const colorVenta = getProductoColorSeguro(selectedProducto);
+  const codigoBuscadorVenta = construirCodigoBuscador({
+    codigo: codigoVenta,
+    producto: productoVenta,
+    talle: talleVenta,
+    color: colorVenta,
+  });
   
   const tempId = Date.now().toString() + Math.random().toString(36).slice(2);
 
@@ -1132,11 +1179,11 @@ const nuevaVenta = {
 const nuevaVentaLimpia = {
   _tempId: tempId,
   Fecha: fechaFormateada,
-  "Codigo (Buscador)": `${selectedProducto["PRODUCTO"]} ${selectedProducto["TALLE"]} ${selectedProducto["COLOR"]} | ${getInventarioCodigo(selectedProducto)}`.trim(),
-  Codigo: getInventarioCodigo(selectedProducto),
-  Talle: selectedProducto["TALLE"],
-  Color: selectedProducto["COLOR"],
-  "Tipo de producto": selectedProducto["PRODUCTO"],
+  "Codigo (Buscador)": codigoBuscadorVenta,
+  Codigo: codigoVenta,
+  Talle: talleVenta,
+  Color: colorVenta,
+  "Tipo de producto": productoVenta,
   Cantidad: cantidad,
   "Medio de pago": medioPago,
   "Precio venta": precio,
@@ -1441,6 +1488,12 @@ const handleGuardarEdicion = async () => {
   const productoActualizado = getInventarioProducto(editSelectedProducto);
   const talleActualizado = getInventarioTalle(editSelectedProducto);
   const colorActualizado = getInventarioColor(editSelectedProducto);
+  const codigoBuscadorActualizado = construirCodigoBuscador({
+    codigo: codigoActualizado,
+    producto: productoActualizado,
+    talle: talleActualizado,
+    color: colorActualizado,
+  });
   const codigoHeader = "Codigo";
   const codigoBuscadorHeader = "Codigo (Buscador)";
 
@@ -1468,7 +1521,7 @@ const handleGuardarEdicion = async () => {
 
   // Fuerza los headers reales del Sheet para evitar fallos de validacion por claves rotas.
   ventaActualizada[codigoBuscadorHeader] =
-    `${productoActualizado} ${talleActualizado} ${colorActualizado} | ${codigoActualizado}`.trim();
+    codigoBuscadorActualizado;
   ventaActualizada[codigoHeader] = codigoActualizado;
   ventaActualizada["Talle"] = talleActualizado;
   ventaActualizada["Color"] = colorActualizado;
@@ -1481,8 +1534,7 @@ const handleGuardarEdicion = async () => {
 
   const ventaActualizadaLimpia = {
     Fecha: ventaEditando["Fecha"],
-    [codigoBuscadorHeader]:
-      `${productoActualizado} ${talleActualizado} ${colorActualizado} | ${codigoActualizado}`.trim(),
+    [codigoBuscadorHeader]: codigoBuscadorActualizado,
     [codigoHeader]: codigoActualizado,
     Talle: talleActualizado,
     Color: colorActualizado,

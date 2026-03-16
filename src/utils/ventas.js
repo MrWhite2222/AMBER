@@ -10,6 +10,28 @@ export const INVENTARIO_HEADER_CODIGO = "CODIGO";
 
 export const normalizarTexto = (valor) => String(valor ?? "").trim();
 
+const CODIGO_ALIASES = [
+  "Codigo",
+  "C\u00f3digo",
+  "C\u00c3\u00b3digo",
+  "C\u00c3\u0192\u00c2\u00b3digo",
+];
+const CODIGO_BUSCADOR_ALIASES = [
+  "Codigo (Buscador)",
+  "C\u00f3digo (Buscador)",
+  "C\u00c3\u00b3digo (Buscador)",
+  "C\u00c3\u0192\u00c2\u00b3digo (Buscador)",
+];
+const INVENTARIO_CODIGO_ALIASES = [
+  "CODIGO",
+  "C\u00d3DIGO",
+  "C\u00c3\u201cDIGO",
+  "C\u00c3\u0192\u00e2\u20ac\u0153DIGO",
+];
+const PRODUCTO_ALIASES = ["PRODUCTO", "Producto", "Tipo de producto"];
+const TALLE_ALIASES = ["TALLE", "Talle"];
+const COLOR_ALIASES = ["COLOR", "Color"];
+
 export const formatearFecha = (fechaISO) => {
   const [year, month, day] = fechaISO.split("-");
   return `${day}/${month}/${year}`;
@@ -27,6 +49,71 @@ const getProductoValor = (producto, claves) => {
   }
 
   return "";
+};
+
+export const getCodigoSeguro = (registro) =>
+  normalizarTexto(
+    getProductoValor(registro, [
+      "CODIGO",
+      "C\u00d3DIGO",
+      "C\u00c3\u201cDIGO",
+      "C\u00c3\u0192\u00e2\u20ac\u0153DIGO",
+      "Codigo",
+      "C\u00f3digo",
+      "C\u00c3\u00b3digo",
+      "C\u00c3\u0192\u00c2\u00b3digo",
+    ])
+  );
+
+export const getProductoNombreSeguro = (registro) =>
+  normalizarTexto(
+    getProductoValor(registro, ["PRODUCTO", "Producto", "Tipo de producto"])
+  );
+
+export const getProductoTalleSeguro = (registro) =>
+  normalizarTexto(getProductoValor(registro, ["TALLE", "Talle"]));
+
+export const getProductoColorSeguro = (registro) =>
+  normalizarTexto(getProductoValor(registro, ["COLOR", "Color"]));
+
+export const construirCodigoBuscador = ({
+  codigo = "",
+  producto = "",
+  talle = "",
+  color = "",
+} = {}) => {
+  const codigoNormalizado = normalizarTexto(codigo);
+  const descripcion = [
+    normalizarTexto(producto),
+    normalizarTexto(talle),
+    normalizarTexto(color),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  if (!descripcion) return codigoNormalizado;
+  if (!codigoNormalizado) return descripcion;
+  return `${descripcion} | ${codigoNormalizado}`;
+};
+
+export const getCodigoBuscadorSeguro = (registro) => {
+  const explicito = normalizarTexto(
+    getProductoValor(registro, [
+      "Codigo (Buscador)",
+      "C\u00f3digo (Buscador)",
+      "C\u00c3\u00b3digo (Buscador)",
+      "C\u00c3\u0192\u00c2\u00b3digo (Buscador)",
+    ])
+  );
+
+  if (explicito) return explicito;
+
+  return construirCodigoBuscador({
+    codigo: getCodigoSeguro(registro),
+    producto: getProductoNombreSeguro(registro),
+    talle: getProductoTalleSeguro(registro),
+    color: getProductoColorSeguro(registro),
+  });
 };
 
 export const getProductoCodigo = (producto) =>
