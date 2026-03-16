@@ -6,7 +6,7 @@ import CargarPrendaModal from "./components/CargarPrendaModal";
 import ModificarPreciosModal from "./components/ModificarPreciosModal";
 import EditarVentaModal from "./components/EditarVentaModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
-import RegistrosView from "./components/RegistrosView";
+import RegistrosView from "./components/RegistrosViewClean";
 import ResumenView from "./components/ResumenView";
 import {
   actualizarFila,
