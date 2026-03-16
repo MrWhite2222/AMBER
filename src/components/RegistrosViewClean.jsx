@@ -24,6 +24,23 @@ const formatearFechaRegistro = (valor) => {
   return texto;
 };
 
+const getTimestampRegistro = (venta) => {
+  const texto = String(venta?.["Fecha"] ?? "").trim();
+  if (!texto) return 0;
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+    const [dia, mes, anio] = texto.split("/").map(Number);
+    return new Date(anio, mes - 1, dia).getTime();
+  }
+
+  const fecha = new Date(texto);
+  if (!Number.isNaN(fecha.getTime())) {
+    return fecha.getTime();
+  }
+
+  return 0;
+};
+
 const RegistrosViewClean = ({
   abrirEdicion,
   dashNombresFiltrados,
@@ -226,7 +243,9 @@ const RegistrosViewClean = ({
         </thead>
 
         <tbody>
-          {ventasDash.map((venta, index) => {
+          {[...ventasDash]
+            .sort((a, b) => getTimestampRegistro(b) - getTimestampRegistro(a))
+            .map((venta, index) => {
             const productoInv = inventarioUnico.find(
               (item) => item && getCodigoSeguro(item) === getCodigoSeguro(venta)
             );
@@ -328,7 +347,7 @@ const RegistrosViewClean = ({
                 </td>
               </tr>
             );
-          })}
+            })}
         </tbody>
       </table>
 
