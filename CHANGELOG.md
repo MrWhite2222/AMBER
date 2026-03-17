@@ -51,6 +51,7 @@
 - Se reforzo la migracion para que el frontend use `Codigo` como clave real en matches de ventas y derive `Codigo (Buscador)` como texto auxiliar desde `Producto + Talle + Color + Codigo`.
 - `Inventario` ahora se normaliza en memoria para exponer siempre `CODIGO`, `PRODUCTO`, `TALLE` y `COLOR`, aunque la hoja o el historial traigan variantes viejas del header.
 - Se corrigio `Cargar Prenda` en `Modo 1` para inicializar y resolver variantes con los helpers seguros de `Codigo`, `Producto`, `Talle` y `Color`, y ahora el modal explica por que `Guardar lote` queda bloqueado.
+- El aviso de bloqueo en `Cargar Prenda` ahora se muestra en rojo y con mayor destaque visual para que no pase desapercibido.
 
 ## Proximo paso sugerido
 

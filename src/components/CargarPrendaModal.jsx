@@ -553,15 +553,21 @@ const CargarPrendaModal = ({
       </div>
 
       {!puedeGuardarCargaPrenda && !guardandoPrenda && mensajeCargaPrendaBloqueada && (
-        <p
+        <div
           style={{
             margin: "18px 0 0",
-            color: "#f39c12",
-            fontSize: "0.82em",
+            color: "#ff6b6b",
+            background: "rgba(231, 76, 60, 0.14)",
+            border: "1px solid rgba(231, 76, 60, 0.45)",
+            borderRadius: "10px",
+            padding: "12px 14px",
+            fontSize: "0.98em",
+            fontWeight: "700",
+            lineHeight: 1.4,
           }}
         >
           {mensajeCargaPrendaBloqueada}
-        </p>
+        </div>
       )}
 
       <div
