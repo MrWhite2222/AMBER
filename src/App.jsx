@@ -451,8 +451,8 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     setCargaPrendaVariantes([
       {
         codigo: "",
-        talle: String(selectedCargaProducto["TALLE"] ?? ""),
-        color: String(selectedCargaProducto["COLOR"] ?? ""),
+        talle: getProductoTalleSeguro(selectedCargaProducto),
+        color: getProductoColorSeguro(selectedCargaProducto),
         cantidad: 1,
       },
     ]);
@@ -910,7 +910,8 @@ useEffect(() => {
 }, [afectadosPrecioSeleccion, selectedPrecioObjetivo]);
 
 const variantesCargaResueltas = useMemo(() => {
-  const productoBase = getInventarioProducto(selectedCargaProducto).toUpperCase();
+  const productoBase =
+    getProductoNombreSeguro(selectedCargaProducto).toUpperCase();
   const productoManual = normalizarTexto(cargaPrendaData.productoManual);
   const claves = new Set();
   const codigos = new Set();
@@ -968,14 +969,19 @@ const variantesCargaResueltas = useMemo(() => {
     const clave = `${productoBase}|${talle.toUpperCase()}|${color.toUpperCase()}`;
     const tieneClave = Boolean(productoBase || talle || color);
 
-    const match = inventarioUnico.find(
-      (item) =>
-        getInventarioProducto(item).toUpperCase() === productoBase &&
-        getInventarioTalle(item).toUpperCase() === talle.toUpperCase() &&
-        getInventarioColor(item).toUpperCase() === color.toUpperCase()
-    );
+    const match = inventarioUnico.find((item) => {
+      const productoMatch = getProductoNombreSeguro(item).toUpperCase();
+      const talleMatch = getProductoTalleSeguro(item).toUpperCase();
+      const colorMatch = getProductoColorSeguro(item).toUpperCase();
 
-    const codigo = match ? getInventarioCodigo(match) : "";
+      return (
+        productoMatch === productoBase &&
+        talleMatch === talle.toUpperCase() &&
+        colorMatch === color.toUpperCase()
+      );
+    });
+
+    const codigo = match ? getCodigoSeguro(match) : "";
     const incompleta = !talle || !color || cantidad <= 0;
     const duplicada = tieneClave && claves.has(clave);
 
@@ -993,7 +999,9 @@ const variantesCargaResueltas = useMemo(() => {
       codigo,
       estado,
       index,
-      producto: getInventarioProducto(match) || getInventarioProducto(selectedCargaProducto),
+      producto:
+        getProductoNombreSeguro(match) ||
+        getProductoNombreSeguro(selectedCargaProducto),
     };
   });
 }, [
@@ -1028,6 +1036,58 @@ const puedeGuardarCargaPrenda = useMemo(() => {
     variantesCargaActivas.length > 0 &&
     variantesCargaActivas.every((variante) => variante.estado === "ok")
   );
+}, [
+  cargaPrendaData.productoManual,
+  cargaPrendaData.temporada,
+  modoCargaPrenda,
+  selectedCargaProducto,
+  variantesCargaActivas,
+]);
+
+const mensajeCargaPrendaBloqueada = useMemo(() => {
+  if (!normalizarTexto(cargaPrendaData.temporada)) {
+    return "Completa la temporada para habilitar el guardado.";
+  }
+
+  if (modoCargaPrenda === "existente" && !selectedCargaProducto) {
+    return "Selecciona un producto base del inventario.";
+  }
+
+  if (modoCargaPrenda === "nuevo" && !normalizarTexto(cargaPrendaData.productoManual)) {
+    return "Ingresa el tipo de prenda para el producto nuevo.";
+  }
+
+  if (!variantesCargaActivas.length) {
+    return "Agrega al menos una variante para guardar el lote.";
+  }
+
+  const primeraInvalida = variantesCargaActivas.find(
+    (variante) => variante.estado !== "ok"
+  );
+
+  if (!primeraInvalida) {
+    return "";
+  }
+
+  if (primeraInvalida.estado === "incompleta") {
+    return modoCargaPrenda === "existente"
+      ? "Completa talle, color y cantidad de cada variante."
+      : "Completa codigo, talle, color y cantidad de cada variante.";
+  }
+
+  if (primeraInvalida.estado === "duplicada") {
+    return "No puede haber variantes duplicadas dentro del mismo lote.";
+  }
+
+  if (primeraInvalida.estado === "sin_match") {
+    return "Alguna variante no encontro un codigo en Inventario para ese talle y color.";
+  }
+
+  if (primeraInvalida.estado === "codigo_existente") {
+    return "Alguna variante usa un codigo que ya existe en Inventario.";
+  }
+
+  return "Revisa las variantes antes de guardar el lote.";
 }, [
   cargaPrendaData.productoManual,
   cargaPrendaData.temporada,
@@ -1962,6 +2022,7 @@ const handleGuardarEdicion = async () => {
               setShowCargaProductoDrop(true);
               setSelectedCargaProducto(null);
             }}
+            mensajeCargaPrendaBloqueada={mensajeCargaPrendaBloqueada}
             parseNumero={parseNumero}
             productosCargaFiltrados={productosCargaFiltrados}
             puedeGuardarCargaPrenda={puedeGuardarCargaPrenda}

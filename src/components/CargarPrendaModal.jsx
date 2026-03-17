@@ -1,4 +1,10 @@
-import { getProductoPrecioEfectivo } from "../utils/ventas";
+import {
+  getCodigoSeguro,
+  getProductoColorSeguro,
+  getProductoNombreSeguro,
+  getProductoPrecioEfectivo,
+  getProductoTalleSeguro,
+} from "../utils/ventas";
 
 const statusStyles = {
   ok: { label: "Lista para guardar", color: "#2ecc71", background: "rgba(46,204,113,0.12)" },
@@ -25,6 +31,7 @@ const CargarPrendaModal = ({
   parseNumero,
   productosCargaFiltrados,
   puedeGuardarCargaPrenda,
+  mensajeCargaPrendaBloqueada,
   searchCargaProducto,
   selectedCargaProducto,
   setSelectedCargaProducto,
@@ -33,6 +40,10 @@ const CargarPrendaModal = ({
   showCargaProductoDrop,
   variantesCargaResueltas,
 }) => {
+  const codigoBaseSeguro = getCodigoSeguro(selectedCargaProducto);
+  const productoBase = getProductoNombreSeguro(selectedCargaProducto);
+  const talleBase = getProductoTalleSeguro(selectedCargaProducto);
+  const colorBase = getProductoColorSeguro(selectedCargaProducto);
   const modoEsNuevo = modoCargaPrenda === "nuevo";
   const codigoBase =
     selectedCargaProducto?.["C\u00D3DIGO"] ??
@@ -212,7 +223,7 @@ const CargarPrendaModal = ({
                     onClick={() => {
                       setSelectedCargaProducto(producto);
                       setSearchCargaProducto(
-                        `${producto["PRODUCTO"]} ${producto["TALLE"]} ${producto["COLOR"]}`
+                        `${getProductoNombreSeguro(producto)} ${getProductoTalleSeguro(producto)} ${getProductoColorSeguro(producto)}`
                       );
                       setShowCargaProductoDrop(false);
                     }}
@@ -224,7 +235,9 @@ const CargarPrendaModal = ({
                       borderBottom: "1px solid rgba(255,255,255,0.08)",
                     }}
                   >
-                    <div style={{ fontWeight: "600" }}>{producto["PRODUCTO"]}</div>
+                    <div style={{ fontWeight: "600" }}>
+                      {getProductoNombreSeguro(producto)}
+                    </div>
                     <div style={{ fontSize: "0.85em", color: "#999" }}>
                       {producto["TALLE"]} · {producto["COLOR"]} · $
                       {getProductoPrecioEfectivo(producto).toLocaleString("es-AR")}
@@ -253,9 +266,12 @@ const CargarPrendaModal = ({
                 fontWeight: "600",
               }}
             >
-              {selectedCargaProducto["PRODUCTO"]}
+              {productoBase}
             </p>
-            <p style={{ margin: 0, color: "#999", fontSize: "0.8em" }}>
+            <p
+              title={`${codigoBaseSeguro || codigoBase} | ${talleBase} | ${colorBase}`}
+              style={{ margin: 0, color: "#999", fontSize: "0.8em" }}
+            >
               Codigo base: {selectedCargaProducto["CÓDIGO"] ?? selectedCargaProducto["CÃ“DIGO"]}
               {" · "}Talle: {selectedCargaProducto["TALLE"]}
               {" · "}Color: {selectedCargaProducto["COLOR"]}
@@ -535,6 +551,18 @@ const CargarPrendaModal = ({
           </div>
         </div>
       </div>
+
+      {!puedeGuardarCargaPrenda && !guardandoPrenda && mensajeCargaPrendaBloqueada && (
+        <p
+          style={{
+            margin: "18px 0 0",
+            color: "#f39c12",
+            fontSize: "0.82em",
+          }}
+        >
+          {mensajeCargaPrendaBloqueada}
+        </p>
+      )}
 
       <div
         style={{

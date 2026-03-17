@@ -50,6 +50,7 @@
 - Se inicio la migracion para preferir headers sin tilde (`Codigo`, `Codigo (Buscador)`, `CODIGO`) en frontend y Apps Script, manteniendo compatibilidad temporal con los nombres viejos.
 - Se reforzo la migracion para que el frontend use `Codigo` como clave real en matches de ventas y derive `Codigo (Buscador)` como texto auxiliar desde `Producto + Talle + Color + Codigo`.
 - `Inventario` ahora se normaliza en memoria para exponer siempre `CODIGO`, `PRODUCTO`, `TALLE` y `COLOR`, aunque la hoja o el historial traigan variantes viejas del header.
+- Se corrigio `Cargar Prenda` en `Modo 1` para inicializar y resolver variantes con los helpers seguros de `Codigo`, `Producto`, `Talle` y `Color`, y ahora el modal explica por que `Guardar lote` queda bloqueado.
 
 ## Proximo paso sugerido
 
