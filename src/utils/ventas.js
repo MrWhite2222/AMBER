@@ -152,6 +152,11 @@ export const getProductoPrecioLista = (producto) =>
     ])
   );
 
+export const getProductoStock = (producto) =>
+  Number(
+    getProductoValor(producto, ["STOCK", "Stock", "stock"]) ?? 0
+  ) || 0;
+
 export const getPrecioSugerido = (producto, medioPago) => {
   if (!producto) return "";
 

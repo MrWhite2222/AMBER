@@ -23,6 +23,7 @@ import {
   getProductoNombreSeguro,
   getProductoPrecioEfectivo,
   getProductoPrecioLista,
+  getProductoStock,
   getProductoTalleSeguro,
   getPrecioSugerido,
   parseNumero,
@@ -1110,6 +1111,14 @@ const puedeGuardarPrecios = useMemo(
   ]
 );
 
+const stockDisponibleVenta = selectedProducto
+  ? getProductoStock(selectedProducto)
+  : 0;
+const cantidadVenta = Number(formData.cantidad) || 0;
+const stockInsuficienteVenta =
+  Boolean(selectedProducto) &&
+  (stockDisponibleVenta <= 0 || cantidadVenta > stockDisponibleVenta);
+
   
   // Calcular ganancia
   const calcularGanancia = () => {
@@ -1167,9 +1176,16 @@ const puedeGuardarPrecios = useMemo(
 const handleGuardarVenta = async () => {
   if (!selectedProducto || !formData.precioVenta) return;
   
+  const cantidad = Number(formData.cantidad) || 1;
+  const stockDisponible = getProductoStock(selectedProducto);
+
+  if (stockDisponible <= 0 || cantidad > stockDisponible) {
+    alert("Sin stock suficiente");
+    return;
+  }
+
   setGuardando(true);
   
-  const cantidad = Number(formData.cantidad) || 1;
   const medioPago = formData.medioPago;
   
   // G: Precio venta - desde el formulario o del inventario según medio de pago
@@ -1999,6 +2015,8 @@ const handleGuardarEdicion = async () => {
             productosFiltrados={productosFiltrados}
             searchProducto={searchProducto}
             selectedProducto={selectedProducto}
+            stockDisponibleVenta={stockDisponibleVenta}
+            stockInsuficienteVenta={stockInsuficienteVenta}
             setSelectedProducto={setSelectedProducto}
             setShowProductoDrop={setShowProductoDrop}
             setSearchProducto={setSearchProducto}

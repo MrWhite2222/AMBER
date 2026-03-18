@@ -2,6 +2,7 @@ import {
   getProductoCosto,
   getProductoPrecioEfectivo,
   getProductoPrecioLista,
+  getProductoStock,
 } from "../utils/ventas";
 
 const NuevaVentaModal = ({
@@ -18,6 +19,8 @@ const NuevaVentaModal = ({
   productosFiltrados,
   searchProducto,
   selectedProducto,
+  stockDisponibleVenta,
+  stockInsuficienteVenta,
   setSelectedProducto,
   setShowProductoDrop,
   setSearchProducto,
@@ -177,6 +180,9 @@ const NuevaVentaModal = ({
                 "es-AR"
               )}
             </p>
+            <p style={{ margin: "5px 0 0", color: "#7ed6df", fontSize: "0.8em" }}>
+              Stock disponible: {stockDisponibleVenta}
+            </p>
           </div>
         )}
 
@@ -192,6 +198,7 @@ const NuevaVentaModal = ({
             <input
               type="number"
               min="1"
+              max={stockDisponibleVenta || undefined}
               value={formData.cantidad}
               onChange={(e) => onFormDataChange("cantidad", e.target.value)}
               style={inp}
@@ -248,6 +255,21 @@ const NuevaVentaModal = ({
             </p>
           </div>
         )}
+        {selectedProducto && stockInsuficienteVenta && (
+          <div
+            style={{
+              background: "rgba(231,76,60,0.14)",
+              padding: "12px",
+              borderRadius: "8px",
+              border: "1px solid rgba(231,76,60,0.45)",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ margin: 0, color: "#ff6b6b", fontWeight: "700" }}>
+              Sin stock suficiente
+            </p>
+          </div>
+        )}
       </div>
 
       <div
@@ -274,19 +296,30 @@ const NuevaVentaModal = ({
         </button>
         <button
           onClick={handleGuardarVenta}
-          disabled={!selectedProducto || !formData.precioVenta || guardando}
+          disabled={
+            !selectedProducto ||
+            !formData.precioVenta ||
+            guardando ||
+            stockInsuficienteVenta
+          }
           style={{
             padding: "12px",
             borderRadius: "8px",
             border: "none",
             background:
-              selectedProducto && formData.precioVenta && !guardando
+              selectedProducto &&
+              formData.precioVenta &&
+              !guardando &&
+              !stockInsuficienteVenta
                 ? "#2ecc71"
                 : "rgba(46,204,113,0.3)",
             color: "#fff",
             fontWeight: "600",
             cursor:
-              selectedProducto && formData.precioVenta && !guardando
+              selectedProducto &&
+              formData.precioVenta &&
+              !guardando &&
+              !stockInsuficienteVenta
                 ? "pointer"
                 : "not-allowed",
           }}
