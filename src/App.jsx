@@ -1693,6 +1693,9 @@ const handleGuardarEdicion = async () => {
     ["registros", "📋 Registros"],
     ["gastos", "💸 Gastos"],
   ];
+  const spreadsheetDownloadUrl = backendInfo?.spreadsheetId
+    ? `https://docs.google.com/spreadsheets/d/${backendInfo.spreadsheetId}/export?format=xlsx`
+    : "";
 
   // Pantalla de carga
   if (loading) {
@@ -1838,6 +1841,29 @@ const handleGuardarEdicion = async () => {
               }}
             >
               <RefreshCw size={15} /> Actualizar
+            </button>
+            <button
+              onClick={() => {
+                if (!spreadsheetDownloadUrl) {
+                  alert("No se pudo detectar la planilla para descargar.");
+                  return;
+                }
+
+                window.open(spreadsheetDownloadUrl, "_blank", "noopener,noreferrer");
+              }}
+              style={{
+                padding: "9px 15px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#3498db",
+                color: "#fff",
+                fontWeight: "600",
+                cursor: spreadsheetDownloadUrl ? "pointer" : "not-allowed",
+                fontSize: "0.85em",
+                opacity: spreadsheetDownloadUrl ? 1 : 0.7,
+              }}
+            >
+              Descargar Sheet
             </button>
             <button
               onClick={() => setShowForm(true)}

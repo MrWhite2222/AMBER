@@ -52,6 +52,7 @@
 - `Inventario` ahora se normaliza en memoria para exponer siempre `CODIGO`, `PRODUCTO`, `TALLE` y `COLOR`, aunque la hoja o el historial traigan variantes viejas del header.
 - Se corrigio `Cargar Prenda` en `Modo 1` para inicializar y resolver variantes con los helpers seguros de `Codigo`, `Producto`, `Talle` y `Color`, y ahora el modal explica por que `Guardar lote` queda bloqueado.
 - El aviso de bloqueo en `Cargar Prenda` ahora se muestra en rojo y con mayor destaque visual para que no pase desapercibido.
+- El encabezado ahora suma un boton `Descargar Sheet` que usa el `spreadsheetId` del backend para bajar la planilla en formato `.xlsx`.
 
 ## Proximo paso sugerido
 
