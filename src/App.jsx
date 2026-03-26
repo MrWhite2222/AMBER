@@ -1165,6 +1165,17 @@ const resumenLote = useMemo(
 
 const filasLotePreview = useMemo(() => filasLote.slice(0, 30), [filasLote]);
 
+const filasLoteConError = useMemo(
+  () =>
+    filasLote
+      .filter((fila) => fila.errores.length > 0)
+      .map((fila) => ({
+        rowNumber: fila.rowNumber,
+        errores: fila.errores,
+      })),
+  [filasLote]
+);
+
 const puedeGuardarLote =
   columnasFaltantesLote.length === 0 &&
   filasLote.length > 0 &&
@@ -2303,6 +2314,7 @@ const handleGuardarEdicion = async () => {
           <CargarLoteModal
             archivoLoteNombre={archivoLoteNombre}
             columnasFaltantes={columnasFaltantesLote}
+            filasLoteConError={filasLoteConError}
             filasLotePreview={filasLotePreview}
             guardandoLote={guardandoLote}
             onArchivoChange={handleArchivoLoteChange}

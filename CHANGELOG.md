@@ -56,6 +56,7 @@
 - `Nueva Venta` ahora toma el `STOCK` del producto seleccionado, avisa si no alcanza y bloquea `Guardar Venta` cuando la cantidad supera el disponible.
 - `Inventario` ahora suma `Cargar Lote`, una importacion masiva por `.csv` con preview, validacion de columnas/filas y guardado en `COSTOS` mas alta automatica en `Inventario` para codigos nuevos.
 - `Cargar Lote` ahora detecta automaticamente archivos CSV separados por `;` y acepta variantes de encabezados como `PRECIO EFECTVO`.
+- `Cargar Lote` ahora permite desplegar el detalle de las filas con error, mostrando numero de fila y columnas problematicas.
 
 ## Proximo paso sugerido
 

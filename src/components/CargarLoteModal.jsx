@@ -1,6 +1,9 @@
+import { useState } from "react";
+
 const CargarLoteModal = ({
   archivoLoteNombre,
   columnasFaltantes,
+  filasLoteConError,
   guardandoLote,
   onArchivoChange,
   onClose,
@@ -8,7 +11,10 @@ const CargarLoteModal = ({
   puedeGuardarLote,
   resumenLote,
   filasLotePreview,
-}) => (
+}) => {
+  const [showErrores, setShowErrores] = useState(false);
+
+  return (
   <div
     style={{
       position: "fixed",
@@ -136,30 +142,167 @@ const CargarLoteModal = ({
             gap: "12px",
           }}
         >
-          {[
-            ["Filas leidas", resumenLote.total],
-            ["Filas validas", resumenLote.validas],
-            ["Filas con error", resumenLote.invalidas],
-            ["Codigos nuevos", resumenLote.nuevos],
-          ].map(([label, value]) => (
+          <div
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: "12px",
+              padding: "14px",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
+              Filas leidas
+            </p>
+            <p style={{ margin: 0, color: "#fff", fontSize: "1.35em", fontWeight: "700" }}>
+              {resumenLote.total}
+            </p>
+          </div>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: "12px",
+              padding: "14px",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
+              Filas validas
+            </p>
+            <p style={{ margin: 0, color: "#fff", fontSize: "1.35em", fontWeight: "700" }}>
+              {resumenLote.validas}
+            </p>
+          </div>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: "12px",
+              padding: "14px",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
             <div
-              key={label}
               style={{
-                background: "rgba(255,255,255,0.05)",
-                borderRadius: "12px",
-                padding: "14px",
-                border: "1px solid rgba(255,255,255,0.08)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
               }}
             >
-              <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
-                {label}
-              </p>
-              <p style={{ margin: 0, color: "#fff", fontSize: "1.35em", fontWeight: "700" }}>
-                {value}
-              </p>
+              <div>
+                <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
+                  Filas con error
+                </p>
+                <p style={{ margin: 0, color: "#fff", fontSize: "1.35em", fontWeight: "700" }}>
+                  {resumenLote.invalidas}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowErrores((prev) => !prev)}
+                disabled={filasLoteConError.length === 0}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(231,76,60,0.45)",
+                  background:
+                    filasLoteConError.length > 0
+                      ? "rgba(231,76,60,0.14)"
+                      : "rgba(255,255,255,0.05)",
+                  color: filasLoteConError.length > 0 ? "#ff6b6b" : "#666",
+                  fontWeight: "700",
+                  cursor: filasLoteConError.length > 0 ? "pointer" : "not-allowed",
+                  fontSize: "1em",
+                }}
+              >
+                {showErrores ? "-" : "+"}
+              </button>
             </div>
-          ))}
+          </div>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: "12px",
+              padding: "14px",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
+              Codigos nuevos
+            </p>
+            <p style={{ margin: 0, color: "#fff", fontSize: "1.35em", fontWeight: "700" }}>
+              {resumenLote.nuevos}
+            </p>
+          </div>
         </div>
+
+        {showErrores && filasLoteConError.length > 0 && (
+          <div
+            style={{
+              background: "rgba(231,76,60,0.08)",
+              borderRadius: "12px",
+              padding: "15px",
+              border: "1px solid rgba(231,76,60,0.25)",
+              overflowX: "auto",
+            }}
+          >
+            <h3 style={{ margin: "0 0 12px", color: "#ff6b6b", fontSize: "1em" }}>
+              Detalle de filas con error
+            </h3>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "0.8em",
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    borderBottom: "2px solid rgba(231,76,60,0.35)",
+                    background: "rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <th
+                    style={{
+                      padding: "9px 10px",
+                      textAlign: "left",
+                      color: "#f39c12",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Numero de fila
+                  </th>
+                  <th
+                    style={{
+                      padding: "9px 10px",
+                      textAlign: "left",
+                      color: "#f39c12",
+                    }}
+                  >
+                    Detalle del error
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filasLoteConError.map((fila) => (
+                  <tr
+                    key={fila.rowNumber}
+                    style={{
+                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    <td style={{ padding: "8px 10px", color: "#fff", whiteSpace: "nowrap" }}>
+                      {fila.rowNumber}
+                    </td>
+                    <td style={{ padding: "8px 10px", color: "#f9b4b4" }}>
+                      {fila.errores.join(", ")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div
           style={{
@@ -289,8 +432,9 @@ const CargarLoteModal = ({
           {guardandoLote ? "Importando..." : "Importar lote"}
         </button>
       </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default CargarLoteModal;
