@@ -5,6 +5,7 @@ const CargarLoteModal = ({
   columnasFaltantes,
   filasLoteConError,
   guardandoLote,
+  importJobLote,
   onArchivoChange,
   onClose,
   onGuardarLote,
@@ -108,6 +109,7 @@ const CargarLoteModal = ({
             type="file"
             accept=".csv,text/csv"
             onChange={(event) => onArchivoChange(event.target.files?.[0] ?? null)}
+            disabled={["PENDIENTE", "PROCESANDO"].includes(String(importJobLote?.status || "").trim())}
             style={{ color: "#fff", fontSize: "0.84em" }}
           />
           {archivoLoteNombre && (
@@ -134,6 +136,52 @@ const CargarLoteModal = ({
             </div>
           )}
         </div>
+
+        {importJobLote && (
+          <div
+            style={{
+              background: "rgba(52,152,219,0.12)",
+              border: "1px solid rgba(52,152,219,0.35)",
+              borderRadius: "12px",
+              padding: "16px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <p style={{ margin: "0 0 4px", color: "#7ed6df", fontWeight: "700" }}>
+                  Importacion en segundo plano
+                </p>
+                <p style={{ margin: 0, color: "#bbb", fontSize: "0.82em" }}>
+                  Estado: {importJobLote.status} · {importJobLote.processedRows}/
+                  {importJobLote.totalRows} procesadas
+                </p>
+              </div>
+              <div
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  background: "rgba(0,0,0,0.15)",
+                  color: "#fff",
+                  fontWeight: "700",
+                }}
+              >
+                {importJobLote.successRows} OK · {importJobLote.errorRows} error
+              </div>
+            </div>
+            <p style={{ margin: "10px 0 0", color: "#d6eaf8", fontSize: "0.82em" }}>
+              {importJobLote.message ||
+                "La importacion ya quedo delegada al backend. Podes cerrar esta pestaña sin cortar el proceso."}
+            </p>
+          </div>
+        )}
 
         <div
           style={{

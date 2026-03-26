@@ -10,6 +10,21 @@ function getSheetOrThrow_(sheetName) {
   return sheet;
 }
 
+function getOrCreateSheet_(sheetName, headers) {
+  const spreadsheet = getSpreadsheet_();
+  let sheet = spreadsheet.getSheetByName(sheetName);
+
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+  }
+
+  if (Array.isArray(headers) && headers.length && sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+
+  return sheet;
+}
+
 function getHeaders_(sheet) {
   if (sheet.getLastColumn() === 0) {
     return [];
@@ -120,6 +135,20 @@ function appendObjectRow_(sheet, rowData) {
   return {
     rowNumber: sheet.getLastRow(),
     headers: headers,
+  };
+}
+
+function appendRowsValues_(sheet, rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    return { startRow: sheet.getLastRow() + 1, rowCount: 0 };
+  }
+
+  const startRow = Math.max(sheet.getLastRow() + 1, 2);
+  sheet.getRange(startRow, 1, rows.length, rows[0].length).setValues(rows);
+
+  return {
+    startRow: startRow,
+    rowCount: rows.length,
   };
 }
 

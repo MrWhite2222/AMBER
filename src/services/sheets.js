@@ -56,3 +56,32 @@ export const actualizarFila = async (nombreHoja, rowNumber, fila) => {
     return { success: false, error: String(error) };
   }
 };
+
+export const crearImportacionLote = async (rows, sourceFile) => {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "create_import_job",
+        rows,
+        sourceFile,
+      }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error creando importacion:", error);
+    return { success: false, error: String(error) };
+  }
+};
+
+export const leerImportacionLote = async (jobId) => {
+  try {
+    const response = await fetch(
+      `${API_URL}?action=import_job_status&jobId=${encodeURIComponent(jobId)}`
+    );
+    return await response.json();
+  } catch (error) {
+    console.error("Error leyendo importacion:", error);
+    return { success: false, error: String(error) };
+  }
+};

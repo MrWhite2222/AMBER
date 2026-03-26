@@ -7,6 +7,22 @@ function leerHoja(sheetName) {
   }
 }
 
+function crearImportacionLote(rows, sourceFile) {
+  try {
+    return createImportJob_(rows || [], sourceFile || "");
+  } catch (error) {
+    return errorResponse_(String(error.message || error));
+  }
+}
+
+function leerImportacionLote(jobId) {
+  try {
+    return getImportJobStatus_(jobId);
+  } catch (error) {
+    return errorResponse_(String(error.message || error));
+  }
+}
+
 function agregarFila(sheetName, rowData) {
   try {
     const sheet = getSheetOrThrow_(sheetName);

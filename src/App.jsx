@@ -12,7 +12,9 @@ import ResumenView from "./components/ResumenView";
 import {
   actualizarFila,
   agregarFila,
+  crearImportacionLote,
   leerBackendInfo,
+  leerImportacionLote,
   leerHoja,
 } from "./services/sheets";
 import {
@@ -397,6 +399,7 @@ const abrirEdicion = (venta) => {
   const [archivoLoteNombre, setArchivoLoteNombre] = useState("");
   const [columnasFaltantesLote, setColumnasFaltantesLote] = useState([]);
   const [filasLote, setFilasLote] = useState([]);
+  const [importJobLote, setImportJobLote] = useState(null);
   const [showModificarPreciosForm, setShowModificarPreciosForm] = useState(false);
   const [guardandoPrecios, setGuardandoPrecios] = useState(false);
   const [alcancePrecio, setAlcancePrecio] = useState("producto");
@@ -1176,13 +1179,43 @@ const filasLoteConError = useMemo(
   [filasLote]
 );
 
+const importJobLoteActiva = ["PENDIENTE", "PROCESANDO"].includes(
+  String(importJobLote?.status || "").trim()
+);
+
 const puedeGuardarLote =
   columnasFaltantesLote.length === 0 &&
   filasLote.length > 0 &&
-  filasLote.every((fila) => fila.errores.length === 0);
+  filasLote.every((fila) => fila.errores.length === 0) &&
+  !importJobLoteActiva;
+
+useEffect(() => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const lastJobId = window.localStorage.getItem("amber_import_job_id");
+  if (!lastJobId) {
+    return;
+  }
+
+  leerImportacionLote(lastJobId).then((result) => {
+    if (!result?.success || !result.job) {
+      return;
+    }
+
+    setImportJobLote(result.job);
+
+    const status = String(result.job.status || "").trim();
+    if (!["PENDIENTE", "PROCESANDO"].includes(status)) {
+      window.localStorage.removeItem("amber_import_job_id");
+    }
+  });
+}, []);
 
 const handleArchivoLoteChange = async (file) => {
   resetCargaLoteForm();
+  setImportJobLote(null);
 
   if (!file) {
     return;
@@ -1278,10 +1311,82 @@ const handleArchivoLoteChange = async (file) => {
   setFilasLote(filasPreparadas);
 };
 
+useEffect(() => {
+  if (!importJobLote?.jobId) {
+    return undefined;
+  }
+
+  const status = String(importJobLote.status || "").trim();
+  if (!["PENDIENTE", "PROCESANDO"].includes(status)) {
+    return undefined;
+  }
+
+  const intervalId = window.setInterval(async () => {
+    const result = await leerImportacionLote(importJobLote.jobId);
+    if (!result?.success || !result.job) {
+      return;
+    }
+
+    setImportJobLote(result.job);
+
+    const nextStatus = String(result.job.status || "").trim();
+    if (!["PENDIENTE", "PROCESANDO"].includes(nextStatus)) {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("amber_import_job_id");
+      }
+      if (nextStatus === "COMPLETADA" || nextStatus === "COMPLETADA_CON_ERRORES") {
+        setInventario(await leerHoja("Inventario"));
+      }
+      window.clearInterval(intervalId);
+    }
+  }, 5000);
+
+  return () => window.clearInterval(intervalId);
+}, [importJobLote?.jobId, importJobLote?.status]);
+
 const handleGuardarLote = async () => {
   if (!puedeGuardarLote) return;
 
   setGuardandoLote(true);
+  const rowsPayload = filasLote.map((fila) => {
+    const fechaParts = getFechaPartsFromCsv(fila.fecha);
+
+    return {
+      rowNumber: fila.rowNumber,
+      temporada: fila.temporada,
+      fecha: fechaParts.fecha,
+      codigo: fila.codigo,
+      producto: fila.producto,
+      talle: fila.talle,
+      color: fila.color,
+      entradas: fila.entradas,
+      costoUnitario: fila.costoUnitario,
+      precioEfectivo: fila.precioEfectivo,
+      precioLista: fila.precioLista,
+    };
+  });
+
+  const jobResult = await crearImportacionLote(rowsPayload, archivoLoteNombre);
+  setGuardandoLote(false);
+
+  if (!jobResult?.success || !jobResult.job) {
+    alert(
+      jobResult?.error
+        ? `No se pudo iniciar la importacion del lote: ${jobResult.error}`
+        : "No se pudo iniciar la importacion del lote."
+    );
+    return;
+  }
+
+  setImportJobLote(jobResult.job);
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("amber_import_job_id", jobResult.job.jobId);
+  }
+  alert(
+    "Importacion iniciada. Podes cerrar la pestaña y el backend va a seguir procesando el lote."
+  );
+  return;
+
   let filasGuardadas = 0;
   const codigosAgregadosInventario = new Set();
 
@@ -2317,6 +2422,7 @@ const handleGuardarEdicion = async () => {
             filasLoteConError={filasLoteConError}
             filasLotePreview={filasLotePreview}
             guardandoLote={guardandoLote}
+            importJobLote={importJobLote}
             onArchivoChange={handleArchivoLoteChange}
             onClose={() => {
               resetCargaLoteForm();

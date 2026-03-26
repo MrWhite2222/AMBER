@@ -17,6 +17,7 @@ La idea recomendada es:
 - `SheetRepository.gs`: utilidades comunes para abrir hojas, leer headers y actualizar filas.
 - `VentasService.gs`: logica especial de `Ventas`, preservando o regenerando columnas con formulas.
 - `InventarioService.gs`: logica especial de `Inventario`, escribiendo solo el `Codigo` en una fila nueva para convivir bien con `ARRAYFORMULA`.
+- `ImportJobsService.gs`: procesamiento robusto de importaciones por lote en segundo plano.
 - `SheetService.gs`: servicios publicos `leerHoja`, `agregarFila` y `actualizarFila`.
 - `Api.gs`: entrypoints `doGet` y `doPost`.
 
@@ -62,6 +63,21 @@ Se mantiene el mismo contrato:
 - `POST { action: "update", sheet, rowNumber, fila }`
 
 No hace falta cambiar el frontend para probar este backend.
+
+## Importacion masiva robusta
+
+Este backend ahora soporta jobs de importacion por lote para `COSTOS`.
+
+- `POST { action: "create_import_job", rows, sourceFile }`
+- `GET ?action=import_job_status&jobId=...`
+
+Cuando se crea un job:
+
+1. el lote se guarda en hojas auxiliares (`Importaciones` e `ImportacionesDetalle`)
+2. el backend procesa el lote en bloques
+3. si quedan filas pendientes, agenda un trigger para seguir aunque el navegador ya no este abierto
+
+Esto esta pensado para que la app web pueda iniciar una importacion grande y cerrar la pestaña sin cortar el proceso.
 
 ## Cambio importante en `Inventario`
 

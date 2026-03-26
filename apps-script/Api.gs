@@ -16,6 +16,10 @@ function doGet(e) {
       return leerHoja(sheetName);
     }
 
+    if (action === "import_job_status") {
+      return leerImportacionLote(e && e.parameter ? e.parameter.jobId : "");
+    }
+
     return errorResponse_("Accion no valida");
   } catch (error) {
     return errorResponse_(String(error.message || error));
@@ -35,6 +39,10 @@ function doPost(e) {
 
     if (action === "update") {
       return actualizarFila(sheetName, payload.rowNumber, rowData);
+    }
+
+    if (action === "create_import_job") {
+      return crearImportacionLote(payload.rows || [], payload.sourceFile || "");
     }
 
     return errorResponse_("Accion no valida");
