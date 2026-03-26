@@ -31,6 +31,7 @@ import {
 } from "./utils/ventas";
 import {
   CARGA_LOTE_HEADERS,
+  CARGA_LOTE_HEADER_ALIASES,
   getFechaPartsFromCsv,
   normalizarHeaderCsv,
   normalizarFechaCsv,
@@ -1194,9 +1195,11 @@ const handleArchivoLoteChange = async (file) => {
 
   const headerMap = {};
   CARGA_LOTE_HEADERS.forEach((requiredHeader) => {
-    const normalizedRequired = normalizarHeaderCsv(requiredHeader);
-    const foundIndex = normalizedHeaders.findIndex(
-      (header) => header === normalizedRequired
+    const acceptedHeaders =
+      CARGA_LOTE_HEADER_ALIASES[requiredHeader] ?? [requiredHeader];
+    const normalizedAcceptedHeaders = acceptedHeaders.map(normalizarHeaderCsv);
+    const foundIndex = normalizedHeaders.findIndex((header) =>
+      normalizedAcceptedHeaders.includes(header)
     );
 
     if (foundIndex >= 0) {

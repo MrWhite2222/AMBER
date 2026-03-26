@@ -55,6 +55,7 @@
 - El encabezado ahora suma un boton `Descargar Sheet` que usa el `spreadsheetId` del backend para bajar la planilla en formato `.xlsx`.
 - `Nueva Venta` ahora toma el `STOCK` del producto seleccionado, avisa si no alcanza y bloquea `Guardar Venta` cuando la cantidad supera el disponible.
 - `Inventario` ahora suma `Cargar Lote`, una importacion masiva por `.csv` con preview, validacion de columnas/filas y guardado en `COSTOS` mas alta automatica en `Inventario` para codigos nuevos.
+- `Cargar Lote` ahora detecta automaticamente archivos CSV separados por `;` y acepta variantes de encabezados como `PRECIO EFECTVO`.
 
 ## Proximo paso sugerido
 

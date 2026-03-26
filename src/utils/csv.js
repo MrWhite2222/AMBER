@@ -26,6 +26,24 @@ export const CARGA_LOTE_HEADERS = [
   "PRECIO LISTA",
 ];
 
+export const CARGA_LOTE_HEADER_ALIASES = {
+  TEMPORADA: ["TEMPORADA"],
+  FECHA: ["FECHA"],
+  CODIGO: ["CODIGO"],
+  PRODUCTO: ["PRODUCTO"],
+  TALLE: ["TALLE"],
+  COLOR: ["COLOR"],
+  ENTRADAS: ["ENTRADAS"],
+  "COSTO U.": ["COSTO U.", "COSTO U", "COSTO UNITARIO"],
+  "PRECIO EFECTIVO": [
+    "PRECIO EFECTIVO",
+    "PRECIO EFECTVO",
+    "PRECIO EFECT.",
+    "PRECIO EFECT",
+  ],
+  "PRECIO LISTA": ["PRECIO LISTA", "P. LISTA"],
+};
+
 const trimBom = (value) => String(value ?? "").replace(/^\uFEFF/, "").trim();
 
 export const normalizarHeaderCsv = (value) =>
@@ -35,7 +53,14 @@ export const normalizarHeaderCsv = (value) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-const parseCsvLine = (line) => {
+const detectarSeparadorCsv = (line) => {
+  const semicolonCount = (String(line ?? "").match(/;/g) || []).length;
+  const commaCount = (String(line ?? "").match(/,/g) || []).length;
+
+  return semicolonCount > commaCount ? ";" : ",";
+};
+
+const parseCsvLine = (line, delimiter = ",") => {
   const values = [];
   let current = "";
   let inQuotes = false;
@@ -54,7 +79,7 @@ const parseCsvLine = (line) => {
       continue;
     }
 
-    if (char === "," && !inQuotes) {
+    if (char === delimiter && !inQuotes) {
       values.push(current);
       current = "";
       continue;
@@ -78,11 +103,12 @@ export const parseCsvText = (text) => {
     return { headers: [], rows: [] };
   }
 
-  const rawHeaders = parseCsvLine(lines[0]).map(trimBom);
+  const delimiter = detectarSeparadorCsv(lines[0]);
+  const rawHeaders = parseCsvLine(lines[0], delimiter).map(trimBom);
   const normalizedHeaders = rawHeaders.map(normalizarHeaderCsv);
 
   const rows = lines.slice(1).map((line, index) => {
-    const values = parseCsvLine(line);
+    const values = parseCsvLine(line, delimiter);
     const row = { _rowIndex: index + 2 };
 
     rawHeaders.forEach((header, headerIndex) => {
@@ -93,6 +119,7 @@ export const parseCsvText = (text) => {
   });
 
   return {
+    delimiter,
     headers: rawHeaders,
     normalizedHeaders,
     rows,
