@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import GastosView from "./components/GastosView";
 import InventarioView from "./components/InventarioView";
+import CargarLoteModal from "./components/CargarLoteModal";
 import CargarPrendaModal from "./components/CargarPrendaModal";
 import ModificarPreciosModal from "./components/ModificarPreciosModal";
 import EditarVentaModal from "./components/EditarVentaModal";
@@ -28,6 +29,14 @@ import {
   getPrecioSugerido,
   parseNumero,
 } from "./utils/ventas";
+import {
+  CARGA_LOTE_HEADERS,
+  getFechaPartsFromCsv,
+  normalizarHeaderCsv,
+  normalizarFechaCsv,
+  parseCsvText,
+  parseNumeroCsv,
+} from "./utils/csv";
 
 const AmberApp = () => {
   const [viewMode, setViewMode] = useState("resumen");
@@ -268,7 +277,7 @@ const AmberApp = () => {
     return ventasConTempId;
   };
 
-  const inventarioUnico = useMemo(() => {
+const inventarioUnico = useMemo(() => {
   const mapa = new Map();
 
   (Array.isArray(inventario) ? inventario : []).forEach((item) => {
@@ -284,6 +293,16 @@ const AmberApp = () => {
 
   return Array.from(mapa.values());
 }, [inventario]);
+
+const codigosInventarioSet = useMemo(
+  () =>
+    new Set(
+      inventarioUnico
+        .map((item) => getCodigoSeguro(item).toUpperCase())
+        .filter(Boolean)
+    ),
+  [inventarioUnico]
+);
 
 const abrirEdicion = (venta) => {
   const productoInv = inventarioUnico.find(
@@ -372,6 +391,11 @@ const abrirEdicion = (venta) => {
   const [selectedCargaProducto, setSelectedCargaProducto] = useState(null);
   const [searchCargaProducto, setSearchCargaProducto] = useState("");
   const [showCargaProductoDrop, setShowCargaProductoDrop] = useState(false);
+  const [showCargaLoteForm, setShowCargaLoteForm] = useState(false);
+  const [guardandoLote, setGuardandoLote] = useState(false);
+  const [archivoLoteNombre, setArchivoLoteNombre] = useState("");
+  const [columnasFaltantesLote, setColumnasFaltantesLote] = useState([]);
+  const [filasLote, setFilasLote] = useState([]);
   const [showModificarPreciosForm, setShowModificarPreciosForm] = useState(false);
   const [guardandoPrecios, setGuardandoPrecios] = useState(false);
   const [alcancePrecio, setAlcancePrecio] = useState("producto");
@@ -486,6 +510,13 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     setSearchCargaProducto("");
     setShowCargaProductoDrop(false);
     setGuardandoPrenda(false);
+  };
+
+  const resetCargaLoteForm = () => {
+    setGuardandoLote(false);
+    setArchivoLoteNombre("");
+    setColumnasFaltantesLote([]);
+    setFilasLote([]);
   };
 
   const resetModificarPreciosForm = () => {
@@ -1118,6 +1149,188 @@ const cantidadVenta = Number(formData.cantidad) || 0;
 const stockInsuficienteVenta =
   Boolean(selectedProducto) &&
   (stockDisponibleVenta <= 0 || cantidadVenta > stockDisponibleVenta);
+
+const resumenLote = useMemo(
+  () => ({
+    total: filasLote.length,
+    validas: filasLote.filter((fila) => fila.errores.length === 0).length,
+    invalidas: filasLote.filter((fila) => fila.errores.length > 0).length,
+    nuevos: filasLote.filter(
+      (fila) => fila.errores.length === 0 && fila.esNuevo
+    ).length,
+  }),
+  [filasLote]
+);
+
+const filasLotePreview = useMemo(() => filasLote.slice(0, 30), [filasLote]);
+
+const puedeGuardarLote =
+  columnasFaltantesLote.length === 0 &&
+  filasLote.length > 0 &&
+  filasLote.every((fila) => fila.errores.length === 0);
+
+const handleArchivoLoteChange = async (file) => {
+  resetCargaLoteForm();
+
+  if (!file) {
+    return;
+  }
+
+  if (!file.name.toLowerCase().endsWith(".csv")) {
+    setArchivoLoteNombre(file.name);
+    setColumnasFaltantesLote(["Solo se admiten archivos .csv"]);
+    return;
+  }
+
+  const text = await file.text();
+  const { headers, normalizedHeaders, rows } = parseCsvText(text);
+
+  setArchivoLoteNombre(file.name);
+
+  if (!headers.length) {
+    setColumnasFaltantesLote(["El archivo no tiene encabezados validos"]);
+    return;
+  }
+
+  const headerMap = {};
+  CARGA_LOTE_HEADERS.forEach((requiredHeader) => {
+    const normalizedRequired = normalizarHeaderCsv(requiredHeader);
+    const foundIndex = normalizedHeaders.findIndex(
+      (header) => header === normalizedRequired
+    );
+
+    if (foundIndex >= 0) {
+      headerMap[requiredHeader] = headers[foundIndex];
+    }
+  });
+
+  const faltantes = CARGA_LOTE_HEADERS.filter((header) => !headerMap[header]);
+  setColumnasFaltantesLote(faltantes);
+
+  if (faltantes.length > 0) {
+    return;
+  }
+
+  const codigosVistos = new Set();
+  const filasPreparadas = rows.map((row) => {
+    const temporada = normalizarTexto(row[headerMap.TEMPORADA]);
+    const fechaOriginal = normalizarTexto(row[headerMap.FECHA]);
+    const fecha = normalizarFechaCsv(fechaOriginal);
+    const codigo = normalizarTexto(row[headerMap.CODIGO]).toUpperCase();
+    const producto = normalizarTexto(row[headerMap.PRODUCTO]);
+    const talle = normalizarTexto(row[headerMap.TALLE]).toUpperCase();
+    const color = normalizarTexto(row[headerMap.COLOR]).toUpperCase();
+    const entradas = parseNumeroCsv(row[headerMap.ENTRADAS]);
+    const costoUnitario = parseNumeroCsv(row[headerMap["COSTO U."]]);
+    const precioEfectivo = parseNumeroCsv(row[headerMap["PRECIO EFECTIVO"]]);
+    const precioLista = parseNumeroCsv(row[headerMap["PRECIO LISTA"]]);
+    const errores = [];
+
+    if (!temporada) errores.push("temporada");
+    if (!fecha) errores.push("fecha");
+    if (!codigo) errores.push("codigo");
+    if (!producto) errores.push("producto");
+    if (!talle) errores.push("talle");
+    if (!color) errores.push("color");
+    if (entradas <= 0) errores.push("entradas");
+    if (costoUnitario < 0) errores.push("costo");
+    if (precioEfectivo <= 0) errores.push("precio efectivo");
+    if (precioLista <= 0) errores.push("precio lista");
+
+    if (codigo) {
+      if (codigosVistos.has(codigo)) {
+        errores.push("codigo duplicado");
+      }
+      codigosVistos.add(codigo);
+    }
+
+    return {
+      rowNumber: row._rowIndex,
+      temporada,
+      fecha,
+      codigo,
+      producto,
+      talle,
+      color,
+      entradas,
+      costoUnitario,
+      precioEfectivo,
+      precioLista,
+      esNuevo: codigo ? !codigosInventarioSet.has(codigo) : false,
+      errores,
+    };
+  });
+
+  setFilasLote(filasPreparadas);
+};
+
+const handleGuardarLote = async () => {
+  if (!puedeGuardarLote) return;
+
+  setGuardandoLote(true);
+  let filasGuardadas = 0;
+  const codigosAgregadosInventario = new Set();
+
+  for (const fila of filasLote) {
+    const fechaParts = getFechaPartsFromCsv(fila.fecha);
+    const payload = {
+      TEMPORADA: fila.temporada,
+      FECHA: fechaParts.fecha,
+      DIA: fechaParts.dia,
+      MES: fechaParts.mes,
+      CODIGO: fila.codigo,
+      "CÓDIGO": fila.codigo,
+      PRODUCTO: fila.producto,
+      TALLE: fila.talle,
+      Talle: fila.talle,
+      COLOR: fila.color,
+      Color: fila.color,
+      ENTRADAS: fila.entradas,
+      Entradas: fila.entradas,
+      "COSTO U.": fila.costoUnitario,
+      "Precio Efectivo": fila.precioEfectivo,
+      "PRECIO EFECTIVO": fila.precioEfectivo,
+      "Precio lista": fila.precioLista,
+      "PRECIO LISTA": fila.precioLista,
+    };
+
+    const result = await agregarFila("COSTOS", payload);
+    if (!result?.success) {
+      alert(
+        filasGuardadas > 0
+          ? `Se importaron ${filasGuardadas} filas antes de encontrar un error.`
+          : "No se pudo importar el lote en COSTOS."
+      );
+      setGuardandoLote(false);
+      return;
+    }
+
+    if (fila.esNuevo && !codigosAgregadosInventario.has(fila.codigo)) {
+      const inventarioResult = await agregarFila("Inventario", {
+        CODIGO: fila.codigo,
+      });
+
+      if (!inventarioResult?.success) {
+        alert(
+          `El codigo ${fila.codigo} se guardo en COSTOS, pero no se pudo crear su fila en INVENTARIO.`
+        );
+        setGuardandoLote(false);
+        return;
+      }
+
+      codigosAgregadosInventario.add(fila.codigo);
+    }
+
+    filasGuardadas += 1;
+  }
+
+  resetCargaLoteForm();
+  setShowCargaLoteForm(false);
+  setInventario(await leerHoja("Inventario"));
+  alert(
+    `Se importaron ${filasGuardadas} filas del lote y se agregaron ${codigosAgregadosInventario.size} codigos nuevos a Inventario.`
+  );
+};
 
   
   // Calcular ganancia
@@ -1925,6 +2138,10 @@ const handleGuardarEdicion = async () => {
             onInvColorChange={setInvColor}
             onInvSearchChange={setInvSearch}
             onInvTalleChange={setInvTalle}
+            onOpenCargaLote={() => {
+              resetCargaLoteForm();
+              setShowCargaLoteForm(true);
+            }}
             onOpenCargaPrenda={() => {
               resetCargaPrendaForm();
               setShowCargaPrendaForm(true);
@@ -2077,6 +2294,22 @@ const handleGuardarEdicion = async () => {
             setShowCargaProductoDrop={setShowCargaProductoDrop}
             showCargaProductoDrop={showCargaProductoDrop}
             variantesCargaResueltas={variantesCargaResueltas}
+          />
+        )}
+        {showCargaLoteForm && (
+          <CargarLoteModal
+            archivoLoteNombre={archivoLoteNombre}
+            columnasFaltantes={columnasFaltantesLote}
+            filasLotePreview={filasLotePreview}
+            guardandoLote={guardandoLote}
+            onArchivoChange={handleArchivoLoteChange}
+            onClose={() => {
+              resetCargaLoteForm();
+              setShowCargaLoteForm(false);
+            }}
+            onGuardarLote={handleGuardarLote}
+            puedeGuardarLote={puedeGuardarLote}
+            resumenLote={resumenLote}
           />
         )}
         {showModificarPreciosForm && (

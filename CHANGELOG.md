@@ -54,6 +54,7 @@
 - El aviso de bloqueo en `Cargar Prenda` ahora se muestra en rojo y con mayor destaque visual para que no pase desapercibido.
 - El encabezado ahora suma un boton `Descargar Sheet` que usa el `spreadsheetId` del backend para bajar la planilla en formato `.xlsx`.
 - `Nueva Venta` ahora toma el `STOCK` del producto seleccionado, avisa si no alcanza y bloquea `Guardar Venta` cuando la cantidad supera el disponible.
+- `Inventario` ahora suma `Cargar Lote`, una importacion masiva por `.csv` con preview, validacion de columnas/filas y guardado en `COSTOS` mas alta automatica en `Inventario` para codigos nuevos.
 
 ## Proximo paso sugerido
 

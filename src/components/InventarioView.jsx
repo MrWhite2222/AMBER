@@ -17,6 +17,7 @@ const InventarioView = ({
   onInvColorChange,
   onInvSearchChange,
   onInvTalleChange,
+  onOpenCargaLote,
   onOpenCargaPrenda,
   onOpenModificarPrecios,
   onResetFiltros,
@@ -197,6 +198,21 @@ const InventarioView = ({
           }}
         >
           + Cargar Prenda
+        </button>
+        <button
+          onClick={onOpenCargaLote}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "6px",
+            border: "none",
+            background: "#16a085",
+            color: "#fff",
+            fontWeight: "600",
+            cursor: "pointer",
+            fontSize: "0.82em",
+          }}
+        >
+          Cargar Lote
         </button>
         <button
           onClick={onOpenModificarPrecios}
