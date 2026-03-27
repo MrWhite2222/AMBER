@@ -273,7 +273,7 @@ const GastosViewClean = ({ card, gastos, onOpenCargarGasto }) => {
                   {gasto.tipo || "-"}
                 </td>
                 <td style={{ padding: "9px 10px", color: "#bbb" }}>
-                  {gasto.formaPago || "1 pago"}
+                  {gasto.pagoLabel || gasto.formaPago || "1 pago"}
                 </td>
                 <td style={{ padding: "9px 10px", color: "#999" }}>
                   {gasto.etiquetaPago || "-"}

@@ -166,9 +166,16 @@ const construirOcurrenciaGasto = ({
     normalizarTextoGasto(
       getValorGasto(gasto, ["FORMA_PAGO", "FORMA DE PAGO", "Forma de pago"])
     ) || "1 pago";
+  const formaPagoUpper = formaPago.toUpperCase();
   const gastoId =
     normalizarTextoGasto(getValorGasto(gasto, ["GASTO_ID", "ID_GASTO", "ID"])) ||
     `${gasto?._rowNumber || "gasto"}-${index}`;
+  const pagoLabel =
+    formaPagoUpper === "CUOTAS" && cantidadCuotas > 1
+      ? `${cantidadCuotas} cuotas`
+      : tipo.toUpperCase() === "FIJOS"
+      ? "Fijo mensual"
+      : formaPago || "1 pago";
 
   return {
     id: `${gastoId}-${fecha.getFullYear()}-${fecha.getMonth() + 1}-${origen}-${index}`,
@@ -180,6 +187,7 @@ const construirOcurrenciaGasto = ({
     concepto,
     tipo,
     formaPago,
+    pagoLabel,
     totalMostrado: monto,
     totalOriginal: parseNumeroGasto(getValorGasto(gasto, ["TOTAL", "Total"])),
     cantidadCuotas,
@@ -259,7 +267,7 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
           monto: valorCuota,
           cuotaActual: cuotaIndex + 1,
           cantidadCuotas,
-          etiquetaPago: `Cuota ${cuotaIndex + 1}/${cantidadCuotas}`,
+          etiquetaPago: `Cuota ${cuotaIndex + 1} de ${cantidadCuotas}`,
           origen: "cuota",
           index,
         })
