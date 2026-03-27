@@ -59,6 +59,8 @@
 - `Cargar Lote` ahora permite desplegar el detalle de las filas con error, mostrando numero de fila y columnas problematicas.
 - `Cargar Lote` ahora puede iniciarse como un job en segundo plano desde Apps Script, con seguimiento de progreso y continuidad aunque se cierre la pestaña de la app.
 - Se corrigio el importador robusto para aceptar fechas que Google Sheets convierta internamente a tipo `Date` dentro de `ImportacionesDetalle`.
+- `Gastos` ahora admite `Cargar Gasto`, con soporte para gastos fijos mensuales y pagos en cuotas proyectados a meses futuros.
+- La vista de `Gastos` ahora muestra una ventana de 5 meses alrededor del mes seleccionado, con acceso rapido a los dos meses anteriores y los dos siguientes.
 
 ## Proximo paso sugerido
 

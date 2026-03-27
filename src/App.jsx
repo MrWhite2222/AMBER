@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
-import GastosView from "./components/GastosView";
+import GastosView from "./components/GastosViewClean";
 import InventarioView from "./components/InventarioView";
 import CargarLoteModal from "./components/CargarLoteModal";
+import CargarGastoModal from "./components/CargarGastoModal";
 import CargarPrendaModal from "./components/CargarPrendaModal";
 import ModificarPreciosModal from "./components/ModificarPreciosModal";
 import EditarVentaModal from "./components/EditarVentaModal";
@@ -40,6 +41,12 @@ import {
   parseCsvText,
   parseNumeroCsv,
 } from "./utils/csv";
+import {
+  getGastosDelMes,
+  getMesNombreGasto,
+  getTotalGastos,
+  parseNumeroGasto,
+} from "./utils/gastos";
 
 const AmberApp = () => {
   const [viewMode, setViewMode] = useState("resumen");
@@ -371,6 +378,16 @@ const abrirEdicion = (venta) => {
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [searchProducto, setSearchProducto] = useState("");
   const [showProductoDrop, setShowProductoDrop] = useState(false);
+  const [showGastoForm, setShowGastoForm] = useState(false);
+  const [guardandoGasto, setGuardandoGasto] = useState(false);
+  const [gastoData, setGastoData] = useState({
+    fecha: new Date().toISOString().split("T")[0],
+    descripcion: "",
+    tipo: "Otros gastos",
+    formaPago: "1 pago",
+    cantidadCuotas: "3",
+    total: "",
+  });
   const createCargaVarianteVacia = () => ({
     codigo: "",
     talle: "",
@@ -468,6 +485,15 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 }, [editSelectedProducto, editFormData.medioPago]);
 
   useEffect(() => {
+    if (!esGastoFijo || gastoData.formaPago === "1 pago") return;
+
+    setGastoData((prev) => ({
+      ...prev,
+      formaPago: "1 pago",
+    }));
+  }, [esGastoFijo, gastoData.formaPago]);
+
+  useEffect(() => {
     if (modoCargaPrenda !== "existente" || !selectedCargaProducto) return;
 
     setCargaPrendaData((prev) => ({
@@ -523,6 +549,18 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     setFilasLote([]);
   };
 
+  const resetGastoForm = () => {
+    setGuardandoGasto(false);
+    setGastoData({
+      fecha: new Date().toISOString().split("T")[0],
+      descripcion: "",
+      tipo: "Otros gastos",
+      formaPago: "1 pago",
+      cantidadCuotas: "3",
+      total: "",
+    });
+  };
+
   const resetModificarPreciosForm = () => {
     setGuardandoPrecios(false);
     setAlcancePrecio("producto");
@@ -570,6 +608,25 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     );
   };
 
+  const esGastoFijo = normalizarTexto(gastoData.tipo).toUpperCase() === "FIJOS";
+  const esGastoCuotas =
+    !esGastoFijo &&
+    normalizarTexto(gastoData.formaPago).toUpperCase() === "CUOTAS";
+  const cantidadCuotasGasto = Math.max(
+    1,
+    Number(gastoData.cantidadCuotas || 0) || 1
+  );
+  const totalGasto = parseNumeroGasto(gastoData.total);
+  const valorCuotaGasto = esGastoCuotas
+    ? totalGasto / cantidadCuotasGasto
+    : totalGasto;
+  const puedeGuardarGasto =
+    Boolean(normalizarTexto(gastoData.fecha)) &&
+    Boolean(normalizarTexto(gastoData.descripcion)) &&
+    Boolean(normalizarTexto(gastoData.tipo)) &&
+    totalGasto > 0 &&
+    (!esGastoCuotas || cantidadCuotasGasto > 1);
+
   // Parsear fecha del formato DD/MM/YYYY
   const parseFecha = (fechaStr) => {
     if (!fechaStr) return null;
@@ -594,17 +651,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
   }, [allVentas]);
 
   const gastosMes = useMemo(() => {
-    const now = new Date();
-    const mesActual = now.getMonth();
-    const anioActual = now.getFullYear();
-    return gastos.filter((g) => {
-      const fecha = parseFechaGasto(g);
-      return (
-        fecha &&
-        fecha.getMonth() === mesActual &&
-        fecha.getFullYear() === anioActual
-      );
-    });
+    return getGastosDelMes(gastos, new Date());
   }, [gastos]);
 
   // Análisis resumen
@@ -633,12 +680,12 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
         (s, v) => s + parseNumero(v["Ganancia Neta"]),
         0
       ),
-      gastos: gastosMes.reduce((s, g) => s + parseNumero(g["TOTAL"]), 0),
+      gastos: getTotalGastos(gastosMes),
       ventas: ventasMes.length,
       movimientosGastos: gastosMes.length,
       resultado:
         ventasMes.reduce((s, v) => s + parseNumero(v["Ganancia Neta"]), 0) -
-        gastosMes.reduce((s, g) => s + parseNumero(g["TOTAL"]), 0),
+        getTotalGastos(gastosMes),
     }),
     [ventasMes, gastosMes]
   );
@@ -1649,6 +1696,56 @@ const syncPromise = agregarFila("Ventas", nuevaVentaLimpia)
 pendingVentasSyncRef.current.set(tempId, syncPromise);
 };
 
+const handleGuardarGasto = async () => {
+  if (!puedeGuardarGasto) return;
+
+  setGuardandoGasto(true);
+
+  const fecha = new Date(gastoData.fecha);
+  const formaPago = esGastoFijo ? "1 pago" : gastoData.formaPago;
+  const cantidadCuotas = esGastoCuotas ? cantidadCuotasGasto : 1;
+  const gastoId = `GASTO-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)
+    .toUpperCase()}`;
+
+  const payload = {
+    FECHA: formatearFecha(gastoData.fecha),
+    "AÑO": fecha.getFullYear(),
+    ANO: fecha.getFullYear(),
+    MES: getMesNombreGasto(fecha.getMonth()),
+    DIA: fecha.getDate(),
+    CONCEPTO: normalizarTexto(gastoData.descripcion),
+    DESCRIPCION: normalizarTexto(gastoData.descripcion),
+    TIPO: gastoData.tipo,
+    TIPO_GASTO: gastoData.tipo,
+    FORMA_PAGO: formaPago,
+    "FORMA DE PAGO": formaPago,
+    CANTIDAD_CUOTAS: cantidadCuotas,
+    "CANTIDAD DE CUOTAS": cantidadCuotas,
+    VALOR_CUOTA: esGastoCuotas ? valorCuotaGasto : totalGasto,
+    "VALOR CUOTA": esGastoCuotas ? valorCuotaGasto : totalGasto,
+    TOTAL: totalGasto,
+    GASTO_ID: gastoId,
+  };
+
+  const result = await agregarFila("Gastos", payload);
+
+  if (!result?.success) {
+    alert(
+      result?.error
+        ? `No se pudo guardar el gasto: ${result.error}`
+        : "No se pudo guardar el gasto."
+    );
+    setGuardandoGasto(false);
+    return;
+  }
+
+  resetGastoForm();
+  setShowGastoForm(false);
+  setGastos(await leerHoja("Gastos"));
+};
+
 const handleGuardarCargaPrenda = async () => {
   const esModoExistente = modoCargaPrenda === "existente";
   const productoManual = normalizarTexto(cargaPrendaData.productoManual);
@@ -2322,11 +2419,12 @@ const handleGuardarEdicion = async () => {
         {/* GASTOS */}
         {viewMode === "gastos" && (
           <GastosView
-            anio={getAnio()}
             card={card}
             gastos={gastos}
-            mes={getMes()}
-            parseNumero={parseNumero}
+            onOpenCargarGasto={() => {
+              resetGastoForm();
+              setShowGastoForm(true);
+            }}
           />
         )}
         {/* MODAL NUEVA VENTA */}
@@ -2357,6 +2455,26 @@ const handleGuardarEdicion = async () => {
             setShowProductoDrop={setShowProductoDrop}
             setSearchProducto={setSearchProducto}
             showProductoDrop={showProductoDrop}
+          />
+        )}
+        {showGastoForm && (
+          <CargarGastoModal
+            esGastoCuotas={esGastoCuotas}
+            esGastoFijo={esGastoFijo}
+            gastoData={gastoData}
+            guardandoGasto={guardandoGasto}
+            inp={inp}
+            lbl={lbl}
+            onClose={() => {
+              resetGastoForm();
+              setShowGastoForm(false);
+            }}
+            onGastoDataChange={(key, value) =>
+              setGastoData((prev) => ({ ...prev, [key]: value }))
+            }
+            onGuardarGasto={handleGuardarGasto}
+            puedeGuardarGasto={puedeGuardarGasto}
+            valorCuotaGasto={valorCuotaGasto}
           />
         )}
         {showCargaPrendaForm && (
