@@ -447,6 +447,25 @@ const [editSelectedProducto, setEditSelectedProducto] = useState(null);
 const [editSearchProducto, setEditSearchProducto] = useState("");
 const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
+  const esGastoFijo = normalizarTexto(gastoData.tipo).toUpperCase() === "FIJOS";
+  const esGastoCuotas =
+    !esGastoFijo &&
+    normalizarTexto(gastoData.formaPago).toUpperCase() === "CUOTAS";
+  const cantidadCuotasGasto = Math.max(
+    1,
+    Number(gastoData.cantidadCuotas || 0) || 1
+  );
+  const totalGasto = parseNumeroGasto(gastoData.total);
+  const valorCuotaGasto = esGastoCuotas
+    ? totalGasto / cantidadCuotasGasto
+    : totalGasto;
+  const puedeGuardarGasto =
+    Boolean(normalizarTexto(gastoData.fecha)) &&
+    Boolean(normalizarTexto(gastoData.descripcion)) &&
+    Boolean(normalizarTexto(gastoData.tipo)) &&
+    totalGasto > 0 &&
+    (!esGastoCuotas || cantidadCuotasGasto > 1);
+
   const getMes = () =>
     [
       "Enero",
@@ -607,25 +626,6 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
         : [...prev, codigo]
     );
   };
-
-  const esGastoFijo = normalizarTexto(gastoData.tipo).toUpperCase() === "FIJOS";
-  const esGastoCuotas =
-    !esGastoFijo &&
-    normalizarTexto(gastoData.formaPago).toUpperCase() === "CUOTAS";
-  const cantidadCuotasGasto = Math.max(
-    1,
-    Number(gastoData.cantidadCuotas || 0) || 1
-  );
-  const totalGasto = parseNumeroGasto(gastoData.total);
-  const valorCuotaGasto = esGastoCuotas
-    ? totalGasto / cantidadCuotasGasto
-    : totalGasto;
-  const puedeGuardarGasto =
-    Boolean(normalizarTexto(gastoData.fecha)) &&
-    Boolean(normalizarTexto(gastoData.descripcion)) &&
-    Boolean(normalizarTexto(gastoData.tipo)) &&
-    totalGasto > 0 &&
-    (!esGastoCuotas || cantidadCuotasGasto > 1);
 
   // Parsear fecha del formato DD/MM/YYYY
   const parseFecha = (fechaStr) => {
