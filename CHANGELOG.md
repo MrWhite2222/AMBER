@@ -58,6 +58,7 @@
 - `Cargar Lote` ahora detecta automaticamente archivos CSV separados por `;` y acepta variantes de encabezados como `PRECIO EFECTVO`.
 - `Cargar Lote` ahora permite desplegar el detalle de las filas con error, mostrando numero de fila y columnas problematicas.
 - `Cargar Lote` ahora puede iniciarse como un job en segundo plano desde Apps Script, con seguimiento de progreso y continuidad aunque se cierre la pestaña de la app.
+- Se corrigio el importador robusto para aceptar fechas que Google Sheets convierta internamente a tipo `Date` dentro de `ImportacionesDetalle`.
 
 ## Proximo paso sugerido
 

@@ -218,6 +218,23 @@ function processImportJobBatch_(jobId) {
 }
 
 function getImportDateParts_(fecha) {
+  if (
+    Object.prototype.toString.call(fecha) === "[object Date]" &&
+    fecha &&
+    !isNaN(fecha.getTime())
+  ) {
+    return {
+      fecha:
+        padImportDatePart_(fecha.getDate()) +
+        "/" +
+        padImportDatePart_(fecha.getMonth() + 1) +
+        "/" +
+        fecha.getFullYear(),
+      dia: Number(fecha.getDate()) || 0,
+      mes: getImportMonthName_(Number(fecha.getMonth()) + 1),
+    };
+  }
+
   const normalized = String(fecha || "").trim();
   var match = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
 
