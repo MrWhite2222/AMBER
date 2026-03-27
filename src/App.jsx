@@ -5,6 +5,7 @@ import InventarioView from "./components/InventarioView";
 import CargarLoteModal from "./components/CargarLoteModal";
 import CargarGastoModal from "./components/CargarGastoModal";
 import CargarPrendaModal from "./components/CargarPrendaModal";
+import EditarGastoModal from "./components/EditarGastoModal";
 import ModificarPreciosModal from "./components/ModificarPreciosModal";
 import EditarVentaModal from "./components/EditarVentaModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
@@ -45,6 +46,7 @@ import {
   getGastosDelMes,
   getMesNombreGasto,
   getTotalGastos,
+  parseFechaGasto,
   parseNumeroGasto,
 } from "./utils/gastos";
 
@@ -388,6 +390,17 @@ const abrirEdicion = (venta) => {
     cantidadCuotas: "3",
     total: "",
   });
+  const [showEditGastoForm, setShowEditGastoForm] = useState(false);
+  const [guardandoEdicionGasto, setGuardandoEdicionGasto] = useState(false);
+  const [gastoEditando, setGastoEditando] = useState(null);
+  const [gastoEditData, setGastoEditData] = useState({
+    fecha: new Date().toISOString().split("T")[0],
+    descripcion: "",
+    tipo: "Otros gastos",
+    formaPago: "1 pago",
+    cantidadCuotas: "3",
+    total: "",
+  });
   const createCargaVarianteVacia = () => ({
     codigo: "",
     talle: "",
@@ -465,6 +478,25 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     Boolean(normalizarTexto(gastoData.tipo)) &&
     totalGasto > 0 &&
     (!esGastoCuotas || cantidadCuotasGasto > 1);
+  const esEditGastoFijo =
+    normalizarTexto(gastoEditData.tipo).toUpperCase() === "FIJOS";
+  const esEditGastoCuotas =
+    !esEditGastoFijo &&
+    normalizarTexto(gastoEditData.formaPago).toUpperCase() === "CUOTAS";
+  const cantidadCuotasEditGasto = Math.max(
+    1,
+    Number(gastoEditData.cantidadCuotas || 0) || 1
+  );
+  const totalEditGasto = parseNumeroGasto(gastoEditData.total);
+  const valorCuotaEditGasto = esEditGastoCuotas
+    ? totalEditGasto / cantidadCuotasEditGasto
+    : totalEditGasto;
+  const puedeGuardarEdicionGasto =
+    Boolean(normalizarTexto(gastoEditData.fecha)) &&
+    Boolean(normalizarTexto(gastoEditData.descripcion)) &&
+    Boolean(normalizarTexto(gastoEditData.tipo)) &&
+    totalEditGasto > 0 &&
+    (!esEditGastoCuotas || cantidadCuotasEditGasto > 1);
 
   const getMes = () =>
     [
@@ -511,6 +543,15 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
       formaPago: "1 pago",
     }));
   }, [esGastoFijo, gastoData.formaPago]);
+
+  useEffect(() => {
+    if (!esEditGastoFijo || gastoEditData.formaPago === "1 pago") return;
+
+    setGastoEditData((prev) => ({
+      ...prev,
+      formaPago: "1 pago",
+    }));
+  }, [esEditGastoFijo, gastoEditData.formaPago]);
 
   useEffect(() => {
     if (modoCargaPrenda !== "existente" || !selectedCargaProducto) return;
@@ -571,6 +612,19 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
   const resetGastoForm = () => {
     setGuardandoGasto(false);
     setGastoData({
+      fecha: new Date().toISOString().split("T")[0],
+      descripcion: "",
+      tipo: "Otros gastos",
+      formaPago: "1 pago",
+      cantidadCuotas: "3",
+      total: "",
+    });
+  };
+
+  const resetEditarGastoForm = () => {
+    setGuardandoEdicionGasto(false);
+    setGastoEditando(null);
+    setGastoEditData({
       fecha: new Date().toISOString().split("T")[0],
       descripcion: "",
       tipo: "Otros gastos",
@@ -1696,38 +1750,90 @@ const syncPromise = agregarFila("Ventas", nuevaVentaLimpia)
 pendingVentasSyncRef.current.set(tempId, syncPromise);
 };
 
+const construirPayloadGasto = ({
+  cantidadCuotas,
+  descripcion,
+  fechaISO,
+  formaPago,
+  gastoId,
+  total,
+  tipo,
+  fechaFin = "",
+}) => {
+  const fecha = new Date(fechaISO);
+  const formaPagoFinal =
+    normalizarTexto(tipo).toUpperCase() === "FIJOS" ? "1 pago" : formaPago;
+  const valorCuota =
+    normalizarTexto(formaPagoFinal).toUpperCase() === "CUOTAS" && cantidadCuotas > 1
+      ? total / cantidadCuotas
+      : total;
+
+  return {
+    FECHA: formatearFecha(fechaISO),
+    "AÑO": fecha.getFullYear(),
+    ANO: fecha.getFullYear(),
+    MES: getMesNombreGasto(fecha.getMonth()),
+    DIA: fecha.getDate(),
+    CONCEPTO: normalizarTexto(descripcion),
+    DESCRIPCION: normalizarTexto(descripcion),
+    TIPO: tipo,
+    TIPO_GASTO: tipo,
+    FORMA_PAGO: formaPagoFinal,
+    "FORMA DE PAGO": formaPagoFinal,
+    CANTIDAD_CUOTAS: cantidadCuotas,
+    "CANTIDAD DE CUOTAS": cantidadCuotas,
+    VALOR_CUOTA: valorCuota,
+    "VALOR CUOTA": valorCuota,
+    TOTAL: total,
+    GASTO_ID: gastoId,
+    FECHA_FIN: fechaFin,
+  };
+};
+
+const abrirEdicionGasto = (gasto) => {
+  if (!gasto?.raw?._rowNumber) return;
+
+  const formaPago = gasto.formaPago || "1 pago";
+  const cantidadCuotas = Number(gasto.cantidadCuotas || 1) || 1;
+  const contexto = gasto.origen === "fijo"
+    ? `Los cambios se van a reflejar desde ${gasto.fechaTexto}.`
+    : gasto.origen === "cuota"
+    ? "Edita la primera cuota para recalcular todas las restantes."
+    : "Se actualizara este gasto puntual.";
+
+  setGastoEditando({
+    ...gasto,
+    contexto,
+  });
+  setGastoEditData({
+    fecha: gasto.fecha ? gasto.fecha.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    descripcion: gasto.concepto || "",
+    tipo: gasto.tipo || "Otros gastos",
+    formaPago,
+    cantidadCuotas: String(cantidadCuotas),
+    total: String(gasto.totalOriginal || gasto.totalMostrado || 0),
+  });
+  setShowEditGastoForm(true);
+};
+
 const handleGuardarGasto = async () => {
   if (!puedeGuardarGasto) return;
 
   setGuardandoGasto(true);
 
-  const fecha = new Date(gastoData.fecha);
-  const formaPago = esGastoFijo ? "1 pago" : gastoData.formaPago;
-  const cantidadCuotas = esGastoCuotas ? cantidadCuotasGasto : 1;
   const gastoId = `GASTO-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 8)
     .toUpperCase()}`;
-
-  const payload = {
-    FECHA: formatearFecha(gastoData.fecha),
-    "AÑO": fecha.getFullYear(),
-    ANO: fecha.getFullYear(),
-    MES: getMesNombreGasto(fecha.getMonth()),
-    DIA: fecha.getDate(),
-    CONCEPTO: normalizarTexto(gastoData.descripcion),
-    DESCRIPCION: normalizarTexto(gastoData.descripcion),
-    TIPO: gastoData.tipo,
-    TIPO_GASTO: gastoData.tipo,
-    FORMA_PAGO: formaPago,
-    "FORMA DE PAGO": formaPago,
-    CANTIDAD_CUOTAS: cantidadCuotas,
-    "CANTIDAD DE CUOTAS": cantidadCuotas,
-    VALOR_CUOTA: esGastoCuotas ? valorCuotaGasto : totalGasto,
-    "VALOR CUOTA": esGastoCuotas ? valorCuotaGasto : totalGasto,
-    TOTAL: totalGasto,
-    GASTO_ID: gastoId,
-  };
+  const payload = construirPayloadGasto({
+    cantidadCuotas: esGastoCuotas ? cantidadCuotasGasto : 1,
+    descripcion: gastoData.descripcion,
+    fechaISO: gastoData.fecha,
+    formaPago: esGastoFijo ? "1 pago" : gastoData.formaPago,
+    gastoId,
+    total: totalGasto,
+    tipo: gastoData.tipo,
+  });
 
   const result = await agregarFila("Gastos", payload);
 
@@ -1743,6 +1849,123 @@ const handleGuardarGasto = async () => {
 
   resetGastoForm();
   setShowGastoForm(false);
+  setGastos(await leerHoja("Gastos"));
+};
+
+const handleGuardarEdicionGasto = async () => {
+  if (!gastoEditando || !puedeGuardarEdicionGasto) return;
+
+  if (
+    gastoEditando.origen === "cuota" &&
+    Number(gastoEditando.cuotaActual || 0) > 1
+  ) {
+    alert("Las cuotas se editan desde la primera cuota del plan.");
+    return;
+  }
+
+  const raw = gastoEditando.raw || {};
+  const rowNumber = Number(raw._rowNumber || 0);
+  if (!rowNumber) {
+    alert("No se pudo identificar el gasto en Google Sheets.");
+    return;
+  }
+
+  setGuardandoEdicionGasto(true);
+
+  const gastoId =
+    normalizarTexto(
+      raw?.GASTO_ID ?? raw?.ID_GASTO ?? raw?.ID ?? gastoEditando.baseId
+    ) ||
+    `GASTO-${Date.now()}`;
+  const fechaFinActual = normalizarTexto(
+    raw?.FECHA_FIN ?? raw?.["Fecha fin"] ?? raw?.HASTA_FECHA ?? ""
+  );
+  const payload = construirPayloadGasto({
+    cantidadCuotas: esEditGastoCuotas ? cantidadCuotasEditGasto : 1,
+    descripcion: gastoEditData.descripcion,
+    fechaISO: gastoEditData.fecha,
+    formaPago: esEditGastoFijo ? "1 pago" : gastoEditData.formaPago,
+    gastoId,
+    total: totalEditGasto,
+    tipo: gastoEditData.tipo,
+    fechaFin: fechaFinActual,
+  });
+
+  if (gastoEditando.origen === "fijo") {
+    const fechaBase = parseFechaGasto(raw);
+    const fechaAplicacion = new Date(gastoEditData.fecha);
+    const mismoMesInicio =
+      fechaBase &&
+      fechaBase.getMonth() === fechaAplicacion.getMonth() &&
+      fechaBase.getFullYear() === fechaAplicacion.getFullYear();
+
+    if (!mismoMesInicio) {
+      const finAnterior = new Date(
+        fechaAplicacion.getFullYear(),
+        fechaAplicacion.getMonth(),
+        0
+      );
+      const fechaFinIso = `${finAnterior.getFullYear()}-${String(
+        finAnterior.getMonth() + 1
+      ).padStart(2, "0")}-${String(finAnterior.getDate()).padStart(2, "0")}`;
+
+      const cierreResult = await actualizarFila("Gastos", rowNumber, {
+        FECHA_FIN: formatearFecha(fechaFinIso),
+      });
+
+      if (!cierreResult?.success) {
+        alert(
+          cierreResult?.error
+            ? `No se pudo cerrar la version anterior del gasto fijo: ${cierreResult.error}`
+            : "No se pudo cerrar la version anterior del gasto fijo."
+        );
+        setGuardandoEdicionGasto(false);
+        return;
+      }
+
+      const nuevaVersionResult = await agregarFila("Gastos", {
+        ...payload,
+        FECHA_FIN: "",
+      });
+
+      if (!nuevaVersionResult?.success) {
+        alert(
+          nuevaVersionResult?.error
+            ? `No se pudo crear la nueva version del gasto fijo: ${nuevaVersionResult.error}`
+            : "No se pudo crear la nueva version del gasto fijo."
+        );
+        setGuardandoEdicionGasto(false);
+        return;
+      }
+    } else {
+      const updateResult = await actualizarFila("Gastos", rowNumber, payload);
+
+      if (!updateResult?.success) {
+        alert(
+          updateResult?.error
+            ? `No se pudo actualizar el gasto fijo: ${updateResult.error}`
+            : "No se pudo actualizar el gasto fijo."
+        );
+        setGuardandoEdicionGasto(false);
+        return;
+      }
+    }
+  } else {
+    const updateResult = await actualizarFila("Gastos", rowNumber, payload);
+
+    if (!updateResult?.success) {
+      alert(
+        updateResult?.error
+          ? `No se pudo actualizar el gasto: ${updateResult.error}`
+          : "No se pudo actualizar el gasto."
+      );
+      setGuardandoEdicionGasto(false);
+      return;
+    }
+  }
+
+  resetEditarGastoForm();
+  setShowEditGastoForm(false);
   setGastos(await leerHoja("Gastos"));
 };
 
@@ -2421,6 +2644,7 @@ const handleGuardarEdicion = async () => {
           <GastosView
             card={card}
             gastos={gastos}
+            onEditarGasto={abrirEdicionGasto}
             onOpenCargarGasto={() => {
               resetGastoForm();
               setShowGastoForm(true);
@@ -2475,6 +2699,27 @@ const handleGuardarEdicion = async () => {
             onGuardarGasto={handleGuardarGasto}
             puedeGuardarGasto={puedeGuardarGasto}
             valorCuotaGasto={valorCuotaGasto}
+          />
+        )}
+        {showEditGastoForm && (
+          <EditarGastoModal
+            contextoEdicionGasto={gastoEditando?.contexto || ""}
+            esGastoCuotas={esEditGastoCuotas}
+            esGastoFijo={esEditGastoFijo}
+            gastoData={gastoEditData}
+            guardandoGasto={guardandoEdicionGasto}
+            inp={inp}
+            lbl={lbl}
+            onClose={() => {
+              resetEditarGastoForm();
+              setShowEditGastoForm(false);
+            }}
+            onGastoDataChange={(key, value) =>
+              setGastoEditData((prev) => ({ ...prev, [key]: value }))
+            }
+            onGuardarGasto={handleGuardarEdicionGasto}
+            puedeGuardarGasto={puedeGuardarEdicionGasto}
+            valorCuotaGasto={valorCuotaEditGasto}
           />
         )}
         {showCargaPrendaForm && (

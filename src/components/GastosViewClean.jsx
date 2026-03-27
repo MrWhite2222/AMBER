@@ -22,7 +22,10 @@ const formatoMonto = (valor) =>
     maximumFractionDigits: 2,
   });
 
-const GastosViewClean = ({ card, gastos, onOpenCargarGasto }) => {
+const puedeEditarGasto = (gasto) =>
+  gasto.origen !== "cuota" || Number(gasto.cuotaActual || 0) === 1;
+
+const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => {
   const [mesSeleccionado, setMesSeleccionado] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -240,7 +243,7 @@ const GastosViewClean = ({ card, gastos, onOpenCargarGasto }) => {
                 background: "rgba(0,0,0,0.2)",
               }}
             >
-              {["Fecha", "Concepto", "Tipo", "Pago", "Detalle", "Monto"].map((h) => (
+              {["Fecha", "Concepto", "Tipo", "Pago", "Detalle", "Monto", ""].map((h) => (
                 <th
                   key={h}
                   style={{
@@ -288,6 +291,27 @@ const GastosViewClean = ({ card, gastos, onOpenCargarGasto }) => {
                   }}
                 >
                   $ {formatoMonto(gasto.totalMostrado)}
+                </td>
+                <td style={{ padding: "9px 10px", textAlign: "right" }}>
+                  {puedeEditarGasto(gasto) ? (
+                    <button
+                      onClick={() => onEditarGasto(gasto)}
+                      style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(243,156,18,0.45)",
+                        background: "rgba(243,156,18,0.12)",
+                        color: "#f39c12",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
+                  ) : (
+                    <span style={{ color: "#666", fontSize: "0.8em" }}>-</span>
+                  )}
                 </td>
               </tr>
             ))}

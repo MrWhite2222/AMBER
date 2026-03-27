@@ -77,6 +77,26 @@ export const getFinMes = (date) =>
 
 const getDiasEnMes = (year, monthIndex) => new Date(year, monthIndex + 1, 0).getDate();
 
+const parseFechaFlexible = (valor) => {
+  if (
+    Object.prototype.toString.call(valor) === "[object Date]" &&
+    valor &&
+    !Number.isNaN(valor.getTime())
+  ) {
+    return valor;
+  }
+
+  const texto = String(valor ?? "").trim();
+  if (!texto) return null;
+
+  if (texto.includes("/")) {
+    const [diaTexto, mesTextoValor, anioTexto] = texto.split("/");
+    return new Date(Number(anioTexto), Number(mesTextoValor) - 1, Number(diaTexto));
+  }
+
+  return new Date(texto);
+};
+
 export const parseFechaGasto = (gasto) => {
   if (
     Object.prototype.toString.call(gasto) === "[object Date]" &&
@@ -99,24 +119,7 @@ export const parseFechaGasto = (gasto) => {
 
   const fecha = getValorGasto(gasto, ["FECHA", "Fecha"]);
   if (!fecha) return null;
-
-  if (
-    Object.prototype.toString.call(fecha) === "[object Date]" &&
-    fecha &&
-    !Number.isNaN(fecha.getTime())
-  ) {
-    return fecha;
-  }
-
-  const texto = String(fecha).trim();
-  if (!texto) return null;
-
-  if (texto.includes("/")) {
-    const [diaTexto, mesTextoValor, anioTexto] = texto.split("/");
-    return new Date(Number(anioTexto), Number(mesTextoValor) - 1, Number(diaTexto));
-  }
-
-  return new Date(texto);
+  return parseFechaFlexible(fecha);
 };
 
 const normalizarFormaPago = (gasto) =>
@@ -203,6 +206,9 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
   if (!fechaBase || Number.isNaN(fechaBase.getTime())) {
     return [];
   }
+  const fechaFin = parseFechaFlexible(
+    getValorGasto(gasto, ["FECHA_FIN", "Fecha fin", "HASTA_FECHA", "Hasta fecha"])
+  );
 
   const total = parseNumeroGasto(getValorGasto(gasto, ["TOTAL", "Total"]));
   const tipo = normalizarTextoGasto(
@@ -231,6 +237,10 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
         getDiasEnMes(cursor.getFullYear(), cursor.getMonth())
       );
       const fecha = new Date(cursor.getFullYear(), cursor.getMonth(), dia);
+
+      if (fechaFin && fecha > getFinMes(fechaFin)) {
+        continue;
+      }
 
       ocurrencias.push(
         construirOcurrenciaGasto({
