@@ -87,16 +87,6 @@ const esRegistroEliminado = (gasto) =>
     ).toUpperCase()
   );
 
-const getMesesOmitidos = (gasto) =>
-  new Set(
-    normalizarTextoGasto(
-      getValorGasto(gasto, ["MESES_OMITIDOS", "Meses omitidos"])
-    )
-      .split(/[;,]/)
-      .map((item) => normalizarTextoGasto(item))
-      .filter(Boolean)
-  );
-
 const parseFechaFlexible = (valor) => {
   if (
     Object.prototype.toString.call(valor) === "[object Date]" &&
@@ -116,6 +106,33 @@ const parseFechaFlexible = (valor) => {
 
   return new Date(texto);
 };
+
+export const normalizarClaveMesGasto = (valor) => {
+  const texto = normalizarTextoGasto(valor);
+  if (!texto) return "";
+
+  const matchMes = texto.match(/^(\d{4})-(\d{2})$/);
+  if (matchMes) {
+    return `${matchMes[1]}-${matchMes[2]}`;
+  }
+
+  const fecha = parseFechaFlexible(texto);
+  if (fecha && !Number.isNaN(fecha.getTime())) {
+    return getClaveMesGasto(fecha);
+  }
+
+  return texto;
+};
+
+const getMesesOmitidos = (gasto) =>
+  new Set(
+    normalizarTextoGasto(
+      getValorGasto(gasto, ["MESES_OMITIDOS", "Meses omitidos"])
+    )
+      .split(/[;,]/)
+      .map((item) => normalizarClaveMesGasto(item))
+      .filter(Boolean)
+  );
 
 export const parseFechaGasto = (gasto) => {
   if (

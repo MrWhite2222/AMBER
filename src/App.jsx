@@ -47,6 +47,7 @@ import {
   getClaveMesGasto,
   getMesNombreGasto,
   getTotalGastos,
+  normalizarClaveMesGasto,
   parseFechaGasto,
   parseNumeroGasto,
 } from "./utils/gastos";
@@ -661,11 +662,11 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     const meses = new Set(
       getMesesOmitidosTexto(gasto)
         .split(/[;,]/)
-        .map((item) => normalizarTexto(item))
+        .map((item) => normalizarClaveMesGasto(item))
         .filter(Boolean)
     );
 
-    meses.add(mesClave);
+    meses.add(normalizarClaveMesGasto(mesClave));
     return Array.from(meses).join(";");
   };
 
