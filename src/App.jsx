@@ -50,7 +50,22 @@ import {
   normalizarClaveMesGasto,
   parseFechaGasto,
   parseNumeroGasto,
+  toInputDate,
 } from "./utils/gastos";
+
+const getTodayInputDate = () => toInputDate(new Date());
+
+const parseInputDateLocal = (value) => {
+  const [year, month, day] = String(value ?? "")
+    .split("-")
+    .map((item) => Number(item));
+
+  if (!year || !month || !day) {
+    return new Date(value);
+  }
+
+  return new Date(year, month - 1, day);
+};
 
 const AmberApp = () => {
   const [viewMode, setViewMode] = useState("resumen");
@@ -374,7 +389,7 @@ const abrirEdicion = (venta) => {
   const [showForm, setShowForm] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [formData, setFormData] = useState({
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: getTodayInputDate(),
     cantidad: 1,
     precioVenta: "",
     medioPago: "EFECTIVO",
@@ -385,7 +400,7 @@ const abrirEdicion = (venta) => {
   const [showGastoForm, setShowGastoForm] = useState(false);
   const [guardandoGasto, setGuardandoGasto] = useState(false);
   const [gastoData, setGastoData] = useState({
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: getTodayInputDate(),
     descripcion: "",
     tipo: "Otros gastos",
     formaPago: "1 pago",
@@ -396,7 +411,7 @@ const abrirEdicion = (venta) => {
   const [guardandoEdicionGasto, setGuardandoEdicionGasto] = useState(false);
   const [gastoEditando, setGastoEditando] = useState(null);
   const [gastoEditData, setGastoEditData] = useState({
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: getTodayInputDate(),
     descripcion: "",
     tipo: "Otros gastos",
     formaPago: "1 pago",
@@ -414,7 +429,7 @@ const abrirEdicion = (venta) => {
   const [guardandoPrenda, setGuardandoPrenda] = useState(false);
   const [modoCargaPrenda, setModoCargaPrenda] = useState("existente");
   const [cargaPrendaData, setCargaPrendaData] = useState({
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: getTodayInputDate(),
     temporada: "",
     productoManual: "",
     costoUnitario: "",
@@ -437,7 +452,7 @@ const abrirEdicion = (venta) => {
   const [guardandoPrecios, setGuardandoPrecios] = useState(false);
   const [alcancePrecio, setAlcancePrecio] = useState("producto");
   const [precioData, setPrecioData] = useState({
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: getTodayInputDate(),
     referencia: "ACTUALIZACION PRECIOS",
     costoUnitario: "",
     precioEfectivo: "",
@@ -595,7 +610,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
   const resetCargaPrendaForm = () => {
     setModoCargaPrenda("existente");
     setCargaPrendaData({
-      fecha: new Date().toISOString().split("T")[0],
+      fecha: getTodayInputDate(),
       temporada: "",
       productoManual: "",
       costoUnitario: "",
@@ -619,7 +634,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
   const resetGastoForm = () => {
     setGuardandoGasto(false);
     setGastoData({
-      fecha: new Date().toISOString().split("T")[0],
+      fecha: getTodayInputDate(),
       descripcion: "",
       tipo: "Otros gastos",
       formaPago: "1 pago",
@@ -633,7 +648,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     setGastoEditando(null);
     setAccionEdicionCuota("plan_completo");
     setGastoEditData({
-      fecha: new Date().toISOString().split("T")[0],
+      fecha: getTodayInputDate(),
       descripcion: "",
       tipo: "Otros gastos",
       formaPago: "1 pago",
@@ -781,7 +796,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     setGuardandoPrecios(false);
     setAlcancePrecio("producto");
     setPrecioData({
-      fecha: new Date().toISOString().split("T")[0],
+      fecha: getTodayInputDate(),
       referencia: "ACTUALIZACION PRECIOS",
       costoUnitario: "",
       precioEfectivo: "",
@@ -1850,7 +1865,7 @@ setAllVentas((prev) => [...prev, nuevaVentaLimpia]);
 
 // 2. Limpiar formulario y cerrar modal
 setFormData({
-  fecha: new Date().toISOString().split("T")[0],
+  fecha: getTodayInputDate(),
   cantidad: 1,
   precioVenta: "",
   medioPago: "EFECTIVO"
@@ -1908,7 +1923,7 @@ const construirPayloadGasto = ({
   valorCuota = null,
   fechaFin = "",
 }) => {
-  const fecha = new Date(fechaISO);
+  const fecha = parseInputDateLocal(fechaISO);
   const formaPagoFinal =
     normalizarTexto(tipo).toUpperCase() === "FIJOS" ? "1 pago" : formaPago;
   const valorCuotaCalculado =
@@ -1966,7 +1981,7 @@ const abrirEdicionGasto = (gasto) => {
   });
   setAccionEdicionCuota(esCuotaPosterior ? "solo_cuota" : "plan_completo");
   setGastoEditData({
-    fecha: gasto.fecha ? gasto.fecha.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    fecha: gasto.fecha ? toInputDate(gasto.fecha) : getTodayInputDate(),
     descripcion: gasto.concepto || "",
     tipo: gasto.tipo || "Otros gastos",
     formaPago,
@@ -2237,7 +2252,7 @@ const handleGuardarEdicionGasto = async () => {
 
   if (gastoEditando.origen === "fijo") {
     const fechaBase = parseFechaGasto(raw);
-    const fechaAplicacion = new Date(gastoEditData.fecha);
+    const fechaAplicacion = parseInputDateLocal(gastoEditData.fecha);
     const mismoMesInicio =
       fechaBase &&
       fechaBase.getMonth() === fechaAplicacion.getMonth() &&
@@ -2416,7 +2431,7 @@ const handleEliminarGastoSoloMes = async () => {
   const fechaAplicacion =
     gastoEditando.fecha instanceof Date
       ? gastoEditando.fecha
-      : new Date(gastoEditData.fecha);
+      : parseInputDateLocal(gastoEditData.fecha);
 
   if (Number.isNaN(fechaAplicacion.getTime())) {
     alert("No se pudo identificar el mes a omitir.");
@@ -2472,7 +2487,7 @@ const handleEliminarGastoSiguientes = async () => {
   const fechaAplicacion =
     gastoEditando.fecha instanceof Date
       ? gastoEditando.fecha
-      : new Date(gastoEditData.fecha);
+      : parseInputDateLocal(gastoEditData.fecha);
 
   if (!fechaBase || Number.isNaN(fechaAplicacion.getTime())) {
     alert("No se pudo identificar desde que mes cortar el gasto fijo.");
