@@ -644,6 +644,14 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     setGastos(await leerHoja("Gastos"));
   };
 
+  const refrescarGastosConDelay = (delayMs = 450) => {
+    if (typeof window === "undefined") return;
+
+    window.setTimeout(() => {
+      refrescarGastos();
+    }, delayMs);
+  };
+
   const getMesesOmitidosTexto = (gasto) =>
     normalizarTexto(
       gasto?.MESES_OMITIDOS ?? gasto?.["Meses omitidos"] ?? ""
@@ -2047,8 +2055,13 @@ const handleEliminarGastoSoloMes = async () => {
 
   setGuardandoEdicionGasto(true);
 
+  const mesesOmitidosActualizados = agregarMesOmitido(
+    raw,
+    getClaveMesGasto(fechaAplicacion)
+  );
+
   const updateResult = await actualizarFila("Gastos", rowNumber, {
-    MESES_OMITIDOS: agregarMesOmitido(raw, getClaveMesGasto(fechaAplicacion)),
+    MESES_OMITIDOS: mesesOmitidosActualizados,
   });
 
   if (!updateResult?.success) {
@@ -2061,8 +2074,18 @@ const handleEliminarGastoSoloMes = async () => {
     return;
   }
 
+  setGastos((prev) =>
+    prev.map((item) =>
+      Number(item?._rowNumber || 0) === rowNumber
+        ? {
+            ...item,
+            MESES_OMITIDOS: mesesOmitidosActualizados,
+          }
+        : item
+    )
+  );
   cerrarEdicionGasto();
-  await refrescarGastos();
+  refrescarGastosConDelay();
 };
 
 const handleEliminarGastoSiguientes = async () => {
