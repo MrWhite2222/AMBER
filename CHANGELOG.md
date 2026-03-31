@@ -63,6 +63,7 @@
 - La vista de `Gastos` ahora muestra una ventana de 5 meses alrededor del mes seleccionado, con acceso rapido a los dos meses anteriores y los dos siguientes.
 - La vista de `Gastos` ahora etiqueta mejor las cuotas (`3 cuotas`, `Cuota 2 de 3`) y distingue los gastos fijos mensuales en la tabla.
 - Los gastos ahora se pueden editar desde la tabla; los gastos fijos se versionan desde el mes editado y las cuotas se recalculan desde la primera cuota.
+- Los gastos ahora permiten eliminar un gasto puntual, omitir un gasto fijo solo en un mes o cortarlo desde un mes en adelante usando los campos `FECHA_FIN`, `MESES_OMITIDOS` y `ELIMINADO`.
 
 ## Proximo paso sugerido
 

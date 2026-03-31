@@ -44,6 +44,7 @@ import {
 } from "./utils/csv";
 import {
   getGastosDelMes,
+  getClaveMesGasto,
   getMesNombreGasto,
   getTotalGastos,
   parseFechaGasto,
@@ -632,6 +633,32 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
       cantidadCuotas: "3",
       total: "",
     });
+  };
+
+  const cerrarEdicionGasto = () => {
+    resetEditarGastoForm();
+    setShowEditGastoForm(false);
+  };
+
+  const refrescarGastos = async () => {
+    setGastos(await leerHoja("Gastos"));
+  };
+
+  const getMesesOmitidosTexto = (gasto) =>
+    normalizarTexto(
+      gasto?.MESES_OMITIDOS ?? gasto?.["Meses omitidos"] ?? ""
+    );
+
+  const agregarMesOmitido = (gasto, mesClave) => {
+    const meses = new Set(
+      getMesesOmitidosTexto(gasto)
+        .split(/[;,]/)
+        .map((item) => normalizarTexto(item))
+        .filter(Boolean)
+    );
+
+    meses.add(mesClave);
+    return Array.from(meses).join(";");
   };
 
   const resetModificarPreciosForm = () => {
@@ -1964,9 +1991,140 @@ const handleGuardarEdicionGasto = async () => {
     }
   }
 
-  resetEditarGastoForm();
-  setShowEditGastoForm(false);
-  setGastos(await leerHoja("Gastos"));
+  cerrarEdicionGasto();
+  await refrescarGastos();
+};
+
+const handleEliminarGastoPuntual = async () => {
+  if (!gastoEditando) return;
+
+  const raw = gastoEditando.raw || {};
+  const rowNumber = Number(raw._rowNumber || 0);
+  if (!rowNumber) {
+    alert("No se pudo identificar el gasto en Google Sheets.");
+    return;
+  }
+
+  setGuardandoEdicionGasto(true);
+
+  const updateResult = await actualizarFila("Gastos", rowNumber, {
+    ELIMINADO: "SI",
+  });
+
+  if (!updateResult?.success) {
+    alert(
+      updateResult?.error
+        ? `No se pudo eliminar el gasto: ${updateResult.error}`
+        : "No se pudo eliminar el gasto."
+    );
+    setGuardandoEdicionGasto(false);
+    return;
+  }
+
+  cerrarEdicionGasto();
+  await refrescarGastos();
+};
+
+const handleEliminarGastoSoloMes = async () => {
+  if (!gastoEditando || gastoEditando.origen !== "fijo") return;
+
+  const raw = gastoEditando.raw || {};
+  const rowNumber = Number(raw._rowNumber || 0);
+  if (!rowNumber) {
+    alert("No se pudo identificar el gasto fijo en Google Sheets.");
+    return;
+  }
+
+  const fechaAplicacion =
+    gastoEditando.fecha instanceof Date
+      ? gastoEditando.fecha
+      : new Date(gastoEditData.fecha);
+
+  if (Number.isNaN(fechaAplicacion.getTime())) {
+    alert("No se pudo identificar el mes a omitir.");
+    return;
+  }
+
+  setGuardandoEdicionGasto(true);
+
+  const updateResult = await actualizarFila("Gastos", rowNumber, {
+    MESES_OMITIDOS: agregarMesOmitido(raw, getClaveMesGasto(fechaAplicacion)),
+  });
+
+  if (!updateResult?.success) {
+    alert(
+      updateResult?.error
+        ? `No se pudo omitir este mes del gasto fijo: ${updateResult.error}`
+        : "No se pudo omitir este mes del gasto fijo."
+    );
+    setGuardandoEdicionGasto(false);
+    return;
+  }
+
+  cerrarEdicionGasto();
+  await refrescarGastos();
+};
+
+const handleEliminarGastoSiguientes = async () => {
+  if (!gastoEditando || gastoEditando.origen !== "fijo") return;
+
+  const raw = gastoEditando.raw || {};
+  const rowNumber = Number(raw._rowNumber || 0);
+  if (!rowNumber) {
+    alert("No se pudo identificar el gasto fijo en Google Sheets.");
+    return;
+  }
+
+  const fechaBase = parseFechaGasto(raw);
+  const fechaAplicacion =
+    gastoEditando.fecha instanceof Date
+      ? gastoEditando.fecha
+      : new Date(gastoEditData.fecha);
+
+  if (!fechaBase || Number.isNaN(fechaAplicacion.getTime())) {
+    alert("No se pudo identificar desde que mes cortar el gasto fijo.");
+    return;
+  }
+
+  setGuardandoEdicionGasto(true);
+
+  const mismoMesInicio =
+    fechaBase.getMonth() === fechaAplicacion.getMonth() &&
+    fechaBase.getFullYear() === fechaAplicacion.getFullYear();
+
+  const updatePayload = mismoMesInicio
+    ? {
+        ELIMINADO: "SI",
+      }
+    : (() => {
+        const finAnterior = new Date(
+          fechaAplicacion.getFullYear(),
+          fechaAplicacion.getMonth(),
+          0
+        );
+        const fechaFinIso = `${finAnterior.getFullYear()}-${String(
+          finAnterior.getMonth() + 1
+        ).padStart(2, "0")}-${String(finAnterior.getDate()).padStart(2, "0")}`;
+
+        return {
+          FECHA_FIN: formatearFecha(fechaFinIso),
+        };
+      })();
+
+  const updateResult = await actualizarFila("Gastos", rowNumber, updatePayload);
+
+  if (!updateResult?.success) {
+    alert(
+      updateResult?.error
+        ? `No se pudo eliminar el gasto fijo desde este mes: ${updateResult.error}`
+        : "No se pudo eliminar el gasto fijo desde este mes."
+    );
+    setGuardandoEdicionGasto(false);
+    return;
+  }
+
+  cerrarEdicionGasto();
+  await refrescarGastos();
 };
 
 const handleGuardarCargaPrenda = async () => {
@@ -2711,13 +2869,18 @@ const handleGuardarEdicion = async () => {
             inp={inp}
             lbl={lbl}
             onClose={() => {
-              resetEditarGastoForm();
-              setShowEditGastoForm(false);
+              cerrarEdicionGasto();
             }}
+            onEliminarGastoPuntual={handleEliminarGastoPuntual}
+            onEliminarGastoSoloMes={handleEliminarGastoSoloMes}
+            onEliminarGastoSiguientes={handleEliminarGastoSiguientes}
             onGastoDataChange={(key, value) =>
               setGastoEditData((prev) => ({ ...prev, [key]: value }))
             }
             onGuardarGasto={handleGuardarEdicionGasto}
+            puedeEliminarGasto={
+              gastoEditando?.origen === "fijo" || gastoEditando?.origen === "base"
+            }
             puedeGuardarGasto={puedeGuardarEdicionGasto}
             valorCuotaGasto={valorCuotaEditGasto}
           />

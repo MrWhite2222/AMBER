@@ -66,6 +66,9 @@ export const formatearFechaGasto = (date) =>
     date.getMonth() + 1
   ).padStart(2, "0")}/${date.getFullYear()}`;
 
+export const getClaveMesGasto = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
 export const sumarMeses = (date, delta) =>
   new Date(date.getFullYear(), date.getMonth() + delta, 1);
 
@@ -76,6 +79,23 @@ export const getFinMes = (date) =>
   new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
 
 const getDiasEnMes = (year, monthIndex) => new Date(year, monthIndex + 1, 0).getDate();
+
+const esRegistroEliminado = (gasto) =>
+  ["SI", "TRUE", "1"].includes(
+    normalizarTextoGasto(
+      getValorGasto(gasto, ["ELIMINADO", "Eliminado", "ESTADO_ELIMINADO"])
+    ).toUpperCase()
+  );
+
+const getMesesOmitidos = (gasto) =>
+  new Set(
+    normalizarTextoGasto(
+      getValorGasto(gasto, ["MESES_OMITIDOS", "Meses omitidos"])
+    )
+      .split(/[;,]/)
+      .map((item) => normalizarTextoGasto(item))
+      .filter(Boolean)
+  );
 
 const parseFechaFlexible = (valor) => {
   if (
@@ -202,6 +222,10 @@ const construirOcurrenciaGasto = ({
 };
 
 const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
+  if (esRegistroEliminado(gasto)) {
+    return [];
+  }
+
   const fechaBase = parseFechaGasto(gasto);
   if (!fechaBase || Number.isNaN(fechaBase.getTime())) {
     return [];
@@ -209,6 +233,7 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
   const fechaFin = parseFechaFlexible(
     getValorGasto(gasto, ["FECHA_FIN", "Fecha fin", "HASTA_FECHA", "Hasta fecha"])
   );
+  const mesesOmitidos = getMesesOmitidos(gasto);
 
   const total = parseNumeroGasto(getValorGasto(gasto, ["TOTAL", "Total"]));
   const tipo = normalizarTextoGasto(
@@ -239,6 +264,9 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
       const fecha = new Date(cursor.getFullYear(), cursor.getMonth(), dia);
 
       if (fechaFin && fecha > getFinMes(fechaFin)) {
+        continue;
+      }
+      if (mesesOmitidos.has(getClaveMesGasto(fecha))) {
         continue;
       }
 
