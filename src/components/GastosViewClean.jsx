@@ -22,8 +22,7 @@ const formatoMonto = (valor) =>
     maximumFractionDigits: 2,
   });
 
-const puedeEditarGasto = (gasto) =>
-  gasto.origen !== "cuota" || Number(gasto.cuotaActual || 0) === 1;
+const puedeEditarGasto = (gasto) => Boolean(gasto?.raw?._rowNumber);
 
 const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => {
   const [mesSeleccionado, setMesSeleccionado] = useState(() => {

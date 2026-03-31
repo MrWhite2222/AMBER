@@ -403,6 +403,7 @@ const abrirEdicion = (venta) => {
     cantidadCuotas: "3",
     total: "",
   });
+  const [accionEdicionCuota, setAccionEdicionCuota] = useState("plan_completo");
   const createCargaVarianteVacia = () => ({
     codigo: "",
     talle: "",
@@ -485,6 +486,10 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
   const esEditGastoCuotas =
     !esEditGastoFijo &&
     normalizarTexto(gastoEditData.formaPago).toUpperCase() === "CUOTAS";
+  const esCuotaPosteriorEditando =
+    gastoEditando?.origen === "cuota" && Number(gastoEditando?.cuotaActual || 0) > 1;
+  const esPrimeraCuotaEditando =
+    gastoEditando?.origen === "cuota" && Number(gastoEditando?.cuotaActual || 0) === 1;
   const cantidadCuotasEditGasto = Math.max(
     1,
     Number(gastoEditData.cantidadCuotas || 0) || 1
@@ -498,7 +503,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     Boolean(normalizarTexto(gastoEditData.descripcion)) &&
     Boolean(normalizarTexto(gastoEditData.tipo)) &&
     totalEditGasto > 0 &&
-    (!esEditGastoCuotas || cantidadCuotasEditGasto > 1);
+    (esCuotaPosteriorEditando || !esEditGastoCuotas || cantidadCuotasEditGasto > 1);
 
   const getMes = () =>
     [
@@ -626,6 +631,7 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
   const resetEditarGastoForm = () => {
     setGuardandoEdicionGasto(false);
     setGastoEditando(null);
+    setAccionEdicionCuota("plan_completo");
     setGastoEditData({
       fecha: new Date().toISOString().split("T")[0],
       descripcion: "",
@@ -668,6 +674,107 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
     meses.add(normalizarClaveMesGasto(mesClave));
     return Array.from(meses).join(";");
+  };
+
+  const getGastoIdSeguro = (gasto) =>
+    normalizarTexto(gasto?.GASTO_ID ?? gasto?.ID_GASTO ?? gasto?.ID ?? gasto?.baseId);
+
+  const getCantidadCuotasLinea = (gasto) =>
+    Math.max(
+      1,
+      Number(
+        gasto?.CANTIDAD_CUOTAS ??
+          gasto?.["CANTIDAD DE CUOTAS"] ??
+          gasto?.["Cantidad de cuotas"] ??
+          1
+      ) || 1
+    );
+
+  const getCuotaInicioLinea = (gasto) =>
+    Math.max(
+      1,
+      Number(
+        gasto?.CUOTA_INICIO ?? gasto?.["CUOTA INICIO"] ?? gasto?.["Cuota inicio"] ?? 1
+      ) || 1
+    );
+
+  const getCuotaFinLinea = (gasto) => {
+    const cantidadCuotas = getCantidadCuotasLinea(gasto);
+    const cuotaInicio = getCuotaInicioLinea(gasto);
+    const cuotaFin = Number(
+      gasto?.CUOTA_FIN ?? gasto?.["CUOTA FIN"] ?? gasto?.["Cuota fin"] ?? cantidadCuotas
+    );
+
+    if (!cuotaFin) {
+      return cantidadCuotas;
+    }
+
+    return Math.max(cuotaInicio, Math.min(cantidadCuotas, cuotaFin));
+  };
+
+  const getCuotasOmitidasLinea = (gasto) =>
+    new Set(
+      normalizarTexto(
+        gasto?.CUOTAS_OMITIDAS ??
+          gasto?.["CUOTAS OMITIDAS"] ??
+          gasto?.["Cuotas omitidas"] ??
+          ""
+      )
+        .split(/[;,]/)
+        .map((item) => Number(normalizarTexto(item)))
+        .filter((item) => Number.isInteger(item) && item > 0)
+    );
+
+  const serializarCuotasOmitidas = (setCuotas) =>
+    Array.from(setCuotas)
+      .sort((a, b) => a - b)
+      .join(";");
+
+  const getCuotasActivasDeFila = (gasto) => {
+    const cuotaInicio = getCuotaInicioLinea(gasto);
+    const cuotaFin = getCuotaFinLinea(gasto);
+    const omitidas = getCuotasOmitidasLinea(gasto);
+    const cuotas = [];
+
+    for (let cuota = cuotaInicio; cuota <= cuotaFin; cuota += 1) {
+      if (!omitidas.has(cuota)) {
+        cuotas.push(cuota);
+      }
+    }
+
+    return cuotas;
+  };
+
+  const getFilasLineaGasto = (gastoId) =>
+    gastos.filter(
+      (item) =>
+        Number(item?._rowNumber || 0) > 0 &&
+        getGastoIdSeguro(item) === gastoId &&
+        !["SI", "TRUE", "1"].includes(
+          normalizarTexto(item?.ELIMINADO ?? item?.Eliminado ?? "").toUpperCase()
+        )
+    );
+
+  const construirPayloadRecorteCuotas = (gasto, cuotaDesde, soloEstaCuota = false) => {
+    const cuotasActivas = getCuotasActivasDeFila(gasto);
+    const cuotasARecortar = cuotasActivas.filter((cuota) =>
+      soloEstaCuota ? cuota === cuotaDesde : cuota >= cuotaDesde
+    );
+
+    if (!cuotasARecortar.length) {
+      return null;
+    }
+
+    if (cuotasARecortar.length === cuotasActivas.length) {
+      return { ELIMINADO: "SI" };
+    }
+
+    const nuevasOmitidas = getCuotasOmitidasLinea(gasto);
+    cuotasARecortar.forEach((cuota) => nuevasOmitidas.add(cuota));
+
+    return {
+      CUOTAS_OMITIDAS: serializarCuotasOmitidas(nuevasOmitidas),
+    };
   };
 
   const resetModificarPreciosForm = () => {
@@ -1789,20 +1896,26 @@ pendingVentasSyncRef.current.set(tempId, syncPromise);
 const construirPayloadGasto = ({
   cantidadCuotas,
   descripcion,
+  cuotaFin = "",
+  cuotaInicio = "",
+  cuotasOmitidas = "",
+  eliminado = "",
   fechaISO,
   formaPago,
   gastoId,
   total,
   tipo,
+  valorCuota = null,
   fechaFin = "",
 }) => {
   const fecha = new Date(fechaISO);
   const formaPagoFinal =
     normalizarTexto(tipo).toUpperCase() === "FIJOS" ? "1 pago" : formaPago;
-  const valorCuota =
+  const valorCuotaCalculado =
     normalizarTexto(formaPagoFinal).toUpperCase() === "CUOTAS" && cantidadCuotas > 1
       ? total / cantidadCuotas
       : total;
+  const valorCuotaFinal = valorCuota ?? valorCuotaCalculado;
 
   return {
     FECHA: formatearFecha(fechaISO),
@@ -1818,11 +1931,18 @@ const construirPayloadGasto = ({
     "FORMA DE PAGO": formaPagoFinal,
     CANTIDAD_CUOTAS: cantidadCuotas,
     "CANTIDAD DE CUOTAS": cantidadCuotas,
-    VALOR_CUOTA: valorCuota,
-    "VALOR CUOTA": valorCuota,
+    VALOR_CUOTA: valorCuotaFinal,
+    "VALOR CUOTA": valorCuotaFinal,
     TOTAL: total,
     GASTO_ID: gastoId,
     FECHA_FIN: fechaFin,
+    CUOTA_INICIO: cuotaInicio,
+    "CUOTA INICIO": cuotaInicio,
+    CUOTA_FIN: cuotaFin,
+    "CUOTA FIN": cuotaFin,
+    CUOTAS_OMITIDAS: cuotasOmitidas,
+    "CUOTAS OMITIDAS": cuotasOmitidas,
+    ELIMINADO: eliminado,
   };
 };
 
@@ -1831,8 +1951,11 @@ const abrirEdicionGasto = (gasto) => {
 
   const formaPago = gasto.formaPago || "1 pago";
   const cantidadCuotas = Number(gasto.cantidadCuotas || 1) || 1;
+  const esCuotaPosterior = gasto.origen === "cuota" && Number(gasto.cuotaActual || 0) > 1;
   const contexto = gasto.origen === "fijo"
     ? `Los cambios se van a reflejar desde ${gasto.fechaTexto}.`
+    : esCuotaPosterior
+    ? "Elegi si queres cambiar solo esta cuota, esta y las restantes, o eliminar las cuotas que faltan."
     : gasto.origen === "cuota"
     ? "Edita la primera cuota para recalcular todas las restantes."
     : "Se actualizara este gasto puntual.";
@@ -1841,13 +1964,16 @@ const abrirEdicionGasto = (gasto) => {
     ...gasto,
     contexto,
   });
+  setAccionEdicionCuota(esCuotaPosterior ? "solo_cuota" : "plan_completo");
   setGastoEditData({
     fecha: gasto.fecha ? gasto.fecha.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     descripcion: gasto.concepto || "",
     tipo: gasto.tipo || "Otros gastos",
     formaPago,
     cantidadCuotas: String(cantidadCuotas),
-    total: String(gasto.totalOriginal || gasto.totalMostrado || 0),
+    total: String(
+      esCuotaPosterior ? gasto.totalMostrado || 0 : gasto.totalOriginal || gasto.totalMostrado || 0
+    ),
   });
   setShowEditGastoForm(true);
 };
@@ -1888,16 +2014,29 @@ const handleGuardarGasto = async () => {
   setGastos(await leerHoja("Gastos"));
 };
 
+const aplicarActualizacionesGastos = async (actualizaciones, descripcionError) => {
+  for (const actualizacion of actualizaciones) {
+    const result = await actualizarFila(
+      "Gastos",
+      actualizacion.rowNumber,
+      actualizacion.payload
+    );
+
+    if (!result?.success) {
+      alert(
+        result?.error
+          ? `${descripcionError}: ${result.error}`
+          : descripcionError
+      );
+      return false;
+    }
+  }
+
+  return true;
+};
+
 const handleGuardarEdicionGasto = async () => {
   if (!gastoEditando || !puedeGuardarEdicionGasto) return;
-
-  if (
-    gastoEditando.origen === "cuota" &&
-    Number(gastoEditando.cuotaActual || 0) > 1
-  ) {
-    alert("Las cuotas se editan desde la primera cuota del plan.");
-    return;
-  }
 
   const raw = gastoEditando.raw || {};
   const rowNumber = Number(raw._rowNumber || 0);
@@ -1926,6 +2065,175 @@ const handleGuardarEdicionGasto = async () => {
     tipo: gastoEditData.tipo,
     fechaFin: fechaFinActual,
   });
+
+  if (esPrimeraCuotaEditando) {
+    const filasRelacionadas = getFilasLineaGasto(gastoId).filter(
+      (item) => Number(item?._rowNumber || 0) !== rowNumber
+    );
+
+    const limpiarLinea = await aplicarActualizacionesGastos(
+      filasRelacionadas.map((item) => ({
+        rowNumber: Number(item._rowNumber),
+        payload: { ELIMINADO: "SI" },
+      })),
+      "No se pudo limpiar la linea anterior de cuotas"
+    );
+
+    if (!limpiarLinea) {
+      setGuardandoEdicionGasto(false);
+      return;
+    }
+
+    const updateResult = await actualizarFila("Gastos", rowNumber, {
+      ...payload,
+      CUOTA_INICIO: "",
+      "CUOTA INICIO": "",
+      CUOTA_FIN: "",
+      "CUOTA FIN": "",
+      CUOTAS_OMITIDAS: "",
+      "CUOTAS OMITIDAS": "",
+      ELIMINADO: "",
+    });
+
+    if (!updateResult?.success) {
+      alert(
+        updateResult?.error
+          ? `No se pudo actualizar el plan de cuotas: ${updateResult.error}`
+          : "No se pudo actualizar el plan de cuotas."
+      );
+      setGuardandoEdicionGasto(false);
+      return;
+    }
+
+    cerrarEdicionGasto();
+    await refrescarGastos();
+    return;
+  }
+
+  if (esCuotaPosteriorEditando) {
+    const cuotaActual = Number(gastoEditando.cuotaActual || 0);
+    const filasRelacionadas = getFilasLineaGasto(gastoId);
+    const cuotasActivasLinea = Array.from(
+      new Set(filasRelacionadas.flatMap((item) => getCuotasActivasDeFila(item)))
+    ).sort((a, b) => a - b);
+    const cantidadCuotasTotal = Math.max(
+      cuotaActual,
+      ...filasRelacionadas.map((item) => getCantidadCuotasLinea(item)),
+      Number(gastoEditando.cantidadCuotas || cuotaActual)
+    );
+    const ultimaCuotaActiva = Math.max(
+      cuotaActual,
+      ...cuotasActivasLinea.filter((cuota) => cuota >= cuotaActual)
+    );
+
+    if (accionEdicionCuota === "solo_cuota") {
+      const actualizaciones = filasRelacionadas
+        .map((item) => {
+          const payloadFila = construirPayloadRecorteCuotas(item, cuotaActual, true);
+          return payloadFila
+            ? {
+                rowNumber: Number(item._rowNumber),
+                payload: payloadFila,
+              }
+            : null;
+        })
+        .filter(Boolean);
+
+      const ok = await aplicarActualizacionesGastos(
+        actualizaciones,
+        "No se pudo separar la cuota seleccionada"
+      );
+
+      if (!ok) {
+        setGuardandoEdicionGasto(false);
+        return;
+      }
+
+      const overrideResult = await agregarFila(
+        "Gastos",
+        construirPayloadGasto({
+          cantidadCuotas: cantidadCuotasTotal,
+          cuotaFin: cuotaActual,
+          cuotaInicio: cuotaActual,
+          descripcion: gastoEditData.descripcion,
+          fechaISO: gastoEditData.fecha,
+          formaPago: "Cuotas",
+          gastoId,
+          total: totalEditGasto,
+          tipo: gastoEditData.tipo,
+          valorCuota: totalEditGasto,
+        })
+      );
+
+      if (!overrideResult?.success) {
+        alert(
+          overrideResult?.error
+            ? `No se pudo guardar la cuota editada: ${overrideResult.error}`
+            : "No se pudo guardar la cuota editada."
+        );
+        setGuardandoEdicionGasto(false);
+        return;
+      }
+
+      cerrarEdicionGasto();
+      await refrescarGastos();
+      return;
+    }
+
+    if (accionEdicionCuota === "cuotas_restantes") {
+      const actualizaciones = filasRelacionadas
+        .map((item) => {
+          const payloadFila = construirPayloadRecorteCuotas(item, cuotaActual, false);
+          return payloadFila
+            ? {
+                rowNumber: Number(item._rowNumber),
+                payload: payloadFila,
+              }
+            : null;
+        })
+        .filter(Boolean);
+
+      const ok = await aplicarActualizacionesGastos(
+        actualizaciones,
+        "No se pudieron recalcular las cuotas restantes"
+      );
+
+      if (!ok) {
+        setGuardandoEdicionGasto(false);
+        return;
+      }
+
+      const nuevaLineaResult = await agregarFila(
+        "Gastos",
+        construirPayloadGasto({
+          cantidadCuotas: cantidadCuotasTotal,
+          cuotaFin: ultimaCuotaActiva < cantidadCuotasTotal ? ultimaCuotaActiva : "",
+          cuotaInicio: cuotaActual,
+          descripcion: gastoEditData.descripcion,
+          fechaISO: gastoEditData.fecha,
+          formaPago: "Cuotas",
+          gastoId,
+          total: totalEditGasto * (ultimaCuotaActiva - cuotaActual + 1),
+          tipo: gastoEditData.tipo,
+          valorCuota: totalEditGasto,
+        })
+      );
+
+      if (!nuevaLineaResult?.success) {
+        alert(
+          nuevaLineaResult?.error
+            ? `No se pudo crear la nueva serie de cuotas: ${nuevaLineaResult.error}`
+            : "No se pudo crear la nueva serie de cuotas."
+        );
+        setGuardandoEdicionGasto(false);
+        return;
+      }
+
+      cerrarEdicionGasto();
+      await refrescarGastos();
+      return;
+    }
+  }
 
   if (gastoEditando.origen === "fijo") {
     const fechaBase = parseFechaGasto(raw);
@@ -2016,6 +2324,27 @@ const handleEliminarGastoPuntual = async () => {
 
   setGuardandoEdicionGasto(true);
 
+  const gastoId = getGastoIdSeguro(raw) || getGastoIdSeguro(gastoEditando);
+
+  if (esPrimeraCuotaEditando && gastoId) {
+    const ok = await aplicarActualizacionesGastos(
+      getFilasLineaGasto(gastoId).map((item) => ({
+        rowNumber: Number(item._rowNumber),
+        payload: { ELIMINADO: "SI" },
+      })),
+      "No se pudieron eliminar las cuotas"
+    );
+
+    if (!ok) {
+      setGuardandoEdicionGasto(false);
+      return;
+    }
+
+    cerrarEdicionGasto();
+    await refrescarGastos();
+    return;
+  }
+
   const updateResult = await actualizarFila("Gastos", rowNumber, {
     ELIMINADO: "SI",
   });
@@ -2026,6 +2355,46 @@ const handleEliminarGastoPuntual = async () => {
         ? `No se pudo eliminar el gasto: ${updateResult.error}`
         : "No se pudo eliminar el gasto."
     );
+    setGuardandoEdicionGasto(false);
+    return;
+  }
+
+  cerrarEdicionGasto();
+  await refrescarGastos();
+};
+
+const handleEliminarCuotasRestantes = async () => {
+  if (!gastoEditando || gastoEditando.origen !== "cuota") return;
+
+  const raw = gastoEditando.raw || {};
+  const gastoId = getGastoIdSeguro(raw) || getGastoIdSeguro(gastoEditando);
+  const cuotaActual = Number(gastoEditando.cuotaActual || 0);
+
+  if (!gastoId || !cuotaActual) {
+    alert("No se pudo identificar la linea de cuotas.");
+    return;
+  }
+
+  setGuardandoEdicionGasto(true);
+
+  const actualizaciones = getFilasLineaGasto(gastoId)
+    .map((item) => {
+      const payloadFila = construirPayloadRecorteCuotas(item, cuotaActual, false);
+      return payloadFila
+        ? {
+            rowNumber: Number(item._rowNumber),
+            payload: payloadFila,
+          }
+        : null;
+    })
+    .filter(Boolean);
+
+  const ok = await aplicarActualizacionesGastos(
+    actualizaciones,
+    "No se pudieron eliminar las cuotas restantes"
+  );
+
+  if (!ok) {
     setGuardandoEdicionGasto(false);
     return;
   }
@@ -2885,17 +3254,21 @@ const handleGuardarEdicion = async () => {
         )}
         {showEditGastoForm && (
           <EditarGastoModal
+            accionEdicionCuota={accionEdicionCuota}
             contextoEdicionGasto={gastoEditando?.contexto || ""}
             esGastoCuotas={esEditGastoCuotas}
+            esCuotaPosterior={esCuotaPosteriorEditando}
             esGastoFijo={esEditGastoFijo}
             gastoData={gastoEditData}
             guardandoGasto={guardandoEdicionGasto}
             inp={inp}
             lbl={lbl}
+            onAccionEdicionCuotaChange={setAccionEdicionCuota}
             onClose={() => {
               cerrarEdicionGasto();
             }}
             onEliminarGastoPuntual={handleEliminarGastoPuntual}
+            onEliminarCuotasRestantes={handleEliminarCuotasRestantes}
             onEliminarGastoSoloMes={handleEliminarGastoSoloMes}
             onEliminarGastoSiguientes={handleEliminarGastoSiguientes}
             onGastoDataChange={(key, value) =>
@@ -2903,7 +3276,9 @@ const handleGuardarEdicion = async () => {
             }
             onGuardarGasto={handleGuardarEdicionGasto}
             puedeEliminarGasto={
-              gastoEditando?.origen === "fijo" || gastoEditando?.origen === "base"
+              gastoEditando?.origen === "fijo" ||
+              gastoEditando?.origen === "base" ||
+              gastoEditando?.origen === "cuota"
             }
             puedeGuardarGasto={puedeGuardarEdicionGasto}
             valorCuotaGasto={valorCuotaEditGasto}

@@ -176,6 +176,36 @@ const getCantidadCuotas = (gasto) =>
     ) || 1
   );
 
+const getCuotaInicio = (gasto) =>
+  Math.max(
+    1,
+    Number(
+      getValorGasto(gasto, ["CUOTA_INICIO", "CUOTA INICIO", "Cuota inicio"])
+    ) || 1
+  );
+
+const getCuotaFin = (gasto, cantidadCuotas, cuotaInicio) => {
+  const cuotaFin = Number(
+    getValorGasto(gasto, ["CUOTA_FIN", "CUOTA FIN", "Cuota fin"])
+  );
+
+  if (!cuotaFin) {
+    return cantidadCuotas;
+  }
+
+  return Math.max(cuotaInicio, Math.min(cantidadCuotas, cuotaFin));
+};
+
+const getCuotasOmitidas = (gasto) =>
+  new Set(
+    normalizarTextoGasto(
+      getValorGasto(gasto, ["CUOTAS_OMITIDAS", "CUOTAS OMITIDAS", "Cuotas omitidas"])
+    )
+      .split(/[;,]/)
+      .map((item) => Number(normalizarTextoGasto(item)))
+      .filter((item) => Number.isInteger(item) && item > 0)
+  );
+
 const getValorCuota = (gasto, total, cantidadCuotas) => {
   const explicito = parseNumeroGasto(
     getValorGasto(gasto, ["VALOR_CUOTA", "VALOR CUOTA", "Valor cuota"])
@@ -257,6 +287,9 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
     getValorGasto(gasto, ["TIPO", "Tipo", "TIPO_GASTO", "Tipo de gasto"])
   ).toUpperCase();
   const cantidadCuotas = getCantidadCuotas(gasto);
+  const cuotaInicio = getCuotaInicio(gasto);
+  const cuotaFin = getCuotaFin(gasto, cantidadCuotas, cuotaInicio);
+  const cuotasOmitidas = getCuotasOmitidas(gasto);
   const valorCuota = getValorCuota(gasto, total, cantidadCuotas);
   const formaPago = normalizarFormaPago(gasto);
   const esFijo = tipo === "FIJOS";
@@ -303,8 +336,15 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
   }
 
   if (esCuotas) {
-    for (let cuotaIndex = 0; cuotaIndex < cantidadCuotas; cuotaIndex += 1) {
-      const cursor = sumarMeses(getInicioMes(fechaBase), cuotaIndex);
+    for (let cuotaNumero = cuotaInicio; cuotaNumero <= cuotaFin; cuotaNumero += 1) {
+      if (cuotasOmitidas.has(cuotaNumero)) {
+        continue;
+      }
+
+      const cursor = sumarMeses(
+        getInicioMes(fechaBase),
+        cuotaNumero - cuotaInicio
+      );
       const dia = Math.min(
         fechaBase.getDate(),
         getDiasEnMes(cursor.getFullYear(), cursor.getMonth())
@@ -320,9 +360,9 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
           gasto,
           fecha,
           monto: valorCuota,
-          cuotaActual: cuotaIndex + 1,
+          cuotaActual: cuotaNumero,
           cantidadCuotas,
-          etiquetaPago: `Cuota ${cuotaIndex + 1} de ${cantidadCuotas}`,
+          etiquetaPago: `Cuota ${cuotaNumero} de ${cantidadCuotas}`,
           origen: "cuota",
           index,
         })

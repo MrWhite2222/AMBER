@@ -64,6 +64,7 @@
 - La vista de `Gastos` ahora etiqueta mejor las cuotas (`3 cuotas`, `Cuota 2 de 3`) y distingue los gastos fijos mensuales en la tabla.
 - Los gastos ahora se pueden editar desde la tabla; los gastos fijos se versionan desde el mes editado y las cuotas se recalculan desde la primera cuota.
 - Los gastos ahora permiten eliminar un gasto puntual, omitir un gasto fijo solo en un mes o cortarlo desde un mes en adelante usando los campos `FECHA_FIN`, `MESES_OMITIDOS` y `ELIMINADO`.
+- La edicion de gastos en cuotas ahora soporta editar el plan completo desde la cuota 1, modificar solo una cuota puntual, recalcular las cuotas restantes y eliminar las cuotas que faltan sin tocar las anteriores.
 
 ## Proximo paso sugerido
 

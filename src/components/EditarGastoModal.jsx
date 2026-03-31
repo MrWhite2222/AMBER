@@ -8,15 +8,19 @@ const formatoMonto = (valor) =>
   });
 
 const EditarGastoModal = ({
+  accionEdicionCuota,
   contextoEdicionGasto,
   esGastoCuotas,
   esGastoFijo,
+  esCuotaPosterior,
   gastoData,
   guardandoGasto,
   inp,
   lbl,
+  onAccionEdicionCuotaChange,
   onClose,
   onEliminarGastoPuntual,
+  onEliminarCuotasRestantes,
   onEliminarGastoSoloMes,
   onEliminarGastoSiguientes,
   onGastoDataChange,
@@ -37,8 +41,20 @@ const EditarGastoModal = ({
       return;
     }
 
+    if (esCuotaPosterior) {
+      setPasoEliminacion("cuotas_restantes");
+      return;
+    }
+
     setPasoEliminacion("confirmar");
   };
+
+  const camposBloqueadosCuotaPosterior = esCuotaPosterior;
+  const etiquetaMonto = esCuotaPosterior
+    ? accionEdicionCuota === "cuotas_restantes"
+      ? "Nuevo monto para las cuotas que faltan"
+      : "Nuevo monto de esta cuota"
+    : "Total a pagar";
 
   return (
     <div
@@ -111,7 +127,12 @@ const EditarGastoModal = ({
               type="text"
               value={gastoData.descripcion}
               onChange={(e) => onGastoDataChange("descripcion", e.target.value)}
-              style={inp}
+              disabled={camposBloqueadosCuotaPosterior}
+              style={{
+                ...inp,
+                opacity: camposBloqueadosCuotaPosterior ? 0.78 : 1,
+                cursor: camposBloqueadosCuotaPosterior ? "not-allowed" : "text",
+              }}
             />
           </div>
 
@@ -127,7 +148,13 @@ const EditarGastoModal = ({
               <select
                 value={gastoData.tipo}
                 onChange={(e) => onGastoDataChange("tipo", e.target.value)}
-                style={{ ...inp, background: "#0f3460" }}
+                disabled={camposBloqueadosCuotaPosterior}
+                style={{
+                  ...inp,
+                  background: "#0f3460",
+                  opacity: camposBloqueadosCuotaPosterior ? 0.78 : 1,
+                  cursor: camposBloqueadosCuotaPosterior ? "not-allowed" : "pointer",
+                }}
               >
                 {TIPOS_GASTO.map((tipo) => (
                   <option key={tipo} value={tipo}>
@@ -142,12 +169,15 @@ const EditarGastoModal = ({
               <select
                 value={esGastoFijo ? "1 pago" : gastoData.formaPago}
                 onChange={(e) => onGastoDataChange("formaPago", e.target.value)}
-                disabled={esGastoFijo}
+                disabled={esGastoFijo || camposBloqueadosCuotaPosterior}
                 style={{
                   ...inp,
                   background: "#0f3460",
-                  opacity: esGastoFijo ? 0.7 : 1,
-                  cursor: esGastoFijo ? "not-allowed" : "pointer",
+                  opacity: esGastoFijo || camposBloqueadosCuotaPosterior ? 0.7 : 1,
+                  cursor:
+                    esGastoFijo || camposBloqueadosCuotaPosterior
+                      ? "not-allowed"
+                      : "pointer",
                 }}
               >
                 {FORMAS_PAGO_GASTO.map((forma) => (
@@ -159,7 +189,60 @@ const EditarGastoModal = ({
             </div>
           </div>
 
-          {esGastoCuotas && !esGastoFijo && (
+          {esCuotaPosterior && (
+            <div
+              style={{
+                display: "grid",
+                gap: "8px",
+                background: "rgba(52,152,219,0.08)",
+                border: "1px solid rgba(52,152,219,0.26)",
+                borderRadius: "10px",
+                padding: "14px",
+              }}
+            >
+              <label style={{ ...lbl, marginBottom: 0 }}>Accion sobre esta cuota</label>
+              <div style={{ display: "grid", gap: "8px" }}>
+                <button
+                  onClick={() => onAccionEdicionCuotaChange("solo_cuota")}
+                  disabled={guardandoGasto}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(52,152,219,0.35)",
+                    background:
+                      accionEdicionCuota === "solo_cuota"
+                        ? "rgba(52,152,219,0.22)"
+                        : "rgba(255,255,255,0.04)",
+                    color: "#fff",
+                    textAlign: "left",
+                    cursor: guardandoGasto ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Modificar monto de esta cuota
+                </button>
+                <button
+                  onClick={() => onAccionEdicionCuotaChange("cuotas_restantes")}
+                  disabled={guardandoGasto}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(52,152,219,0.35)",
+                    background:
+                      accionEdicionCuota === "cuotas_restantes"
+                        ? "rgba(52,152,219,0.22)"
+                        : "rgba(255,255,255,0.04)",
+                    color: "#fff",
+                    textAlign: "left",
+                    cursor: guardandoGasto ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Modificar monto de las cuotas que faltan
+                </button>
+              </div>
+            </div>
+          )}
+
+          {esGastoCuotas && !esGastoFijo && !esCuotaPosterior && (
             <div>
               <label style={lbl}>Cantidad de cuotas</label>
               <input
@@ -180,7 +263,7 @@ const EditarGastoModal = ({
             }}
           >
             <div>
-              <label style={lbl}>Total a pagar</label>
+              <label style={lbl}>{etiquetaMonto}</label>
               <input
                 type="number"
                 min="0"
@@ -191,7 +274,7 @@ const EditarGastoModal = ({
               />
             </div>
 
-            {esGastoCuotas && !esGastoFijo && (
+            {esGastoCuotas && !esGastoFijo && !esCuotaPosterior && (
               <div>
                 <label style={lbl}>Valor cuota</label>
                 <input
@@ -331,6 +414,48 @@ const EditarGastoModal = ({
                   </div>
                 </>
               )}
+
+              {pasoEliminacion === "cuotas_restantes" && (
+                <>
+                  <p style={{ margin: 0, color: "#ffb3aa", fontWeight: "600" }}>
+                    ¿Queres eliminar esta cuota y todas las restantes?
+                  </p>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                      onClick={onEliminarCuotasRestantes}
+                      disabled={guardandoGasto}
+                      style={{
+                        flex: 1,
+                        padding: "11px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: "#e74c3c",
+                        color: "#fff",
+                        fontWeight: "700",
+                        cursor: guardandoGasto ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      Eliminar cuotas restantes
+                    </button>
+                    <button
+                      onClick={() => setPasoEliminacion("none")}
+                      disabled={guardandoGasto}
+                      style={{
+                        flex: 1,
+                        padding: "11px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255,255,255,0.15)",
+                        background: "rgba(255,255,255,0.06)",
+                        color: "#fff",
+                        fontWeight: "600",
+                        cursor: guardandoGasto ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -350,7 +475,11 @@ const EditarGastoModal = ({
                 !puedeGuardarGasto || guardandoGasto ? "not-allowed" : "pointer",
             }}
           >
-            {guardandoGasto ? "Guardando..." : "Guardar cambios"}
+            {guardandoGasto
+              ? "Guardando..."
+              : esCuotaPosterior
+              ? "Guardar cambio de cuota"
+              : "Guardar cambios"}
           </button>
         </div>
       </div>
