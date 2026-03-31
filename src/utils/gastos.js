@@ -93,7 +93,7 @@ const parseFechaFlexible = (valor) => {
     valor &&
     !Number.isNaN(valor.getTime())
   ) {
-    return valor;
+    return new Date(valor.getFullYear(), valor.getMonth(), valor.getDate());
   }
 
   const texto = String(valor ?? "").trim();
@@ -102,6 +102,24 @@ const parseFechaFlexible = (valor) => {
   if (texto.includes("/")) {
     const [diaTexto, mesTextoValor, anioTexto] = texto.split("/");
     return new Date(Number(anioTexto), Number(mesTextoValor) - 1, Number(diaTexto));
+  }
+
+  const matchIsoDate = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (matchIsoDate) {
+    return new Date(
+      Number(matchIsoDate[1]),
+      Number(matchIsoDate[2]) - 1,
+      Number(matchIsoDate[3])
+    );
+  }
+
+  const matchIsoDateTime = texto.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if (matchIsoDateTime) {
+    return new Date(
+      Number(matchIsoDateTime[1]),
+      Number(matchIsoDateTime[2]) - 1,
+      Number(matchIsoDateTime[3])
+    );
   }
 
   return new Date(texto);
@@ -140,10 +158,13 @@ export const parseFechaGasto = (gasto) => {
     gasto &&
     !Number.isNaN(gasto.getTime())
   ) {
-    return gasto;
+    return new Date(gasto.getFullYear(), gasto.getMonth(), gasto.getDate());
   }
 
-  const anio = Number(
+  const anioPreferido = Number(
+    getValorGasto(gasto, ["AÑO", "Ano", "ANO", "Anio", "anio"])
+  );
+  const anio = anioPreferido || Number(
     getValorGasto(gasto, ["AÑO", "Ano", "ANO", "Año", "Anio", "anio"])
   );
   const mesTexto = getValorGasto(gasto, ["MES", "Mes"]);

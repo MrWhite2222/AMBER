@@ -846,6 +846,25 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
     if (partes.length === 3) {
       return new Date(partes[2], partes[1] - 1, partes[0]);
     }
+
+    const isoDate = String(fechaStr).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoDate) {
+      return new Date(
+        Number(isoDate[1]),
+        Number(isoDate[2]) - 1,
+        Number(isoDate[3])
+      );
+    }
+
+    const isoDateTime = String(fechaStr).match(/^(\d{4})-(\d{2})-(\d{2})T/);
+    if (isoDateTime) {
+      return new Date(
+        Number(isoDateTime[1]),
+        Number(isoDateTime[2]) - 1,
+        Number(isoDateTime[3])
+      );
+    }
+
     return new Date(fechaStr);
   };
 
