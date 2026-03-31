@@ -70,3 +70,11 @@
 
 - Revisar y corregir el encoding roto en textos visibles de la app.
 - Seguir reduciendo `src/App.jsx` extrayendo helpers y estado compartido.
+
+## 2026-03-31
+
+- `Registros` ahora suma un boton `Medios de Pago` para administrar la configuracion dinamica desde la app.
+- Las ventas nuevas y las ediciones ahora pueden leer medios de pago desde la hoja `MediosPago`, manteniendo un fallback legacy si la hoja todavia esta vacia.
+- El selector de `Medio de Pago` en `Nueva Venta` y `Editar Venta` deja de estar hardcodeado y se alimenta desde la configuracion cargada.
+- El calculo de `Impuesto` para ventas ahora puede tomar formulas dinamicas para medios `CON_CUOTAS` y `SIN_CUOTAS`, usando los parametros guardados en `MediosPago`.
+- La baja de medios de pago se hace como desactivacion logica (`ACTIVO = NO`) para no afectar el historial de ventas.

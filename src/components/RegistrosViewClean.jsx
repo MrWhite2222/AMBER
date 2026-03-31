@@ -52,6 +52,7 @@ const RegistrosViewClean = ({
   onClearFiltros,
   onDashSearchChange,
   onDateChange,
+  onOpenMediosPago,
   onProductoSelect,
   onSetColor,
   onSetTalle,
@@ -70,9 +71,35 @@ const RegistrosViewClean = ({
         border: "1px solid rgba(255,255,255,0.1)",
       }}
     >
-      <h2 style={{ margin: "0 0 15px", color: "#f39c12", fontSize: "1.1em" }}>
-        Filtros
-      </h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "12px",
+          flexWrap: "wrap",
+          marginBottom: "15px",
+        }}
+      >
+        <h2 style={{ margin: 0, color: "#f39c12", fontSize: "1.1em" }}>
+          Filtros
+        </h2>
+        <button
+          onClick={onOpenMediosPago}
+          style={{
+            padding: "9px 14px",
+            borderRadius: "8px",
+            border: "none",
+            background: "#9b59b6",
+            color: "#fff",
+            fontWeight: "700",
+            cursor: "pointer",
+            fontSize: "0.85em",
+          }}
+        >
+          Medios de Pago
+        </button>
+      </div>
 
       <div
         style={{

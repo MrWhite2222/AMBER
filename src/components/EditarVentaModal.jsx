@@ -5,6 +5,7 @@ const EditarVentaModal = ({
   editProductosFiltrados,
   editSearchProducto,
   editSelectedProducto,
+  mediosPagoOptions,
   productosConflictivosEdicion,
   guardandoEdicion,
   handleGuardarEdicion,
@@ -231,18 +232,9 @@ const EditarVentaModal = ({
             onChange={(e) => onEditFormDataChange("medioPago", e.target.value)}
             style={{ ...inp, background: "#0f3460" }}
           >
-            {[
-              "EFECTIVO",
-              "DEBITO",
-              "TRANSFERENCIA",
-              "QR",
-              "CRED.1 CUOTA",
-              "CRED.3 CUOTAS",
-              "CRED.6 CUOTAS",
-              "CRED.13 CUOTAS",
-            ].map((o) => (
-              <option key={o} value={o}>
-                {o}
+            {mediosPagoOptions.map((medio) => (
+              <option key={medio.nombre} value={medio.nombre}>
+                {medio.nombre}
               </option>
             ))}
           </select>

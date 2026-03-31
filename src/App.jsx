@@ -8,6 +8,7 @@ import CargarPrendaModal from "./components/CargarPrendaModal";
 import EditarGastoModal from "./components/EditarGastoModal";
 import ModificarPreciosModal from "./components/ModificarPreciosModal";
 import EditarVentaModal from "./components/EditarVentaModal";
+import MediosPagoModal from "./components/MediosPagoModal";
 import NuevaVentaModal from "./components/NuevaVentaModal";
 import RegistrosView from "./components/RegistrosViewClean";
 import ResumenView from "./components/ResumenView";
@@ -30,9 +31,15 @@ import {
   getProductoPrecioLista,
   getProductoStock,
   getProductoTalleSeguro,
-  getPrecioSugerido,
   parseNumero,
 } from "./utils/ventas";
+import {
+  buscarConfigMedioPago,
+  calcularVentaSegunMedioPago,
+  getMediosPagoActivos,
+  getPrecioSugeridoMedioPago,
+  normalizarMedioPagoConfig,
+} from "./utils/mediosPago";
 import {
   CARGA_LOTE_HEADERS,
   CARGA_LOTE_HEADER_ALIASES,
@@ -75,6 +82,7 @@ const AmberApp = () => {
   const [allVentas, setAllVentas] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [gastos, setGastos] = useState([]);
+  const [mediosPago, setMediosPago] = useState([]);
   const [backendInfo, setBackendInfo] = useState(null);
   const pendingVentasSyncRef = useRef(new Map());
   const ventasRowNumberRef = useRef(new Map());
@@ -86,16 +94,19 @@ const AmberApp = () => {
     setError(null);
 
     try {
-      const [ventasData, inventarioData, gastosData, backend] = await Promise.all([
+      const [ventasData, inventarioData, gastosData, mediosPagoData, backend] =
+        await Promise.all([
         leerHoja("Ventas"),
         leerHoja("Inventario"),
         leerHoja("Gastos"),
+        leerHoja("MediosPago"),
         leerBackendInfo(),
       ]);
 
       setAllVentas(ventasData);
       setInventario(inventarioData);
       setGastos(gastosData);
+      setMediosPago(mediosPagoData);
       setBackendInfo(backend?.success ? backend : null);
     } catch (err) {
       setError("Error al cargar datos");
@@ -111,6 +122,12 @@ const AmberApp = () => {
   useEffect(() => {
     allVentasRef.current = allVentas;
   }, [allVentas]);
+
+  const refrescarMediosPago = async () => {
+    const mediosPagoData = await leerHoja("MediosPago");
+    setMediosPago(mediosPagoData);
+    return mediosPagoData;
+  };
 
 
   // Dashboard filters
@@ -333,6 +350,39 @@ const codigosInventarioSet = useMemo(
   [inventarioUnico]
 );
 
+const mediosPagoActivos = useMemo(
+  () => getMediosPagoActivos(mediosPago),
+  [mediosPago]
+);
+
+const medioPagoDefault = useMemo(
+  () => mediosPagoActivos[0]?.nombre || "EFECTIVO",
+  [mediosPagoActivos]
+);
+
+const buildMediosPagoOptions = (medioActual = "") => {
+  const opciones = [...mediosPagoActivos];
+  const actual = normalizarTexto(medioActual);
+
+  if (
+    actual &&
+    !opciones.some(
+      (medio) =>
+        normalizarTexto(medio.nombre).toUpperCase() === actual.toUpperCase()
+    )
+  ) {
+    opciones.push(
+      normalizarMedioPagoConfig({
+        NOMBRE: actual,
+        TIPO: buscarConfigMedioPago(mediosPagoActivos, actual)?.tipo || "SIN_CUOTAS",
+        ACTIVO: "SI",
+      })
+    );
+  }
+
+  return opciones;
+};
+
 const abrirEdicion = (venta) => {
   const productoInv = inventarioUnico.find(
     (p) =>
@@ -388,6 +438,8 @@ const abrirEdicion = (venta) => {
 
   const [showForm, setShowForm] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [showMediosPagoForm, setShowMediosPagoForm] = useState(false);
+  const [guardandoMedioPago, setGuardandoMedioPago] = useState(false);
   const [formData, setFormData] = useState({
     fecha: getTodayInputDate(),
     cantidad: 1,
@@ -538,24 +590,51 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
   const getAnio = () => new Date().getFullYear();
 
+  useEffect(() => {
+    if (!mediosPagoActivos.length) return;
+
+    setFormData((prev) => {
+      const opciones = buildMediosPagoOptions(prev.medioPago);
+      if (
+        opciones.some(
+          (medio) =>
+            normalizarTexto(medio.nombre).toUpperCase() ===
+            normalizarTexto(prev.medioPago).toUpperCase()
+        )
+      ) {
+        return prev;
+      }
+
+      return { ...prev, medioPago: medioPagoDefault };
+    });
+  }, [medioPagoDefault, mediosPagoActivos]);
+
 // Autocompletar precio según medio de pago
   useEffect(() => {
     if (selectedProducto) {
       setFormData((f) => ({
         ...f,
-        precioVenta: getPrecioSugerido(selectedProducto, formData.medioPago),
+        precioVenta: getPrecioSugeridoMedioPago(
+          selectedProducto,
+          formData.medioPago,
+          mediosPagoActivos
+        ),
       }));
     }
-  }, [selectedProducto, formData.medioPago]);
+  }, [formData.medioPago, mediosPagoActivos, selectedProducto]);
 
   useEffect(() => {
   if (editSelectedProducto) {
     setEditFormData((f) => ({
       ...f,
-      precioVenta: getPrecioSugerido(editSelectedProducto, editFormData.medioPago),
+      precioVenta: getPrecioSugeridoMedioPago(
+        editSelectedProducto,
+        editFormData.medioPago,
+        mediosPagoActivos
+      ),
     }));
   }
-}, [editSelectedProducto, editFormData.medioPago]);
+}, [editFormData.medioPago, editSelectedProducto, mediosPagoActivos]);
 
   useEffect(() => {
     if (!esGastoFijo || gastoData.formaPago === "1 pago") return;
@@ -1797,39 +1876,19 @@ const handleGuardarVenta = async () => {
   setGuardando(true);
   
   const medioPago = formData.medioPago;
-  
-  // G: Precio venta - desde el formulario o del inventario según medio de pago
-  const precioManual = parseNumero(formData.precioVenta);
-  const precioEfectivo = getProductoPrecioEfectivo(selectedProducto);
-  const precioLista = getProductoPrecioLista(selectedProducto);
-  const precio = precioManual > 0 ? precioManual : (medioPago === "EFECTIVO" ? precioEfectivo : precioLista);
-  
-  // H: Costo U. - del inventario
-  const costo = getProductoCosto(selectedProducto);
-  
-  // I: IVA 21% - calculado según medio de pago
-let iva = 0;
-if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "QR") {
-  iva = 0;
-} else if (medioPago === "DEBITO") {
-  iva = precio * 0.012 * (1 + 0.012);
-} else if (medioPago === "CRED.1 CUOTA") {
-  iva = precio * 0.242 * (1 + 0.012);
-} else if (medioPago === "CRED.3 CUOTAS") {
-  iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
-} else if (medioPago === "CRED.6 CUOTAS") {
-  iva = precio * (0.0242 + 1 - 1/1.2139) + (precio - precio * (0.0242 + 1 - 1/1.2139)) * 0.012;
-} else if (medioPago === "CRED.13 CUOTAS") {
-  iva = precio * (0.0242 + 1 - 1/1.1039) + (precio - precio * (0.0242 + 1 - 1/1.1039)) * 0.012;
-} else {
-  iva = precio * 0.012;
-}
-  
-  // J: Ganancia Neta
-  const gananciaNeta = precio === 0 ? 0 : Math.round(((precio - iva) * cantidad) * 1000) / 1000;
-  
-  // K: Ganancias con recompra
-  const gananciaRecompra = (precio - costo - iva) * cantidad;
+  const {
+    precio,
+    costo,
+    impuesto: iva,
+    gananciaNeta,
+    gananciaRecompra,
+  } = calcularVentaSegunMedioPago({
+    producto: selectedProducto,
+    cantidad,
+    medioPago,
+    precioVenta: formData.precioVenta,
+    mediosPago: mediosPagoActivos,
+  });
   
   const fechaFormateada = formatearFecha(formData.fecha);
   const codigoVenta = getCodigoSeguro(selectedProducto);
@@ -1887,7 +1946,7 @@ setFormData({
   fecha: getTodayInputDate(),
   cantidad: 1,
   precioVenta: "",
-  medioPago: "EFECTIVO"
+  medioPago: medioPagoDefault
 });
 setSelectedProducto(null);
 setSearchProducto("");
@@ -2768,35 +2827,19 @@ const handleGuardarEdicion = async () => {
 
   const cantidad = Number(editFormData.cantidad) || 1;
   const medioPago = editFormData.medioPago;
-
-  const precioManual = parseNumero(editFormData.precioVenta);
-  const precioEfectivo = getProductoPrecioEfectivo(editSelectedProducto);
-  const precioLista = getProductoPrecioLista(editSelectedProducto);
-  const precio = precioManual > 0 ? precioManual : (medioPago === "EFECTIVO" ? precioEfectivo : precioLista);
-
-  const costo = getProductoCosto(editSelectedProducto);
-
-  let iva = 0;
-  if (medioPago === "EFECTIVO" || medioPago === "TRANSFERENCIA" || medioPago === "QR") {
-    iva = 0;
-  } else if (medioPago === "DEBITO") {
-    iva = precio * 0.012 * (1 + 0.012);
-  } else if (medioPago === "CRED.1 CUOTA") {
-    iva = precio * 0.0242 * (1 + 0.012);
-  } else if (medioPago === "CRED.3 CUOTAS") {
-    iva = precio * (0.0242 + 1 - 1 / 1.1039) + (precio - precio * (0.0242 + 1 - 1 / 1.1039)) * 0.012;
-  } else if (medioPago === "CRED.6 CUOTAS") {
-    iva = precio * (0.0242 + 1 - 1 / 1.2139) + (precio - precio * (0.0242 + 1 - 1 / 1.2139)) * 0.012;
-  } else if (medioPago === "CRED.13 CUOTAS") {
-    iva = precio * (0.0242 + 1 - 1 / 1.1039) + (precio - precio * (0.0242 + 1 - 1 / 1.1039)) * 0.012;
-  } else {
-    iva = precio * 0.012;
-  }
-
-  const gananciaNeta =
-    precio === 0 ? 0 : Math.round(((precio - iva) * cantidad) * 1000) / 1000;
-
-  const gananciaRecompra = (precio - costo - iva) * cantidad;
+  const {
+    precio,
+    costo,
+    impuesto: iva,
+    gananciaNeta,
+    gananciaRecompra,
+  } = calcularVentaSegunMedioPago({
+    producto: editSelectedProducto,
+    cantidad,
+    medioPago,
+    precioVenta: editFormData.precioVenta,
+    mediosPago: mediosPagoActivos,
+  });
   const codigoActualizado = getInventarioCodigo(editSelectedProducto);
   const productoActualizado = getInventarioProducto(editSelectedProducto);
   const talleActualizado = getInventarioTalle(editSelectedProducto);
@@ -2914,6 +2957,80 @@ const handleGuardarEdicion = async () => {
   setEditSelectedProducto(null);
   setEditSearchProducto("");
   setGuardandoEdicion(false);
+};
+
+const construirPayloadMedioPago = (medioData) => ({
+  NOMBRE: normalizarTexto(medioData.nombre),
+  TIPO: normalizarTexto(medioData.tipo) || "SIN_CUOTAS",
+  CANTIDAD_CUOTAS:
+    normalizarTexto(medioData.tipo) === "CON_CUOTAS"
+      ? Number(medioData.cantidadCuotas || 0) || 1
+      : "",
+  COEFICIENTE_CON_IVA:
+    normalizarTexto(medioData.tipo) === "CON_CUOTAS"
+      ? Number(medioData.coeficienteConIva || 0) || 0
+      : "",
+  ARANCEL_CREDITO_SIN_IVA:
+    normalizarTexto(medioData.tipo) === "CON_CUOTAS"
+      ? Number(medioData.arancelCreditoSinIva || 0) || 0
+      : "",
+  ARANCEL_MEDIO_SIN_IVA:
+    normalizarTexto(medioData.tipo) === "SIN_CUOTAS"
+      ? Number(medioData.arancelMedioSinIva || 0) || 0
+      : "",
+  ARANCEL_BANCO_SIN_IVA: Number(medioData.arancelBancoSinIva || 0) || 0,
+  ACTIVO: "SI",
+});
+
+const handleGuardarMedioPago = async (medioData, onSuccess) => {
+  const payload = construirPayloadMedioPago(medioData);
+  if (!payload.NOMBRE) return;
+
+  setGuardandoMedioPago(true);
+  const result = await agregarFila("MediosPago", payload);
+
+  if (!result?.success) {
+    alert(
+      result?.error
+        ? `No se pudo guardar el medio de pago: ${result.error}`
+        : "No se pudo guardar el medio de pago."
+    );
+    setGuardandoMedioPago(false);
+    return;
+  }
+
+  await refrescarMediosPago();
+  onSuccess?.();
+  setGuardandoMedioPago(false);
+  setShowMediosPagoForm(false);
+};
+
+const handleEliminarMedioPago = async (medio) => {
+  if (!medio?._rowNumber) return;
+
+  setGuardandoMedioPago(true);
+
+  const payload = {
+    ...medio.raw,
+    ...construirPayloadMedioPago(medio),
+    ACTIVO: "NO",
+  };
+
+  const result = await actualizarFila("MediosPago", medio._rowNumber, payload);
+
+  if (!result?.success) {
+    alert(
+      result?.error
+        ? `No se pudo eliminar el medio de pago: ${result.error}`
+        : "No se pudo eliminar el medio de pago."
+    );
+    setGuardandoMedioPago(false);
+    return;
+  }
+
+  await refrescarMediosPago();
+  setGuardandoMedioPago(false);
+  setShowMediosPagoForm(false);
 };
   // Estilos
   const inp = {
@@ -3119,7 +3236,10 @@ const handleGuardarEdicion = async () => {
               Descargar Sheet
             </button>
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => {
+                setFormData((prev) => ({ ...prev, medioPago: medioPagoDefault }));
+                setShowForm(true);
+              }}
               style={{
                 padding: "9px 15px",
                 borderRadius: "8px",
@@ -3211,6 +3331,7 @@ const handleGuardarEdicion = async () => {
       setShowDashDrop(true);
     }}
     onDateChange={(key, value) => setDf((f) => ({ ...f, [key]: value }))}
+    onOpenMediosPago={() => setShowMediosPagoForm(true)}
     onProductoSelect={(producto) => {
       setDf((f) => ({ ...f, producto }));
       setDashSearch(producto);
@@ -3245,6 +3366,7 @@ const handleGuardarEdicion = async () => {
             handleGuardarVenta={handleGuardarVenta}
             inp={inp}
             lbl={lbl}
+            mediosPagoOptions={buildMediosPagoOptions(formData.medioPago)}
             onClose={() => setShowForm(false)}
             onFormDataChange={(key, value) =>
               setFormData((f) => ({ ...f, [key]: value }))
@@ -3434,6 +3556,7 @@ const handleGuardarEdicion = async () => {
     editProductosFiltrados={editProductosFiltrados}
     editSearchProducto={editSearchProducto}
     editSelectedProducto={editSelectedProducto}
+    mediosPagoOptions={buildMediosPagoOptions(editFormData.medioPago)}
     productosConflictivosEdicion={productosConflictivosEdicion.length}
     guardandoEdicion={guardandoEdicion}
     handleGuardarEdicion={handleGuardarEdicion}
@@ -3455,6 +3578,17 @@ const handleGuardarEdicion = async () => {
     showEditProductoDrop={showEditProductoDrop}
   />
 )}
+        {showMediosPagoForm && (
+          <MediosPagoModal
+            guardando={guardandoMedioPago}
+            inp={inp}
+            lbl={lbl}
+            mediosPagoActivos={mediosPagoActivos}
+            onClose={() => setShowMediosPagoForm(false)}
+            onEliminar={handleEliminarMedioPago}
+            onGuardar={handleGuardarMedioPago}
+          />
+        )}
       </div>
     </div>
   );
