@@ -2962,6 +2962,10 @@ const handleGuardarEdicion = async () => {
 const construirPayloadMedioPago = (medioData) => ({
   NOMBRE: normalizarTexto(medioData.nombre),
   TIPO: normalizarTexto(medioData.tipo) || "SIN_CUOTAS",
+  PRECIO_REFERENCIA:
+    normalizarTexto(medioData.tipo) === "SIN_CUOTAS"
+      ? normalizarTexto(medioData.precioReferencia) || "PRECIO_EFECTIVO"
+      : "",
   CANTIDAD_CUOTAS:
     normalizarTexto(medioData.tipo) === "CON_CUOTAS"
       ? Number(medioData.cantidadCuotas || 0) || 1

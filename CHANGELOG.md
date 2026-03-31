@@ -78,3 +78,4 @@
 - El selector de `Medio de Pago` en `Nueva Venta` y `Editar Venta` deja de estar hardcodeado y se alimenta desde la configuracion cargada.
 - El calculo de `Impuesto` para ventas ahora puede tomar formulas dinamicas para medios `CON_CUOTAS` y `SIN_CUOTAS`, usando los parametros guardados en `MediosPago`.
 - La baja de medios de pago se hace como desactivacion logica (`ACTIVO = NO`) para no afectar el historial de ventas.
+- Los medios de pago `SIN_CUOTAS` ahora pueden elegir si usan `Precio efectivo` o `Precio lista` mediante el nuevo campo `PRECIO_REFERENCIA`.

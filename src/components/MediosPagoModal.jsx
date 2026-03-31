@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  PRECIO_REFERENCIA_EFECTIVO,
+  PRECIO_REFERENCIA_LISTA,
   TIPO_MEDIO_PAGO_CON_CUOTAS,
   TIPO_MEDIO_PAGO_SIN_CUOTAS,
 } from "../utils/mediosPago";
@@ -13,6 +15,7 @@ const createMedioPagoVacio = () => ({
   arancelCreditoSinIva: "",
   arancelMedioSinIva: "",
   arancelBancoSinIva: "",
+  precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
 });
 
 const MediosPagoModal = ({
@@ -257,25 +260,60 @@ const MediosPagoModal = ({
                 </div>
               </>
             ) : (
-              <div>
-                <label style={lbl}>Arancel del medio de pago (sin IVA)</label>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.arancelMedioSinIva}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        arancelMedioSinIva: e.target.value,
-                      }))
-                    }
-                    style={inp}
-                  />
-                  <span style={{ color: "#f39c12", fontWeight: "700" }}>%</span>
+              <>
+                <div>
+                  <label style={lbl}>Precio a usar</label>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    {[
+                      [PRECIO_REFERENCIA_EFECTIVO, "Precio efectivo"],
+                      [PRECIO_REFERENCIA_LISTA, "Precio lista"],
+                    ].map(([valor, label]) => (
+                      <button
+                        key={valor}
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            precioReferencia: valor,
+                          }))
+                        }
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: "8px",
+                          border: "none",
+                          background:
+                            formData.precioReferencia === valor
+                              ? "#3498db"
+                              : "rgba(255,255,255,0.08)",
+                          color: "#fff",
+                          fontWeight: "700",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+                <div>
+                  <label style={lbl}>Arancel del medio de pago (sin IVA)</label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.arancelMedioSinIva}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          arancelMedioSinIva: e.target.value,
+                        }))
+                      }
+                      style={inp}
+                    />
+                    <span style={{ color: "#f39c12", fontWeight: "700" }}>%</span>
+                  </div>
+                </div>
+              </>
             )}
 
             <div>

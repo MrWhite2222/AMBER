@@ -8,6 +8,8 @@ import {
 
 export const TIPO_MEDIO_PAGO_CON_CUOTAS = "CON_CUOTAS";
 export const TIPO_MEDIO_PAGO_SIN_CUOTAS = "SIN_CUOTAS";
+export const PRECIO_REFERENCIA_EFECTIVO = "PRECIO_EFECTIVO";
+export const PRECIO_REFERENCIA_LISTA = "PRECIO_LISTA";
 
 const IVA_MEDIO_PAGO = 0.21;
 
@@ -37,12 +39,37 @@ const MEDIO_PAGO_ARANCEL_BANCO_ALIASES = [
   "Arancel del banco (sin IVA)",
   "Arancel del banco sin IVA)",
 ];
+const MEDIO_PAGO_PRECIO_REFERENCIA_ALIASES = [
+  "PRECIO_REFERENCIA",
+  "PRECIO_BASE",
+  "Precio referencia",
+];
 
 const MEDIOS_PAGO_FALLBACK = [
-  { nombre: "EFECTIVO", tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS, activo: true },
-  { nombre: "DEBITO", tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS, activo: true },
-  { nombre: "TRANSFERENCIA", tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS, activo: true },
-  { nombre: "QR", tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS, activo: true },
+  {
+    nombre: "EFECTIVO",
+    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
+    activo: true,
+    precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
+  },
+  {
+    nombre: "DEBITO",
+    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
+    activo: true,
+    precioReferencia: PRECIO_REFERENCIA_LISTA,
+  },
+  {
+    nombre: "TRANSFERENCIA",
+    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
+    activo: true,
+    precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
+  },
+  {
+    nombre: "QR",
+    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
+    activo: true,
+    precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
+  },
   {
     nombre: "CRED.1 CUOTA",
     tipo: TIPO_MEDIO_PAGO_CON_CUOTAS,
@@ -125,6 +152,19 @@ const normalizarActivoMedioPago = (valor) => {
   return !["NO", "FALSE", "0", "INACTIVO", "ELIMINADO"].includes(texto);
 };
 
+const normalizarPrecioReferencia = (valor) => {
+  const texto = normalizarTexto(valor).toUpperCase();
+  if (
+    texto === PRECIO_REFERENCIA_LISTA ||
+    texto === "PRECIO LISTA" ||
+    texto === "LISTA"
+  ) {
+    return PRECIO_REFERENCIA_LISTA;
+  }
+
+  return PRECIO_REFERENCIA_EFECTIVO;
+};
+
 export const normalizarMedioPagoConfig = (registro = {}) => ({
   ...registro,
   raw: registro?.raw ?? registro,
@@ -150,6 +190,9 @@ export const normalizarMedioPagoConfig = (registro = {}) => ({
   ),
   arancelBancoSinIva: parseNumero(
     getRegistroValor(registro, MEDIO_PAGO_ARANCEL_BANCO_ALIASES)
+  ),
+  precioReferencia: normalizarPrecioReferencia(
+    getRegistroValor(registro, MEDIO_PAGO_PRECIO_REFERENCIA_ALIASES)
   ),
 });
 
@@ -177,7 +220,8 @@ export const buscarConfigMedioPago = (mediosPago = [], nombre = "") => {
 export const medioPagoUsaPrecioEfectivo = (medioPago, mediosPago = []) => {
   const config = buscarConfigMedioPago(mediosPago, medioPago);
   if (!config) return legacyEsPrecioEfectivo(medioPago);
-  return config.tipo !== TIPO_MEDIO_PAGO_CON_CUOTAS;
+  if (config.tipo === TIPO_MEDIO_PAGO_CON_CUOTAS) return false;
+  return config.precioReferencia !== PRECIO_REFERENCIA_LISTA;
 };
 
 export const getPrecioSugeridoMedioPago = (
