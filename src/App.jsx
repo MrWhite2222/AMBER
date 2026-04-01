@@ -9,7 +9,7 @@ import EditarGastoModal from "./components/EditarGastoModal";
 import ModificarPreciosModal from "./components/ModificarPreciosModal";
 import EditarVentaModal from "./components/EditarVentaModal";
 import MediosPagoModal from "./components/MediosPagoModal";
-import NuevaVentaModal from "./components/NuevaVentaModal";
+import NuevaVentaModal from "./components/NuevaVentaModalPromo";
 import RegistrosView from "./components/RegistrosViewClean";
 import ResumenView from "./components/ResumenView";
 import {
@@ -73,6 +73,37 @@ const parseInputDateLocal = (value) => {
   }
 
   return new Date(year, month - 1, day);
+};
+
+const parseDescuentoPromo = (value) => {
+  const texto = String(value ?? "").trim();
+  if (!texto) return Number.NaN;
+
+  const numero = Number(texto.replace(",", "."));
+  return Number.isFinite(numero) ? numero : Number.NaN;
+};
+
+const redondearACentenaMasCercana = (value) =>
+  Math.round((Number(value) || 0) / 100) * 100;
+
+const calcularPrecioPromocional = (producto, descuento) => {
+  if (!producto) return "";
+
+  const descuentoNumero = parseDescuentoPromo(descuento);
+  if (
+    !Number.isFinite(descuentoNumero) ||
+    descuentoNumero < 1 ||
+    descuentoNumero > 100
+  ) {
+    return "";
+  }
+
+  const precioLista = getProductoPrecioLista(producto);
+  return String(
+    redondearACentenaMasCercana(
+      precioLista * (1 - descuentoNumero / 100)
+    )
+  );
 };
 
 const AmberApp = () => {
@@ -453,6 +484,8 @@ const abrirEdicion = (venta) => {
     cantidad: 1,
     precioVenta: "",
     medioPago: "",
+    promoActiva: false,
+    promoDescuento: "",
   });
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [searchProducto, setSearchProducto] = useState("");
@@ -537,6 +570,15 @@ const [editFormData, setEditFormData] = useState({
 const [editSelectedProducto, setEditSelectedProducto] = useState(null);
 const [editSearchProducto, setEditSearchProducto] = useState("");
 const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
+const promoActivaVenta = Boolean(formData.promoActiva);
+const descuentoPromoVenta = parseDescuentoPromo(formData.promoDescuento);
+const promoValidaVenta =
+  promoActivaVenta &&
+  Number.isFinite(descuentoPromoVenta) &&
+  descuentoPromoVenta >= 1 &&
+  descuentoPromoVenta <= 100;
+const promoPendienteVenta = promoActivaVenta && !promoValidaVenta;
+const tienePrecioVenta = String(formData.precioVenta ?? "").trim() !== "";
 
   const esGastoFijo = normalizarTexto(gastoData.tipo).toUpperCase() === "FIJOS";
   const esGastoCuotas =
@@ -619,17 +661,34 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
 
 // Autocompletar precio según medio de pago
   useEffect(() => {
-    if (selectedProducto) {
-      setFormData((f) => ({
-        ...f,
-        precioVenta: getPrecioSugeridoMedioPago(
+    if (!selectedProducto) return;
+
+    const precioSugerido = promoActivaVenta
+      ? promoValidaVenta
+        ? calcularPrecioPromocional(selectedProducto, descuentoPromoVenta)
+        : ""
+      : getPrecioSugeridoMedioPago(
           selectedProducto,
           formData.medioPago,
           mediosPagoConfigurados
-        ),
-      }));
-    }
-  }, [formData.medioPago, mediosPagoConfigurados, selectedProducto]);
+        );
+
+    setFormData((prev) =>
+      String(prev.precioVenta ?? "") === String(precioSugerido ?? "")
+        ? prev
+        : {
+            ...prev,
+            precioVenta: precioSugerido,
+          }
+    );
+  }, [
+    descuentoPromoVenta,
+    formData.medioPago,
+    mediosPagoConfigurados,
+    promoActivaVenta,
+    promoValidaVenta,
+    selectedProducto,
+  ]);
 
   useEffect(() => {
   if (editSelectedProducto) {
@@ -1876,7 +1935,14 @@ const handleGuardarLote = async () => {
 
 // Guardar venta
 const handleGuardarVenta = async () => {
-  if (!selectedProducto || !formData.precioVenta || !formData.medioPago) return;
+  if (
+    !selectedProducto ||
+    !tienePrecioVenta ||
+    !formData.medioPago ||
+    promoPendienteVenta
+  ) {
+    return;
+  }
   
   const cantidad = Number(formData.cantidad) || 1;
   const stockDisponible = getProductoStock(selectedProducto);
@@ -1908,6 +1974,7 @@ const handleGuardarVenta = async () => {
   const productoVenta = getProductoNombreSeguro(selectedProducto);
   const talleVenta = getProductoTalleSeguro(selectedProducto);
   const colorVenta = getProductoColorSeguro(selectedProducto);
+  const promoVenta = promoValidaVenta ? descuentoPromoVenta : "";
   const codigoBuscadorVenta = construirCodigoBuscador({
     codigo: codigoVenta,
     producto: productoVenta,
@@ -1931,7 +1998,8 @@ const nuevaVenta = {
   "Costo U.": costo,
   "Impuesto": iva,
   "Ganancia Neta": gananciaNeta,
-  "Ganancias con recompra": gananciaRecompra
+  "Ganancias con recompra": gananciaRecompra,
+  "Promo": promoVenta
 };
 
 const nuevaVentaLimpia = {
@@ -1949,6 +2017,7 @@ const nuevaVentaLimpia = {
   Impuesto: iva,
   "Ganancia Neta": gananciaNeta,
   "Ganancias con recompra": gananciaRecompra,
+  Promo: promoVenta,
 };
   
   // 1. Agregar localmente al instante
@@ -1959,7 +2028,9 @@ setFormData({
   fecha: getTodayInputDate(),
   cantidad: 1,
   precioVenta: "",
-  medioPago: medioPagoDefault
+  medioPago: medioPagoDefault,
+  promoActiva: false,
+  promoDescuento: "",
 });
 setSelectedProducto(null);
 setSearchProducto("");
@@ -2863,6 +2934,10 @@ const handleGuardarEdicion = async () => {
   const productoActualizado = getInventarioProducto(editSelectedProducto);
   const talleActualizado = getInventarioTalle(editSelectedProducto);
   const colorActualizado = getInventarioColor(editSelectedProducto);
+  const promoVentaActual =
+    ventaEditando?.["Promo"] ??
+    ventaEditando?.["PROMO"] ??
+    "";
   const codigoBuscadorActualizado = construirCodigoBuscador({
     codigo: codigoActualizado,
     producto: productoActualizado,
@@ -2886,6 +2961,7 @@ const handleGuardarEdicion = async () => {
     "Impuesto": iva,
     "Ganancia Neta": gananciaNeta,
     "Ganancias con recompra": gananciaRecompra,
+    "Promo": promoVentaActual,
   };
 
   Object.assign(ventaActualizada, {
@@ -2921,6 +2997,7 @@ const handleGuardarEdicion = async () => {
     Impuesto: iva,
     "Ganancia Neta": gananciaNeta,
     "Ganancias con recompra": gananciaRecompra,
+    Promo: promoVentaActual,
     Estado: ventaEditando["Estado"] ?? "",
   };
 
@@ -3398,6 +3475,7 @@ const handleEliminarMedioPago = async (medio) => {
               setSearchProducto(value);
               setShowProductoDrop(true);
               setSelectedProducto(null);
+              setFormData((f) => ({ ...f, precioVenta: "" }));
             }}
             parseNumero={parseNumero}
             productosFiltrados={productosFiltrados}

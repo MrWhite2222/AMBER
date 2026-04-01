@@ -81,3 +81,5 @@
 - Los medios de pago `SIN_CUOTAS` ahora pueden elegir si usan `Precio efectivo` o `Precio lista` mediante el nuevo campo `PRECIO_REFERENCIA`.
 - Se elimino el fallback hardcodeado de medios de pago legacy: la app ahora toma `MediosPago` como fuente de verdad y deja de inyectar automaticamente los medios viejos.
 - `Ganancia estimada` en `Nueva Venta` ahora tambien descuenta el `Impuesto` del medio de pago elegido, no solo `Costo U.`.
+- `Nueva Venta` ahora permite activar `Promo`, cargar un descuento del 1 al 100 y calcular `Precio venta` desde `Precio lista`, redondeado a la centena mas cercana.
+- `Registros` ahora muestra una columna `Promo` entre `Pago` y `Editar`, usando el descuento guardado en cada venta.

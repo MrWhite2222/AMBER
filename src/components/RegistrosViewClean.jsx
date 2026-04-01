@@ -41,6 +41,20 @@ const getTimestampRegistro = (venta) => {
   return 0;
 };
 
+const formatearPromoRegistro = (venta) => {
+  const promoRaw = String(venta?.["Promo"] ?? venta?.["PROMO"] ?? "").trim();
+  if (!promoRaw) return "";
+
+  if (promoRaw.endsWith("%")) return promoRaw;
+
+  const promoNumero = Number(promoRaw.replace(",", "."));
+  if (Number.isFinite(promoNumero)) {
+    return `${Number.isInteger(promoNumero) ? promoNumero : promoNumero.toString().replace(".", ",")}%`;
+  }
+
+  return promoRaw;
+};
+
 const RegistrosViewClean = ({
   abrirEdicion,
   dashNombresFiltrados,
@@ -250,6 +264,7 @@ const RegistrosViewClean = ({
               "Cant",
               "Precio",
               "Pago",
+              "Promo",
               "Editar",
             ].map((header) => (
               <th
@@ -354,6 +369,17 @@ const RegistrosViewClean = ({
                   }}
                 >
                   {venta["Medio de pago"]}
+                </td>
+                <td
+                  style={{
+                    padding: "8px 10px",
+                    color: "#f39c12",
+                    fontSize: "0.85em",
+                    whiteSpace: "nowrap",
+                    textAlign: "center",
+                  }}
+                >
+                  {formatearPromoRegistro(venta)}
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "center" }}>
                   <button
