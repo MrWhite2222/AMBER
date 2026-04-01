@@ -45,57 +45,6 @@ const MEDIO_PAGO_PRECIO_REFERENCIA_ALIASES = [
   "Precio referencia",
 ];
 
-const MEDIOS_PAGO_FALLBACK = [
-  {
-    nombre: "EFECTIVO",
-    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
-    activo: true,
-    precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
-  },
-  {
-    nombre: "DEBITO",
-    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
-    activo: true,
-    precioReferencia: PRECIO_REFERENCIA_LISTA,
-  },
-  {
-    nombre: "TRANSFERENCIA",
-    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
-    activo: true,
-    precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
-  },
-  {
-    nombre: "QR",
-    tipo: TIPO_MEDIO_PAGO_SIN_CUOTAS,
-    activo: true,
-    precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
-  },
-  {
-    nombre: "CRED.1 CUOTA",
-    tipo: TIPO_MEDIO_PAGO_CON_CUOTAS,
-    activo: true,
-    cantidadCuotas: 1,
-  },
-  {
-    nombre: "CRED.3 CUOTAS",
-    tipo: TIPO_MEDIO_PAGO_CON_CUOTAS,
-    activo: true,
-    cantidadCuotas: 3,
-  },
-  {
-    nombre: "CRED.6 CUOTAS",
-    tipo: TIPO_MEDIO_PAGO_CON_CUOTAS,
-    activo: true,
-    cantidadCuotas: 6,
-  },
-  {
-    nombre: "CRED.13 CUOTAS",
-    tipo: TIPO_MEDIO_PAGO_CON_CUOTAS,
-    activo: true,
-    cantidadCuotas: 13,
-  },
-];
-
 const getRegistroValor = (registro, claves) => {
   for (const clave of claves) {
     const valor = registro?.[clave];
@@ -105,37 +54,6 @@ const getRegistroValor = (registro, claves) => {
   }
 
   return "";
-};
-
-const legacyEsPrecioEfectivo = (medioPago) =>
-  ["EFECTIVO", "TRANSFERENCIA", "QR"].includes(
-    normalizarTexto(medioPago).toUpperCase()
-  );
-
-const calcularIvaLegacy = (precio, medioPago) => {
-  if (legacyEsPrecioEfectivo(medioPago)) return 0;
-  if (medioPago === "DEBITO") return precio * 0.012 * (1 + 0.012);
-  if (medioPago === "CRED.1 CUOTA") return precio * 0.242 * (1 + 0.012);
-  if (medioPago === "CRED.3 CUOTAS") {
-    return (
-      precio * (0.0242 + 1 - 1 / 1.1039) +
-      (precio - precio * (0.0242 + 1 - 1 / 1.1039)) * 0.012
-    );
-  }
-  if (medioPago === "CRED.6 CUOTAS") {
-    return (
-      precio * (0.0242 + 1 - 1 / 1.2139) +
-      (precio - precio * (0.0242 + 1 - 1 / 1.2139)) * 0.012
-    );
-  }
-  if (medioPago === "CRED.13 CUOTAS") {
-    return (
-      precio * (0.0242 + 1 - 1 / 1.1039) +
-      (precio - precio * (0.0242 + 1 - 1 / 1.1039)) * 0.012
-    );
-  }
-
-  return precio * 0.012;
 };
 
 const normalizarTipoMedioPago = (valor) => {
@@ -196,14 +114,13 @@ export const normalizarMedioPagoConfig = (registro = {}) => ({
   ),
 });
 
-export const getMediosPagoActivos = (mediosPago = []) => {
-  const origen = Array.isArray(mediosPago) ? mediosPago : [];
-  const activos = origen
+export const getMediosPagoConfigurados = (mediosPago = []) =>
+  (Array.isArray(mediosPago) ? mediosPago : [])
     .map((registro) => normalizarMedioPagoConfig(registro))
-    .filter((medio) => medio.nombre && medio.activo);
+    .filter((medio) => medio.nombre);
 
-  if (activos.length > 0) return activos;
-  return origen.length === 0 ? MEDIOS_PAGO_FALLBACK : [];
+export const getMediosPagoActivos = (mediosPago = []) => {
+  return getMediosPagoConfigurados(mediosPago).filter((medio) => medio.activo);
 };
 
 export const buscarConfigMedioPago = (mediosPago = [], nombre = "") => {
@@ -211,7 +128,7 @@ export const buscarConfigMedioPago = (mediosPago = [], nombre = "") => {
   if (!objetivo) return null;
 
   return (
-    getMediosPagoActivos(mediosPago).find(
+    getMediosPagoConfigurados(mediosPago).find(
       (medio) => normalizarTexto(medio.nombre).toUpperCase() === objetivo
     ) || null
   );
@@ -219,7 +136,7 @@ export const buscarConfigMedioPago = (mediosPago = [], nombre = "") => {
 
 export const medioPagoUsaPrecioEfectivo = (medioPago, mediosPago = []) => {
   const config = buscarConfigMedioPago(mediosPago, medioPago);
-  if (!config) return legacyEsPrecioEfectivo(medioPago);
+  if (!config) return true;
   if (config.tipo === TIPO_MEDIO_PAGO_CON_CUOTAS) return false;
   return config.precioReferencia !== PRECIO_REFERENCIA_LISTA;
 };
@@ -246,9 +163,7 @@ export const calcularImpuestoMedioPago = (
   const precioNumero = parseNumero(precio);
   const config = buscarConfigMedioPago(mediosPago, medioPago);
 
-  if (!config) {
-    return calcularIvaLegacy(precioNumero, normalizarTexto(medioPago));
-  }
+  if (!config) return 0;
 
   if (config.tipo === TIPO_MEDIO_PAGO_CON_CUOTAS) {
     const k = Number(config.coeficienteConIva || 0);

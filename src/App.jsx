@@ -36,6 +36,7 @@ import {
 import {
   buscarConfigMedioPago,
   calcularVentaSegunMedioPago,
+  getMediosPagoConfigurados,
   getMediosPagoActivos,
   getPrecioSugeridoMedioPago,
   normalizarMedioPagoConfig,
@@ -350,13 +351,18 @@ const codigosInventarioSet = useMemo(
   [inventarioUnico]
 );
 
-const mediosPagoActivos = useMemo(
-  () => getMediosPagoActivos(mediosPago),
+const mediosPagoConfigurados = useMemo(
+  () => getMediosPagoConfigurados(mediosPago),
   [mediosPago]
 );
 
+const mediosPagoActivos = useMemo(
+  () => getMediosPagoActivos(mediosPagoConfigurados),
+  [mediosPagoConfigurados]
+);
+
 const medioPagoDefault = useMemo(
-  () => mediosPagoActivos[0]?.nombre || "EFECTIVO",
+  () => mediosPagoActivos[0]?.nombre || "",
   [mediosPagoActivos]
 );
 
@@ -374,7 +380,9 @@ const buildMediosPagoOptions = (medioActual = "") => {
     opciones.push(
       normalizarMedioPagoConfig({
         NOMBRE: actual,
-        TIPO: buscarConfigMedioPago(mediosPagoActivos, actual)?.tipo || "SIN_CUOTAS",
+        TIPO:
+          buscarConfigMedioPago(mediosPagoConfigurados, actual)?.tipo ||
+          "SIN_CUOTAS",
         ACTIVO: "SI",
       })
     );
@@ -444,7 +452,7 @@ const abrirEdicion = (venta) => {
     fecha: getTodayInputDate(),
     cantidad: 1,
     precioVenta: "",
-    medioPago: "EFECTIVO",
+    medioPago: "",
   });
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [searchProducto, setSearchProducto] = useState("");
@@ -524,7 +532,7 @@ const [editFormData, setEditFormData] = useState({
   fecha: "",
   cantidad: 1,
   precioVenta: "",
-  medioPago: "EFECTIVO",
+  medioPago: "",
 });
 const [editSelectedProducto, setEditSelectedProducto] = useState(null);
 const [editSearchProducto, setEditSearchProducto] = useState("");
@@ -617,11 +625,11 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
         precioVenta: getPrecioSugeridoMedioPago(
           selectedProducto,
           formData.medioPago,
-          mediosPagoActivos
+          mediosPagoConfigurados
         ),
       }));
     }
-  }, [formData.medioPago, mediosPagoActivos, selectedProducto]);
+  }, [formData.medioPago, mediosPagoConfigurados, selectedProducto]);
 
   useEffect(() => {
   if (editSelectedProducto) {
@@ -630,11 +638,11 @@ const [showEditProductoDrop, setShowEditProductoDrop] = useState(false);
       precioVenta: getPrecioSugeridoMedioPago(
         editSelectedProducto,
         editFormData.medioPago,
-        mediosPagoActivos
+        mediosPagoConfigurados
       ),
     }));
   }
-}, [editFormData.medioPago, editSelectedProducto, mediosPagoActivos]);
+}, [editFormData.medioPago, editSelectedProducto, mediosPagoConfigurados]);
 
   useEffect(() => {
     if (!esGastoFijo || gastoData.formaPago === "1 pago") return;
@@ -1811,11 +1819,16 @@ const handleGuardarLote = async () => {
   
   // Calcular ganancia
   const calcularGanancia = () => {
-    if (!selectedProducto || !formData.precioVenta) return 0;
-    const precio = parseNumero(formData.precioVenta);
-    const costo = parseNumero(selectedProducto["COSTO U."]);
+    if (!selectedProducto || !formData.precioVenta || !formData.medioPago) return 0;
     const cantidad = Number(formData.cantidad) || 1;
-    return (precio - costo) * cantidad;
+    const { precio, costo, impuesto } = calcularVentaSegunMedioPago({
+      producto: selectedProducto,
+      cantidad,
+      medioPago: formData.medioPago,
+      precioVenta: formData.precioVenta,
+      mediosPago: mediosPagoConfigurados,
+    });
+    return (precio - costo - impuesto) * cantidad;
   };
 
   const resolverRowNumberVenta = async (venta) => {
@@ -1863,7 +1876,7 @@ const handleGuardarLote = async () => {
 
 // Guardar venta
 const handleGuardarVenta = async () => {
-  if (!selectedProducto || !formData.precioVenta) return;
+  if (!selectedProducto || !formData.precioVenta || !formData.medioPago) return;
   
   const cantidad = Number(formData.cantidad) || 1;
   const stockDisponible = getProductoStock(selectedProducto);
@@ -1887,7 +1900,7 @@ const handleGuardarVenta = async () => {
     cantidad,
     medioPago,
     precioVenta: formData.precioVenta,
-    mediosPago: mediosPagoActivos,
+    mediosPago: mediosPagoConfigurados,
   });
   
   const fechaFormateada = formatearFecha(formData.fecha);
@@ -2791,7 +2804,13 @@ const handleGuardarPrecios = async () => {
   setInventario(await leerHoja("Inventario"));
 };
 const handleGuardarEdicion = async () => {
-  if (!ventaEditando || !editSelectedProducto || !editFormData.precioVenta) return;
+  if (
+    !ventaEditando ||
+    !editSelectedProducto ||
+    !editFormData.precioVenta ||
+    !editFormData.medioPago
+  )
+    return;
   const rowNumber = await resolverRowNumberVenta(ventaEditando);
   const problemasProducto = getProblemasProductoEdicion(editSelectedProducto);
 
@@ -2838,7 +2857,7 @@ const handleGuardarEdicion = async () => {
     cantidad,
     medioPago,
     precioVenta: editFormData.precioVenta,
-    mediosPago: mediosPagoActivos,
+    mediosPago: mediosPagoConfigurados,
   });
   const codigoActualizado = getInventarioCodigo(editSelectedProducto);
   const productoActualizado = getInventarioProducto(editSelectedProducto);

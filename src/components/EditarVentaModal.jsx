@@ -232,11 +232,15 @@ const EditarVentaModal = ({
             onChange={(e) => onEditFormDataChange("medioPago", e.target.value)}
             style={{ ...inp, background: "#0f3460" }}
           >
-            {mediosPagoOptions.map((medio) => (
-              <option key={medio.nombre} value={medio.nombre}>
-                {medio.nombre}
-              </option>
-            ))}
+            {mediosPagoOptions.length === 0 ? (
+              <option value="">Primero carga medios de pago</option>
+            ) : (
+              mediosPagoOptions.map((medio) => (
+                <option key={medio.nombre} value={medio.nombre}>
+                  {medio.nombre}
+                </option>
+              ))
+            )}
           </select>
         </div>
       </div>
@@ -268,6 +272,7 @@ const EditarVentaModal = ({
           disabled={
             !editSelectedProducto ||
             !editFormData.precioVenta ||
+            !editFormData.medioPago ||
             guardandoEdicion ||
             editSelectedProducto?._editWarnings?.length > 0
           }
@@ -278,6 +283,7 @@ const EditarVentaModal = ({
             background:
               editSelectedProducto &&
               editFormData.precioVenta &&
+              editFormData.medioPago &&
               !guardandoEdicion &&
               !(editSelectedProducto?._editWarnings?.length > 0)
                 ? "#2ecc71"
@@ -287,6 +293,7 @@ const EditarVentaModal = ({
             cursor:
               editSelectedProducto &&
               editFormData.precioVenta &&
+              editFormData.medioPago &&
               !guardandoEdicion &&
               !(editSelectedProducto?._editWarnings?.length > 0)
                 ? "pointer"

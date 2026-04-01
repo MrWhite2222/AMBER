@@ -224,11 +224,15 @@ const NuevaVentaModal = ({
             onChange={(e) => onFormDataChange("medioPago", e.target.value)}
             style={{ ...inp, background: "#0f3460" }}
           >
-            {mediosPagoOptions.map((medio) => (
-              <option key={medio.nombre} value={medio.nombre}>
-                {medio.nombre}
-              </option>
-            ))}
+            {mediosPagoOptions.length === 0 ? (
+              <option value="">Primero carga medios de pago</option>
+            ) : (
+              mediosPagoOptions.map((medio) => (
+                <option key={medio.nombre} value={medio.nombre}>
+                  {medio.nombre}
+                </option>
+              ))
+            )}
           </select>
         </div>
 
@@ -291,6 +295,7 @@ const NuevaVentaModal = ({
           disabled={
             !selectedProducto ||
             !formData.precioVenta ||
+            !formData.medioPago ||
             guardando ||
             stockInsuficienteVenta
           }
@@ -301,6 +306,7 @@ const NuevaVentaModal = ({
             background:
               selectedProducto &&
               formData.precioVenta &&
+              formData.medioPago &&
               !guardando &&
               !stockInsuficienteVenta
                 ? "#2ecc71"
@@ -310,6 +316,7 @@ const NuevaVentaModal = ({
             cursor:
               selectedProducto &&
               formData.precioVenta &&
+              formData.medioPago &&
               !guardando &&
               !stockInsuficienteVenta
                 ? "pointer"
