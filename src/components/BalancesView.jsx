@@ -77,10 +77,27 @@ const formatearMes = (fecha) =>
     .toLowerCase()} ${fecha.getFullYear()}`;
 
 const montoCellStyle = {
-  padding: "10px 14px",
+  padding: "12px 14px",
   textAlign: "right",
   whiteSpace: "nowrap",
   fontVariantNumeric: "tabular-nums",
+};
+
+const glassPanel = {
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+  border: "1px solid rgba(255,255,255,0.12)",
+  boxShadow: "0 20px 40px rgba(0,0,0,0.18)",
+  backdropFilter: "blur(8px)",
+};
+
+const eyebrowStyle = {
+  margin: "0 0 6px",
+  color: "#8ea4d2",
+  fontSize: "0.72em",
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  fontWeight: "700",
 };
 
 const calcularResumenMes = (ventasMes, gastosMes) => {
@@ -227,39 +244,43 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: "12px",
+          gap: "16px",
           flexWrap: "wrap",
-          marginBottom: "18px",
+          marginBottom: "20px",
         }}
       >
         <div>
-          <h2 style={{ color: "#f39c12", margin: 0 }}>Balances</h2>
-          <p style={{ margin: "6px 0 0", color: "#bbb", fontSize: "0.88em" }}>
-            Rentabilidad real del periodo, con ventas, gastos y resultado final.
+          <p style={eyebrowStyle}>Rentabilidad</p>
+          <h2 style={{ color: "#f39c12", margin: "0 0 6px", fontSize: "1.72em" }}>
+            Balances
+          </h2>
+          <p style={{ margin: 0, color: "#b7bfd7", fontSize: "0.9em", lineHeight: 1.5 }}>
+            Vista mensual de ventas, impuestos, gastos y evolucion del resultado real.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <button
             onClick={() => setMesSeleccionado((prev) => sumarMeses(prev, -1))}
             style={{
-              padding: "9px 12px",
-              borderRadius: "8px",
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
               border: "1px solid rgba(255,255,255,0.14)",
               background: "rgba(255,255,255,0.06)",
               color: "#fff",
               cursor: "pointer",
+              fontSize: "1.02em",
             }}
           >
             {"<"}
           </button>
           <div
             style={{
-              minWidth: "210px",
+              ...glassPanel,
+              minWidth: "228px",
               textAlign: "center",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              padding: "12px 16px",
+              borderRadius: "14px",
             }}
           >
             <div
@@ -268,8 +289,8 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 alignItems: "center",
                 gap: "8px",
                 color: "#7ed6df",
-                fontSize: "0.82em",
-                marginBottom: "4px",
+                fontSize: "0.8em",
+                marginBottom: "5px",
               }}
             >
               <CalendarRange size={15} />
@@ -280,12 +301,14 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           <button
             onClick={() => setMesSeleccionado((prev) => sumarMeses(prev, 1))}
             style={{
-              padding: "9px 12px",
-              borderRadius: "8px",
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
               border: "1px solid rgba(255,255,255,0.14)",
               background: "rgba(255,255,255,0.06)",
               color: "#fff",
               cursor: "pointer",
+              fontSize: "1.02em",
             }}
           >
             {">"}
@@ -298,25 +321,28 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           display: "flex",
           flexWrap: "wrap",
           gap: "18px",
-          marginBottom: "20px",
-          alignItems: "start",
+          marginBottom: "22px",
+          alignItems: "stretch",
         }}
       >
         <div
           style={{
             ...card("243,156,18"),
+            ...glassPanel,
             overflowX: "auto",
-            flex: "1 1 480px",
+            flex: "1 1 470px",
           }}
         >
-          <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1em" }}>
+          <p style={eyebrowStyle}>Corte Del Mes</p>
+          <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1.05em" }}>
             Resumen del mes
           </h3>
           <table
             style={{
               width: "100%",
-              borderCollapse: "collapse",
-              minWidth: "420px",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              minWidth: "390px",
             }}
           >
             <tbody>
@@ -324,17 +350,19 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 <tr
                   key={fila.label}
                   style={{
-                    borderBottom:
-                      index === resumenFilas.length - 1
-                        ? "none"
-                        : "1px solid rgba(255,255,255,0.08)",
+                    background:
+                      index % 2 === 0 ? "rgba(255,255,255,0.025)" : "transparent",
                   }}
                 >
                   <td
                     style={{
-                      padding: "12px 14px",
+                      padding: "13px 14px",
                       color: "#fff",
                       fontWeight: fila.strong ? "700" : "600",
+                      borderBottom:
+                        index === resumenFilas.length - 1
+                          ? "none"
+                          : "1px solid rgba(255,255,255,0.08)",
                     }}
                   >
                     {fila.label}
@@ -343,8 +371,12 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                     style={{
                       ...montoCellStyle,
                       color: fila.color,
-                      fontWeight: fila.strong ? "700" : "600",
-                      fontSize: fila.strong ? "1.02em" : "0.96em",
+                      fontWeight: fila.strong ? "800" : "600",
+                      fontSize: fila.strong ? "1.03em" : "0.97em",
+                      borderBottom:
+                        index === resumenFilas.length - 1
+                          ? "none"
+                          : "1px solid rgba(255,255,255,0.08)",
                     }}
                   >
                     {fila.isPercent
@@ -359,34 +391,36 @@ const BalancesView = ({ allVentas, card, gastos }) => {
 
         <div
           style={{
-            background: "rgba(255,255,255,0.05)",
-            borderRadius: "12px",
-            padding: "15px",
-            border: "1px solid rgba(255,255,255,0.1)",
+            ...glassPanel,
+            borderRadius: "14px",
+            padding: "18px",
             overflowX: "auto",
-            flex: "1 1 360px",
+            flex: "1 1 340px",
           }}
         >
-          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
+          <p style={eyebrowStyle}>Ranking</p>
+          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1.05em" }}>
             Top productos del mes
           </h3>
           <table
             style={{
               width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "0.8em",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              fontSize: "0.82em",
             }}
           >
             <thead>
-              <tr style={{ borderBottom: "2px solid rgba(46,204,113,0.35)" }}>
+              <tr style={{ background: "rgba(46,204,113,0.08)" }}>
                 {["Producto", "Unid.", "Total", "Gan. Neta"].map((header) => (
                   <th
                     key={header}
                     style={{
-                      padding: "9px 10px",
+                      padding: "11px 12px",
                       textAlign: header === "Producto" ? "left" : "right",
                       color: "#2ecc71",
                       whiteSpace: "nowrap",
+                      borderBottom: "1px solid rgba(46,204,113,0.22)",
                     }}
                   >
                     {header}
@@ -395,19 +429,22 @@ const BalancesView = ({ allVentas, card, gastos }) => {
               </tr>
             </thead>
             <tbody>
-              {rankingProductos.map((producto) => (
+              {rankingProductos.map((producto, index) => (
                 <tr
                   key={producto.producto}
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{
+                    background:
+                      index % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+                  }}
                 >
-                  <td style={{ padding: "9px 10px", color: "#fff" }}>{producto.producto}</td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#3498db" }}>
+                  <td style={{ padding: "11px 12px", color: "#fff" }}>{producto.producto}</td>
+                  <td style={{ padding: "11px 12px", textAlign: "right", color: "#3498db" }}>
                     {producto.ventas}
                   </td>
-                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#f39c12" }}>
+                  <td style={{ ...montoCellStyle, padding: "11px 12px", color: "#f39c12" }}>
                     $ {formatearMonto(producto.totalVentas)}
                   </td>
-                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#2ecc71" }}>
+                  <td style={{ ...montoCellStyle, padding: "11px 12px", color: "#2ecc71" }}>
                     $ {formatearMonto(producto.gananciaNeta)}
                   </td>
                 </tr>
@@ -427,16 +464,18 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           display: "flex",
           flexWrap: "wrap",
           gap: "18px",
-          marginBottom: "20px",
+          marginBottom: "22px",
         }}
       >
         <div
           style={{
             ...card("243,156,18"),
-            flex: "1.15 1 380px",
+            ...glassPanel,
+            flex: "1.05 1 390px",
           }}
         >
-          <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1em" }}>
+          <p style={eyebrowStyle}>Evolucion</p>
+          <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1.05em" }}>
             Total ventas
           </h3>
           <ResponsiveContainer width="100%" height={260}>
@@ -448,7 +487,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 contentStyle={{
                   background: "#1a1a2e",
                   border: "1px solid #f39c12",
-                  borderRadius: "6px",
+                  borderRadius: "10px",
                   color: "#fff",
                   fontSize: "0.85em",
                 }}
@@ -458,7 +497,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 dataKey="totalVentas"
                 name="Total ventas"
                 fill="#f39c12"
-                radius={[4, 4, 0, 0]}
+                radius={[6, 6, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -467,10 +506,12 @@ const BalancesView = ({ allVentas, card, gastos }) => {
         <div
           style={{
             ...card("46,204,113"),
-            flex: "1 1 380px",
+            ...glassPanel,
+            flex: "1 1 390px",
           }}
         >
-          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
+          <p style={eyebrowStyle}>Evolucion</p>
+          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1.05em" }}>
             Ganancia neta
           </h3>
           <ResponsiveContainer width="100%" height={260}>
@@ -482,7 +523,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 contentStyle={{
                   background: "#1a1a2e",
                   border: "1px solid #2ecc71",
-                  borderRadius: "6px",
+                  borderRadius: "10px",
                   color: "#fff",
                   fontSize: "0.85em",
                 }}
@@ -492,7 +533,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 dataKey="resultadoFinal"
                 name="Ganancia neta"
                 fill="#2ecc71"
-                radius={[4, 4, 0, 0]}
+                radius={[6, 6, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -504,32 +545,32 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           display: "flex",
           flexWrap: "wrap",
           gap: "18px",
-          alignItems: "start",
         }}
       >
         <div
           style={{
-            background: "rgba(255,255,255,0.05)",
-            borderRadius: "12px",
-            padding: "15px",
-            border: "1px solid rgba(255,255,255,0.1)",
+            ...glassPanel,
+            borderRadius: "14px",
+            padding: "18px",
             overflowX: "auto",
             flex: "1 1 100%",
           }}
         >
-          <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1em" }}>
+          <p style={eyebrowStyle}>Seguimiento</p>
+          <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1.05em" }}>
             Historico mensual
           </h3>
           <table
             style={{
               width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "0.8em",
-              minWidth: "760px",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              fontSize: "0.82em",
+              minWidth: "820px",
             }}
           >
             <thead>
-              <tr style={{ borderBottom: "2px solid rgba(243,156,18,0.4)" }}>
+              <tr style={{ background: "rgba(243,156,18,0.08)" }}>
                 {[
                   "Mes",
                   "Total ventas",
@@ -541,10 +582,11 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   <th
                     key={header}
                     style={{
-                      padding: "9px 10px",
+                      padding: "11px 12px",
                       textAlign: header === "Mes" ? "left" : "right",
                       color: "#f39c12",
                       whiteSpace: "nowrap",
+                      borderBottom: "1px solid rgba(243,156,18,0.22)",
                     }}
                   >
                     {header}
@@ -553,12 +595,15 @@ const BalancesView = ({ allVentas, card, gastos }) => {
               </tr>
             </thead>
             <tbody>
-              {[...historialMeses].reverse().map((fila) => (
+              {[...historialMeses].reverse().map((fila, index) => (
                 <tr
                   key={fila.key}
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{
+                    background:
+                      index % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+                  }}
                 >
-                  <td style={{ padding: "10px 14px", color: "#fff", whiteSpace: "nowrap" }}>
+                  <td style={{ padding: "12px 14px", color: "#fff", whiteSpace: "nowrap" }}>
                     {fila.mes}
                   </td>
                   <td style={{ ...montoCellStyle, color: "#f39c12" }}>
@@ -577,7 +622,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                     style={{
                       ...montoCellStyle,
                       color: fila.resultadoFinal >= 0 ? "#2ecc71" : "#ffb3aa",
-                      fontWeight: "700",
+                      fontWeight: "800",
                     }}
                   >
                     $ {formatearMonto(fila.resultadoFinal)}
@@ -587,7 +632,6 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             </tbody>
           </table>
         </div>
-
       </div>
     </>
   );
