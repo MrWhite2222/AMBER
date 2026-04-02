@@ -7,7 +7,7 @@ import CargarGastoModal from "./components/CargarGastoModal";
 import CargarPrendaModal from "./components/CargarPrendaModal";
 import EditarGastoModal from "./components/EditarGastoModal";
 import ModificarPreciosModal from "./components/ModificarPreciosModal";
-import EditarVentaModal from "./components/EditarVentaModal";
+import EditarVentaModal from "./components/EditarVentaModalPromo";
 import MediosPagoModal from "./components/MediosPagoModal";
 import NuevaVentaModal from "./components/NuevaVentaModalPromo";
 import RegistrosView from "./components/RegistrosViewClean";
@@ -463,6 +463,10 @@ const abrirEdicion = (venta) => {
     cantidad: venta["Cantidad"] || 1,
     precioVenta: String(venta["Precio venta"] ?? ""),
     medioPago: venta["Medio de pago"] || "EFECTIVO",
+    promoActiva: Boolean(
+      String(venta?.["Promo"] ?? venta?.["PROMO"] ?? "").trim()
+    ),
+    promoDescuento: String(venta?.["Promo"] ?? venta?.["PROMO"] ?? ""),
   });
 
   setShowEditProductoDrop(false);
@@ -566,6 +570,8 @@ const [editFormData, setEditFormData] = useState({
   cantidad: 1,
   precioVenta: "",
   medioPago: "",
+  promoActiva: false,
+  promoDescuento: "",
 });
 const [editSelectedProducto, setEditSelectedProducto] = useState(null);
 const [editSearchProducto, setEditSearchProducto] = useState("");
@@ -579,6 +585,16 @@ const promoValidaVenta =
   descuentoPromoVenta <= 100;
 const promoPendienteVenta = promoActivaVenta && !promoValidaVenta;
 const tienePrecioVenta = String(formData.precioVenta ?? "").trim() !== "";
+const promoActivaEdicion = Boolean(editFormData.promoActiva);
+const descuentoPromoEdicion = parseDescuentoPromo(editFormData.promoDescuento);
+const promoValidaEdicion =
+  promoActivaEdicion &&
+  Number.isFinite(descuentoPromoEdicion) &&
+  descuentoPromoEdicion >= 1 &&
+  descuentoPromoEdicion <= 100;
+const promoPendienteEdicion = promoActivaEdicion && !promoValidaEdicion;
+const tienePrecioVentaEdicion =
+  String(editFormData.precioVenta ?? "").trim() !== "";
 
   const esGastoFijo = normalizarTexto(gastoData.tipo).toUpperCase() === "FIJOS";
   const esGastoCuotas =
@@ -692,16 +708,33 @@ const tienePrecioVenta = String(formData.precioVenta ?? "").trim() !== "";
 
   useEffect(() => {
   if (editSelectedProducto) {
-    setEditFormData((f) => ({
-      ...f,
-      precioVenta: getPrecioSugeridoMedioPago(
-        editSelectedProducto,
-        editFormData.medioPago,
-        mediosPagoConfigurados
-      ),
-    }));
+    const precioSugerido = promoActivaEdicion
+      ? promoValidaEdicion
+        ? calcularPrecioPromocional(editSelectedProducto, descuentoPromoEdicion)
+        : ""
+      : getPrecioSugeridoMedioPago(
+          editSelectedProducto,
+          editFormData.medioPago,
+          mediosPagoConfigurados
+        );
+
+    setEditFormData((prev) =>
+      String(prev.precioVenta ?? "") === String(precioSugerido ?? "")
+        ? prev
+        : {
+            ...prev,
+            precioVenta: precioSugerido,
+          }
+    );
   }
-}, [editFormData.medioPago, editSelectedProducto, mediosPagoConfigurados]);
+}, [
+  descuentoPromoEdicion,
+  editFormData.medioPago,
+  editSelectedProducto,
+  mediosPagoConfigurados,
+  promoActivaEdicion,
+  promoValidaEdicion,
+]);
 
   useEffect(() => {
     if (!esGastoFijo || gastoData.formaPago === "1 pago") return;
@@ -2878,8 +2911,9 @@ const handleGuardarEdicion = async () => {
   if (
     !ventaEditando ||
     !editSelectedProducto ||
-    !editFormData.precioVenta ||
-    !editFormData.medioPago
+    !tienePrecioVentaEdicion ||
+    !editFormData.medioPago ||
+    promoPendienteEdicion
   )
     return;
   const rowNumber = await resolverRowNumberVenta(ventaEditando);
@@ -2934,10 +2968,7 @@ const handleGuardarEdicion = async () => {
   const productoActualizado = getInventarioProducto(editSelectedProducto);
   const talleActualizado = getInventarioTalle(editSelectedProducto);
   const colorActualizado = getInventarioColor(editSelectedProducto);
-  const promoVentaActual =
-    ventaEditando?.["Promo"] ??
-    ventaEditando?.["PROMO"] ??
-    "";
+  const promoVentaActual = promoValidaEdicion ? descuentoPromoEdicion : "";
   const codigoBuscadorActualizado = construirCodigoBuscador({
     codigo: codigoActualizado,
     producto: productoActualizado,
@@ -3671,6 +3702,7 @@ const handleEliminarMedioPago = async (medio) => {
       setEditSearchProducto(value);
       setShowEditProductoDrop(true);
       setEditSelectedProducto(null);
+      setEditFormData((f) => ({ ...f, precioVenta: "" }));
     }}
     parseNumero={parseNumero}
     setEditSearchProducto={setEditSearchProducto}

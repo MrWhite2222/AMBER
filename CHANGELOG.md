@@ -83,3 +83,4 @@
 - `Ganancia estimada` en `Nueva Venta` ahora tambien descuenta el `Impuesto` del medio de pago elegido, no solo `Costo U.`.
 - `Nueva Venta` ahora permite activar `Promo`, cargar un descuento del 1 al 100 y calcular `Precio venta` desde `Precio lista`, redondeado a la centena mas cercana.
 - `Registros` ahora muestra una columna `Promo` entre `Pago` y `Editar`, usando el descuento guardado en cada venta.
+- `Editar Venta` ahora tambien permite activar o quitar `Promo`, con el mismo flujo de descuento bloqueante y recalculo automatico del precio promocional.
