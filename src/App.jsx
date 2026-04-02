@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
+import BalancesView from "./components/BalancesView";
 import GastosView from "./components/GastosViewClean";
 import InventarioView from "./components/InventarioView";
 import CargarLoteModal from "./components/CargarLoteModal";
@@ -56,7 +57,6 @@ import {
   getMesNombreGasto,
   getTotalGastos,
   normalizarClaveMesGasto,
-  parseFechaGasto,
   parseNumeroGasto,
   toInputDate,
 } from "./utils/gastos";
@@ -3505,10 +3505,11 @@ const handleEliminarMedioPago = async (medio) => {
   });
 
   const navBtns = [
-    ["resumen", "📅 Resumen"],
-    ["inventario", "📦 Inventario"],
-    ["registros", "📋 Registros"],
-    ["gastos", "💸 Gastos"],
+    ["resumen", "Resumen"],
+    ["inventario", "Inventario"],
+    ["registros", "Registros"],
+    ["gastos", "Gastos"],
+    ["balances", "Balances"],
   ];
   const spreadsheetDownloadUrl = backendInfo?.spreadsheetId
     ? `https://docs.google.com/spreadsheets/d/${backendInfo.spreadsheetId}/export?format=xlsx`
@@ -3800,6 +3801,10 @@ const handleEliminarMedioPago = async (medio) => {
               setShowGastoForm(true);
             }}
           />
+        )}
+        {/* BALANCES */}
+        {viewMode === "balances" && (
+          <BalancesView allVentas={allVentas} card={card} gastos={gastos} />
         )}
         {/* MODAL NUEVA VENTA */}
         {showForm && (
