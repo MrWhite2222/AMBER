@@ -1,5 +1,5 @@
 const SHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
-const APPS_SCRIPT_VERSION = "amber-test-2026-03-26-01";
+const APPS_SCRIPT_VERSION = "amber-test-2026-04-01-01";
 
 const SHEET_NAMES = Object.freeze({
   VENTAS: "Ventas",
@@ -32,6 +32,7 @@ const VENTAS_EDITABLE_COLUMNS = Object.freeze([
   "Tipo de producto",
   "Cantidad",
   "Medio de pago",
+  "Promo",
   "Estado",
 ]);
 

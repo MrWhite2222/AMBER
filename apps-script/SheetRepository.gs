@@ -63,6 +63,12 @@ function getHeaderAliases_(headerName) {
   if (headerName === "C\u00F3digo") {
     candidates.push("Codigo");
   }
+  if (headerName === "Promo") {
+    candidates.push("PROMO");
+  }
+  if (headerName === "PROMO") {
+    candidates.push("Promo");
+  }
 
   return candidates.filter(function (candidate, index, list) {
     return list.indexOf(candidate) === index;

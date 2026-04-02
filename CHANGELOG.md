@@ -84,3 +84,4 @@
 - `Nueva Venta` ahora permite activar `Promo`, cargar un descuento del 1 al 100 y calcular `Precio venta` desde `Precio lista`, redondeado a la centena mas cercana.
 - `Registros` ahora muestra una columna `Promo` entre `Pago` y `Editar`, usando el descuento guardado en cada venta.
 - `Editar Venta` ahora tambien permite activar o quitar `Promo`, con el mismo flujo de descuento bloqueante y recalculo automatico del precio promocional.
+- El Apps Script ahora tambien permite actualizar la columna `Promo` en `Ventas`, para que los cambios de promo hechos desde `Editar Venta` persistan correctamente en la hoja.
