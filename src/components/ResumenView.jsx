@@ -67,9 +67,9 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
           </h3>
           <table
             style={{
-              width: "100%",
+              width: "auto",
               borderCollapse: "collapse",
-              minWidth: "420px",
+              minWidth: "320px",
             }}
           >
             <tbody>
@@ -88,6 +88,8 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                       padding: "12px 14px",
                       color: "#fff",
                       fontWeight: fila.strong ? "700" : "600",
+                      whiteSpace: "nowrap",
+                      paddingRight: "18px",
                     }}
                   >
                     {fila.label}
@@ -169,24 +171,24 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
           border: "1px solid rgba(255,255,255,0.1)",
           overflowX: "auto",
         }}
-      >
-        <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
-          Top productos del mes
-        </h3>
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            fontSize: "0.82em",
-          }}
         >
+          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
+            Top productos del mes
+          </h3>
+          <table
+            style={{
+              width: "auto",
+              borderCollapse: "collapse",
+              fontSize: "0.8em",
+            }}
+          >
           <thead>
             <tr style={{ borderBottom: "2px solid rgba(46,204,113,0.35)" }}>
-              {["Producto", "Unid.", "Total", "Gan. Neta"].map((header) => (
+              {["Producto", "Unid.", "Total", "Ganancia Neta"].map((header) => (
                 <th
                   key={header}
                   style={{
-                    padding: "9px 10px",
+                    padding: "8px 9px",
                     textAlign: header === "Producto" ? "left" : "right",
                     color: "#2ecc71",
                     whiteSpace: "nowrap",
@@ -203,20 +205,20 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                 key={producto.name}
                 style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
               >
-                <td style={{ padding: "9px 10px", color: "#fff" }}>{producto.name}</td>
+                <td style={{ padding: "8px 9px", color: "#fff" }}>{producto.name}</td>
                 <td
                   style={{
-                    padding: "9px 10px",
+                    padding: "8px 9px",
                     textAlign: "right",
                     color: "#3498db",
                   }}
                 >
                   {producto.ventas}
                 </td>
-                <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#f39c12" }}>
+                <td style={{ ...montoCellStyle, padding: "8px 9px", color: "#f39c12" }}>
                   $ {formatearMonto(producto.total)}
                 </td>
-                <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#2ecc71" }}>
+                <td style={{ ...montoCellStyle, padding: "8px 9px", color: "#2ecc71" }}>
                   $ {formatearMonto(producto.ganancia)}
                 </td>
               </tr>
