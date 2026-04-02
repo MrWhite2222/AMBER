@@ -1,13 +1,4 @@
-import {
-  AlertTriangle,
-  CalendarRange,
-  CheckCircle2,
-  CircleDollarSign,
-  Percent,
-  Receipt,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { CalendarRange } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -55,6 +46,17 @@ const parseVentaFecha = (valor) => {
   return Number.isNaN(fecha.getTime()) ? null : fecha;
 };
 
+const getCantidadVenta = (venta) => {
+  const cantidad = Number(venta?.["Cantidad"] ?? 1);
+  return Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 1;
+};
+
+const getTotalVentaFila = (venta) =>
+  parseNumero(venta?.["Precio venta"]) * getCantidadVenta(venta);
+
+const getImpuestoVentaFila = (venta) =>
+  parseNumero(venta?.["Impuesto"]) * getCantidadVenta(venta);
+
 const formatearMonto = (valor) =>
   Number(valor || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 0,
@@ -74,22 +76,36 @@ const formatearMes = (fecha) =>
     .slice(1)
     .toLowerCase()} ${fecha.getFullYear()}`;
 
-const EstadoLinea = ({ color, icon: Icon, label, value }) => (
-  <div
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "8px",
-      color,
-      fontSize: "0.86em",
-      fontWeight: "700",
-      whiteSpace: "nowrap",
-    }}
-  >
-    <Icon size={15} />
-    {label}: $ {formatearMonto(value)}
-  </div>
-);
+const montoCellStyle = {
+  padding: "10px 14px",
+  textAlign: "right",
+  whiteSpace: "nowrap",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const calcularResumenMes = (ventasMes, gastosMes) => {
+  const totalVentas = ventasMes.reduce(
+    (acum, venta) => acum + getTotalVentaFila(venta),
+    0
+  );
+  const impuestos = ventasMes.reduce(
+    (acum, venta) => acum + getImpuestoVentaFila(venta),
+    0
+  );
+  const gananciaNetaVentas = totalVentas - impuestos;
+  const gastosPeriodo = getTotalGastos(gastosMes);
+  const resultadoFinal = gananciaNetaVentas - gastosPeriodo;
+  const margenNeto = totalVentas > 0 ? (resultadoFinal / totalVentas) * 100 : 0;
+
+  return {
+    totalVentas,
+    impuestos,
+    gananciaNetaVentas,
+    gastosPeriodo,
+    resultadoFinal,
+    margenNeto,
+  };
+};
 
 const BalancesView = ({ allVentas, card, gastos }) => {
   const [mesSeleccionado, setMesSeleccionado] = useState(() => getInicioMes(new Date()));
@@ -112,44 +128,10 @@ const BalancesView = ({ allVentas, card, gastos }) => {
     [gastos, mesSeleccionado]
   );
 
-  const resumenPrincipal = useMemo(() => {
-    const ventasBrutas = ventasMesSeleccionado.reduce(
-      (acum, venta) => acum + parseNumero(venta?.["Precio venta"]),
-      0
-    );
-    const impuestos = ventasMesSeleccionado.reduce(
-      (acum, venta) => acum + parseNumero(venta?.["Impuesto"]),
-      0
-    );
-    const gananciaNetaVentas = ventasMesSeleccionado.reduce(
-      (acum, venta) => acum + parseNumero(venta?.["Ganancia Neta"]),
-      0
-    );
-    const gastosPeriodo = getTotalGastos(gastosMesSeleccionado);
-    const resultadoFinal = gananciaNetaVentas - gastosPeriodo;
-    const margenNeto = ventasBrutas > 0 ? (resultadoFinal / ventasBrutas) * 100 : 0;
-    const gastosPagados = getTotalGastos(
-      gastosMesSeleccionado.filter((gasto) => gasto.estado === "Pagado")
-    );
-    const gastosImpagos = getTotalGastos(
-      gastosMesSeleccionado.filter((gasto) => gasto.estado === "Impago")
-    );
-    const compromisosProximoMes = getTotalGastos(
-      getGastosDelMes(gastos, sumarMeses(mesSeleccionado, 1))
-    );
-
-    return {
-      ventasBrutas,
-      impuestos,
-      gananciaNetaVentas,
-      gastosPeriodo,
-      resultadoFinal,
-      margenNeto,
-      gastosPagados,
-      gastosImpagos,
-      compromisosProximoMes,
-    };
-  }, [gastos, gastosMesSeleccionado, mesSeleccionado, ventasMesSeleccionado]);
+  const resumenPrincipal = useMemo(
+    () => calcularResumenMes(ventasMesSeleccionado, gastosMesSeleccionado),
+    [gastosMesSeleccionado, ventasMesSeleccionado]
+  );
 
   const historialMeses = useMemo(() => {
     return Array.from({ length: 6 }, (_, index) => sumarMeses(mesSeleccionado, index - 5)).map(
@@ -163,20 +145,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           );
         });
         const gastosMes = getGastosDelMes(gastos, fecha);
-        const ventasBrutas = ventasMes.reduce(
-          (acum, venta) => acum + parseNumero(venta?.["Precio venta"]),
-          0
-        );
-        const impuestos = ventasMes.reduce(
-          (acum, venta) => acum + parseNumero(venta?.["Impuesto"]),
-          0
-        );
-        const gananciaNetaVentas = ventasMes.reduce(
-          (acum, venta) => acum + parseNumero(venta?.["Ganancia Neta"]),
-          0
-        );
-        const gastosPeriodo = getTotalGastos(gastosMes);
-        const resultadoFinal = gananciaNetaVentas - gastosPeriodo;
+        const resumenMes = calcularResumenMes(ventasMes, gastosMes);
 
         return {
           key: `${fecha.getFullYear()}-${fecha.getMonth() + 1}`,
@@ -185,11 +154,11 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             fecha.getFullYear()
           ).slice(-2)}`,
           mes: formatearMes(fecha),
-          ventasBrutas,
-          impuestos,
-          gananciaNetaVentas,
-          gastosPeriodo,
-          resultadoFinal,
+          totalVentas: resumenMes.totalVentas,
+          impuestos: resumenMes.impuestos,
+          gananciaNetaVentas: resumenMes.gananciaNetaVentas,
+          gastosPeriodo: resumenMes.gastosPeriodo,
+          resultadoFinal: resumenMes.resultadoFinal,
         };
       }
     );
@@ -204,14 +173,15 @@ const BalancesView = ({ allVentas, card, gastos }) => {
         acumulado[producto] = {
           producto,
           ventas: 0,
-          ventasBrutas: 0,
+          totalVentas: 0,
           gananciaNeta: 0,
         };
       }
 
-      acumulado[producto].ventas += Number(venta?.["Cantidad"] ?? 0) || 0;
-      acumulado[producto].ventasBrutas += parseNumero(venta?.["Precio venta"]);
-      acumulado[producto].gananciaNeta += parseNumero(venta?.["Ganancia Neta"]);
+      acumulado[producto].ventas += getCantidadVenta(venta);
+      acumulado[producto].totalVentas += getTotalVentaFila(venta);
+      acumulado[producto].gananciaNeta +=
+        getTotalVentaFila(venta) - getImpuestoVentaFila(venta);
     });
 
     return Object.values(acumulado)
@@ -219,49 +189,34 @@ const BalancesView = ({ allVentas, card, gastos }) => {
       .slice(0, 8);
   }, [ventasMesSeleccionado]);
 
-  const tarjetasPrincipales = [
+  const resumenFilas = [
     {
-      label: "Ventas brutas",
-      value: resumenPrincipal.ventasBrutas,
-      cardColor: "243,156,18",
+      label: "Total ventas",
+      value: resumenPrincipal.totalVentas,
       color: "#f39c12",
-      icon: CircleDollarSign,
     },
     {
-      label: "Impuestos / comisiones",
+      label: "Impuestos",
       value: resumenPrincipal.impuestos,
-      cardColor: "230,126,34",
       color: "#e67e22",
-      icon: Receipt,
     },
     {
-      label: "Ganancia neta ventas",
-      value: resumenPrincipal.gananciaNetaVentas,
-      cardColor: "52,152,219",
-      color: "#3498db",
-      icon: TrendingUp,
-    },
-    {
-      label: "Gastos del periodo",
+      label: "Gastos del mes",
       value: resumenPrincipal.gastosPeriodo,
-      cardColor: "231,76,60",
       color: "#e74c3c",
-      icon: Wallet,
     },
     {
       label: "Resultado final",
       value: resumenPrincipal.resultadoFinal,
-      cardColor: resumenPrincipal.resultadoFinal >= 0 ? "46,204,113" : "231,76,60",
-      color: resumenPrincipal.resultadoFinal >= 0 ? "#2ecc71" : "#e74c3c",
-      icon: CircleDollarSign,
+      color: resumenPrincipal.resultadoFinal >= 0 ? "#2ecc71" : "#ffb3aa",
+      strong: true,
     },
     {
       label: "Margen neto",
       value: resumenPrincipal.margenNeto,
-      cardColor: "155,89,182",
       color: "#9b59b6",
-      icon: Percent,
       isPercent: true,
+      strong: true,
     },
   ];
 
@@ -340,135 +295,140 @@ const BalancesView = ({ allVentas, card, gastos }) => {
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-          gap: "12px",
-          marginBottom: "18px",
+          ...card("243,156,18"),
+          marginBottom: "20px",
+          overflowX: "auto",
         }}
       >
-        {tarjetasPrincipales.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label} style={card(item.cardColor)}>
-              <div
+        <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1em" }}>
+          Resumen del mes
+        </h3>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            minWidth: "420px",
+          }}
+        >
+          <tbody>
+            {resumenFilas.map((fila, index) => (
+              <tr
+                key={fila.label}
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: "10px",
+                  borderBottom:
+                    index === resumenFilas.length - 1
+                      ? "none"
+                      : "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                <div>
-                  <p style={{ margin: "0 0 5px", color: "#bbb", fontSize: "0.8em" }}>
-                    {item.label}
-                  </p>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: item.isPercent ? "1.35em" : "1.45em",
-                      fontWeight: "700",
-                      color: item.color,
-                    }}
-                  >
-                    {item.isPercent
-                      ? formatearPorcentaje(item.value)
-                      : `$ ${formatearMonto(item.value)}`}
-                  </p>
-                </div>
-                <Icon size={18} style={{ color: item.color }} />
-              </div>
-            </div>
-          );
-        })}
+                <td
+                  style={{
+                    padding: "12px 14px",
+                    color: "#fff",
+                    fontWeight: fila.strong ? "700" : "600",
+                  }}
+                >
+                  {fila.label}
+                </td>
+                <td
+                  style={{
+                    ...montoCellStyle,
+                    color: fila.color,
+                    fontWeight: fila.strong ? "700" : "600",
+                    fontSize: fila.strong ? "1.02em" : "0.96em",
+                  }}
+                >
+                  {fila.isPercent
+                    ? formatearPorcentaje(fila.value)
+                    : `$ ${formatearMonto(fila.value)}`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-          gap: "12px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "18px",
           marginBottom: "20px",
         }}
       >
-        <div style={card("46,204,113")}>
-          <p style={{ margin: "0 0 6px", color: "#bbb", fontSize: "0.8em" }}>
-            Gastos pagados
-          </p>
-          <p style={{ margin: "0 0 10px", color: "#2ecc71", fontWeight: "700", fontSize: "1.35em" }}>
-            $ {formatearMonto(resumenPrincipal.gastosPagados)}
-          </p>
-          <EstadoLinea
-            color="#2ecc71"
-            icon={CheckCircle2}
-            label="Pagados"
-            value={resumenPrincipal.gastosPagados}
-          />
+        <div
+          style={{
+            ...card("243,156,18"),
+            flex: "1.15 1 380px",
+          }}
+        >
+          <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1em" }}>
+            Total ventas
+          </h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={historialMeses}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
+              <YAxis stroke="#999" tick={{ fontSize: 11 }} />
+              <Tooltip
+                contentStyle={{
+                  background: "#1a1a2e",
+                  border: "1px solid #f39c12",
+                  borderRadius: "6px",
+                  color: "#fff",
+                  fontSize: "0.85em",
+                }}
+                formatter={(value) => `$ ${formatearMonto(value)}`}
+              />
+              <Bar
+                dataKey="totalVentas"
+                name="Total ventas"
+                fill="#f39c12"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-        <div style={card("231,76,60")}>
-          <p style={{ margin: "0 0 6px", color: "#bbb", fontSize: "0.8em" }}>
-            Gastos impagos
-          </p>
-          <p style={{ margin: "0 0 10px", color: "#ffb3aa", fontWeight: "700", fontSize: "1.35em" }}>
-            $ {formatearMonto(resumenPrincipal.gastosImpagos)}
-          </p>
-          <EstadoLinea
-            color="#ffb3aa"
-            icon={AlertTriangle}
-            label="Impagos"
-            value={resumenPrincipal.gastosImpagos}
-          />
-        </div>
-        <div style={card("52,152,219")}>
-          <p style={{ margin: "0 0 6px", color: "#bbb", fontSize: "0.8em" }}>
-            Compromisos proximo mes
-          </p>
-          <p style={{ margin: "0 0 10px", color: "#7ed6df", fontWeight: "700", fontSize: "1.35em" }}>
-            $ {formatearMonto(resumenPrincipal.compromisosProximoMes)}
-          </p>
-          <p style={{ margin: 0, color: "#bbb", fontSize: "0.82em" }}>
-            Incluye fijos y cuotas proyectadas para {formatearMes(sumarMeses(mesSeleccionado, 1))}.
-          </p>
+
+        <div
+          style={{
+            ...card("46,204,113"),
+            flex: "1 1 380px",
+          }}
+        >
+          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
+            Resultado final
+          </h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={historialMeses}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
+              <YAxis stroke="#999" tick={{ fontSize: 11 }} />
+              <Tooltip
+                contentStyle={{
+                  background: "#1a1a2e",
+                  border: "1px solid #2ecc71",
+                  borderRadius: "6px",
+                  color: "#fff",
+                  fontSize: "0.85em",
+                }}
+                formatter={(value) => `$ ${formatearMonto(value)}`}
+              />
+              <Bar
+                dataKey="resultadoFinal"
+                name="Resultado final"
+                fill="#2ecc71"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
       <div
         style={{
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: "12px",
-          padding: "15px",
-          marginBottom: "20px",
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}
-      >
-        <h3 style={{ margin: "0 0 12px", color: "#7ed6df", fontSize: "1em" }}>
-          Evolucion ultimos 6 meses
-        </h3>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={historialMeses}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-            <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#999" tick={{ fontSize: 11 }} />
-            <Tooltip
-              contentStyle={{
-                background: "#1a1a2e",
-                border: "1px solid #7ed6df",
-                borderRadius: "6px",
-                color: "#fff",
-                fontSize: "0.85em",
-              }}
-              formatter={(value) => `$ ${formatearMonto(value)}`}
-            />
-            <Bar dataKey="ventasBrutas" name="Ventas" fill="#f39c12" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="gastosPeriodo" name="Gastos" fill="#e74c3c" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="resultadoFinal" name="Resultado" fill="#2ecc71" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
+          display: "flex",
+          flexWrap: "wrap",
           gap: "18px",
           alignItems: "start",
         }}
@@ -480,6 +440,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             padding: "15px",
             border: "1px solid rgba(255,255,255,0.1)",
             overflowX: "auto",
+            flex: "1.55 1 620px",
           }}
         >
           <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1em" }}>
@@ -490,13 +451,14 @@ const BalancesView = ({ allVentas, card, gastos }) => {
               width: "100%",
               borderCollapse: "collapse",
               fontSize: "0.8em",
+              minWidth: "760px",
             }}
           >
             <thead>
               <tr style={{ borderBottom: "2px solid rgba(243,156,18,0.4)" }}>
                 {[
                   "Mes",
-                  "Ventas",
+                  "Total ventas",
                   "Impuestos",
                   "Gan. Neta",
                   "Gastos",
@@ -522,23 +484,24 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   key={fila.key}
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
                 >
-                  <td style={{ padding: "9px 10px", color: "#fff" }}>{fila.mes}</td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#f39c12" }}>
-                    $ {formatearMonto(fila.ventasBrutas)}
+                  <td style={{ padding: "10px 14px", color: "#fff", whiteSpace: "nowrap" }}>
+                    {fila.mes}
                   </td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#e67e22" }}>
+                  <td style={{ ...montoCellStyle, color: "#f39c12" }}>
+                    $ {formatearMonto(fila.totalVentas)}
+                  </td>
+                  <td style={{ ...montoCellStyle, color: "#e67e22" }}>
                     $ {formatearMonto(fila.impuestos)}
                   </td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#3498db" }}>
+                  <td style={{ ...montoCellStyle, color: "#3498db" }}>
                     $ {formatearMonto(fila.gananciaNetaVentas)}
                   </td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#e74c3c" }}>
+                  <td style={{ ...montoCellStyle, color: "#e74c3c" }}>
                     $ {formatearMonto(fila.gastosPeriodo)}
                   </td>
                   <td
                     style={{
-                      padding: "9px 10px",
-                      textAlign: "right",
+                      ...montoCellStyle,
                       color: fila.resultadoFinal >= 0 ? "#2ecc71" : "#ffb3aa",
                       fontWeight: "700",
                     }}
@@ -558,6 +521,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             padding: "15px",
             border: "1px solid rgba(255,255,255,0.1)",
             overflowX: "auto",
+            flex: "0.95 1 360px",
           }}
         >
           <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
@@ -572,7 +536,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           >
             <thead>
               <tr style={{ borderBottom: "2px solid rgba(46,204,113,0.35)" }}>
-                {["Producto", "Unid.", "Ventas", "Gan. Neta"].map((header) => (
+                {["Producto", "Unid.", "Total", "Gan. Neta"].map((header) => (
                   <th
                     key={header}
                     style={{
@@ -597,10 +561,10 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   <td style={{ padding: "9px 10px", textAlign: "right", color: "#3498db" }}>
                     {producto.ventas}
                   </td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#f39c12" }}>
-                    $ {formatearMonto(producto.ventasBrutas)}
+                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#f39c12" }}>
+                    $ {formatearMonto(producto.totalVentas)}
                   </td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#2ecc71" }}>
+                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#2ecc71" }}>
                     $ {formatearMonto(producto.gananciaNeta)}
                   </td>
                 </tr>

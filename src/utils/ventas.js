@@ -1,7 +1,15 @@
 export const parseNumero = (valor) => {
-  if (typeof valor === "number") return valor;
+  if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
   if (!valor) return 0;
-  return Number(String(valor).replace(/[$.,]/g, "").replace(",", ".")) || 0;
+
+  const normalized = String(valor)
+    .trim()
+    .replace(/\$/g, "")
+    .replace(/\s/g, "")
+    .replace(/\.(?=\d{3}(,|$))/g, "")
+    .replace(/,/g, ".");
+
+  return Number(normalized) || 0;
 };
 
 export const VENTA_HEADER_CODIGO = "Codigo";

@@ -99,3 +99,4 @@
 - `Editar Venta` ahora tambien permite activar o quitar `Promo`, con el mismo flujo de descuento bloqueante y recalculo automatico del precio promocional.
 - El Apps Script ahora tambien permite actualizar la columna `Promo` en `Ventas`, para que los cambios de promo hechos desde `Editar Venta` persistan correctamente en la hoja.
 - Se agrego la seccion `Balances` con una vista V1 de rentabilidad del periodo, resumen mensual, evolucion de 6 meses y ranking de productos por ganancia.
+- `Balances` ahora calcula `Total ventas` e `Impuestos` por fila completa (`Precio venta` e `Impuesto` multiplicados por `Cantidad`) y simplifica la vista a resumen tabular, dos graficos separados y un historico mensual mas ancho.
