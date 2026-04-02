@@ -132,22 +132,22 @@ const EditarInventarioModal = ({
           }}
         >
           <div>
-            <label style={lbl}>Precio Unitario</label>
-            <input
-              type="number"
-              min="0"
-              value={editData.precioUnitario}
-              onChange={(e) => onFieldChange("precioUnitario", e.target.value)}
-              style={inp}
-            />
-          </div>
-          <div>
             <label style={lbl}>Costo Unitario</label>
             <input
               type="number"
               min="0"
               value={editData.costoUnitario}
               onChange={(e) => onFieldChange("costoUnitario", e.target.value)}
+              style={inp}
+            />
+          </div>
+          <div>
+            <label style={lbl}>Precio Efectivo</label>
+            <input
+              type="number"
+              min="0"
+              value={editData.precioEfectivo}
+              onChange={(e) => onFieldChange("precioEfectivo", e.target.value)}
               style={inp}
             />
           </div>
@@ -160,16 +160,7 @@ const EditarInventarioModal = ({
             gap: "12px",
           }}
         >
-          <div>
-            <label style={lbl}>Precio Efectivo</label>
-            <input
-              type="number"
-              min="0"
-              value={editData.precioEfectivo}
-              onChange={(e) => onFieldChange("precioEfectivo", e.target.value)}
-              style={inp}
-            />
-          </div>
+          <div />
           <div>
             <label style={lbl}>Precio Lista</label>
             <input

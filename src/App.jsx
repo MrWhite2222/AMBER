@@ -487,7 +487,6 @@ const abrirEdicion = (venta) => {
     talle: "",
     color: "",
     cantidad: "0",
-    precioUnitario: "",
     costoUnitario: "",
     precioEfectivo: "",
     precioLista: "",
@@ -1010,7 +1009,6 @@ const tienePrecioVentaEdicion =
       talle: "",
       color: "",
       cantidad: "0",
-      precioUnitario: "",
       costoUnitario: "",
       precioEfectivo: "",
       precioLista: "",
@@ -1028,7 +1026,6 @@ const tienePrecioVentaEdicion =
       talle: getProductoTalleSeguro(itemNormalizado),
       color: getProductoColorSeguro(itemNormalizado),
       cantidad: String(parseNumero(itemNormalizado["STOCK"])),
-      precioUnitario: String(precioLista),
       costoUnitario: String(getProductoCosto(itemNormalizado)),
       precioEfectivo: String(getProductoPrecioEfectivo(itemNormalizado)),
       precioLista: String(precioLista),
@@ -1037,20 +1034,10 @@ const tienePrecioVentaEdicion =
   };
 
   const handleInventarioEditDataChange = (key, value) => {
-    setInventarioEditData((prev) => {
-      if (key === "precioUnitario" || key === "precioLista") {
-        return {
-          ...prev,
-          precioUnitario: value,
-          precioLista: value,
-        };
-      }
-
-      return {
-        ...prev,
-        [key]: value,
-      };
-    });
+    setInventarioEditData((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   const puedeGuardarEdicionInventario = useMemo(() => {
