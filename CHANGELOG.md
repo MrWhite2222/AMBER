@@ -86,6 +86,7 @@
 - La edicion de inventario permite actualizar producto, codigo, talle, color, stock y precios desde un modal dedicado.
 - Los cambios de inventario ahora se reflejan tambien en `COSTOS`: se actualizan las cargas historicas del codigo original y, si cambia la cantidad, se agrega una fila de ajuste con la diferencia en `ENTRADAS`.
 - El modal de edicion de inventario ahora elimina el campo `Precio Unitario` para evitar duplicidad con `Precio Lista`.
+- La eliminacion de una prenda desde `Inventario` ahora usa una confirmacion visual dentro del modal, con las opciones `Si` y `No`.
 - Los medios de pago `SIN_CUOTAS` ahora pueden elegir si usan `Precio efectivo` o `Precio lista` mediante el nuevo campo `PRECIO_REFERENCIA`.
 - Se elimino el fallback hardcodeado de medios de pago legacy: la app ahora toma `MediosPago` como fuente de verdad y deja de inyectar automaticamente los medios viejos.
 - `Ganancia estimada` en `Nueva Venta` ahora tambien descuenta el `Impuesto` del medio de pago elegido, no solo `Costo U.`.

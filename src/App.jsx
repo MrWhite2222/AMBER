@@ -3160,12 +3160,6 @@ const handleGuardarEdicionInventario = async () => {
 const handleEliminarInventario = async () => {
   if (!inventarioEditando) return;
 
-  const confirmar = window.confirm(
-    "Esto eliminara la prenda del inventario y dejara sin codigo sus cargas historicas en COSTOS. ¿Continuar?"
-  );
-
-  if (!confirmar) return;
-
   setGuardandoEdicionInventario(true);
 
   const codigoAnterior = normalizarTexto(getCodigoSeguro(inventarioEditando));
