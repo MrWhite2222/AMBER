@@ -73,7 +73,7 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
 
   return (
     <>
-      <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>{mes}</h2>
+      <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>{`Periodo: ${mes}`}</h2>
       <div
         style={{
           display: "flex",
@@ -155,6 +155,7 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
               ...card("231,76,60"),
               width: "fit-content",
               minWidth: "250px",
+              textAlign: "center",
             }}
           >
             <h3 style={{ margin: "0 0 10px", color: "#ffb3aa", fontSize: "1em" }}>
@@ -187,6 +188,7 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
               ...card("46,204,113"),
               width: "fit-content",
               minWidth: "250px",
+              textAlign: "center",
             }}
           >
             <h3 style={{ margin: "0 0 10px", color: "#2ecc71", fontSize: "1em" }}>
