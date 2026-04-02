@@ -6,7 +6,7 @@ import CargarLoteModal from "./components/CargarLoteModal";
 import CargarGastoModal from "./components/CargarGastoModal";
 import CargarPrendaModal from "./components/CargarPrendaModal";
 import EditarGastoModal from "./components/EditarGastoModal";
-import ModificarPreciosModal from "./components/ModificarPreciosModal";
+import EditarInventarioModal from "./components/EditarInventarioModal";
 import EditarVentaModal from "./components/EditarVentaModalPromo";
 import MediosPagoModal from "./components/MediosPagoModal";
 import NuevaVentaModal from "./components/NuevaVentaModalPromo";
@@ -478,6 +478,20 @@ const abrirEdicion = (venta) => {
   const [invTalle, setInvTalle] = useState("");
   const [invColor, setInvColor] = useState("");
   const [showSinStock, setShowSinStock] = useState(false);
+  const [showEditInventarioForm, setShowEditInventarioForm] = useState(false);
+  const [guardandoEdicionInventario, setGuardandoEdicionInventario] = useState(false);
+  const [inventarioEditando, setInventarioEditando] = useState(null);
+  const [inventarioEditData, setInventarioEditData] = useState({
+    producto: "",
+    codigo: "",
+    talle: "",
+    color: "",
+    cantidad: "0",
+    precioUnitario: "",
+    costoUnitario: "",
+    precioEfectivo: "",
+    precioLista: "",
+  });
 
   const [showForm, setShowForm] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -986,6 +1000,93 @@ const tienePrecioVentaEdicion =
     setShowPrecioObjetivoDrop(false);
     setCodigosPrecioExcluidos([]);
   };
+
+  const resetEdicionInventarioForm = () => {
+    setGuardandoEdicionInventario(false);
+    setInventarioEditando(null);
+    setInventarioEditData({
+      producto: "",
+      codigo: "",
+      talle: "",
+      color: "",
+      cantidad: "0",
+      precioUnitario: "",
+      costoUnitario: "",
+      precioEfectivo: "",
+      precioLista: "",
+    });
+  };
+
+  const abrirEdicionInventario = (item) => {
+    const itemNormalizado = normalizarItemInventario(item);
+    const precioLista = getProductoPrecioLista(itemNormalizado);
+
+    setInventarioEditando(itemNormalizado);
+    setInventarioEditData({
+      producto: getProductoNombreSeguro(itemNormalizado),
+      codigo: getCodigoSeguro(itemNormalizado),
+      talle: getProductoTalleSeguro(itemNormalizado),
+      color: getProductoColorSeguro(itemNormalizado),
+      cantidad: String(parseNumero(itemNormalizado["STOCK"])),
+      precioUnitario: String(precioLista),
+      costoUnitario: String(getProductoCosto(itemNormalizado)),
+      precioEfectivo: String(getProductoPrecioEfectivo(itemNormalizado)),
+      precioLista: String(precioLista),
+    });
+    setShowEditInventarioForm(true);
+  };
+
+  const handleInventarioEditDataChange = (key, value) => {
+    setInventarioEditData((prev) => {
+      if (key === "precioUnitario" || key === "precioLista") {
+        return {
+          ...prev,
+          precioUnitario: value,
+          precioLista: value,
+        };
+      }
+
+      return {
+        ...prev,
+        [key]: value,
+      };
+    });
+  };
+
+  const puedeGuardarEdicionInventario = useMemo(() => {
+    const codigoNuevo = normalizarTexto(inventarioEditData.codigo);
+    const productoNuevo = normalizarTexto(inventarioEditData.producto);
+    const talleNuevo = normalizarTexto(inventarioEditData.talle);
+    const colorNuevo = normalizarTexto(inventarioEditData.color);
+    const cantidadNueva = Number(inventarioEditData.cantidad);
+    const costoNuevo = parseNumero(inventarioEditData.costoUnitario);
+    const precioEfectivoNuevo = parseNumero(inventarioEditData.precioEfectivo);
+    const precioListaNuevo = parseNumero(inventarioEditData.precioLista);
+    const codigoActual = normalizarTexto(getCodigoSeguro(inventarioEditando)).toUpperCase();
+
+    const codigoDuplicado = inventarioUnico.some((item) => {
+      const codigoItem = normalizarTexto(getCodigoSeguro(item)).toUpperCase();
+      return (
+        codigoItem &&
+        codigoItem === codigoNuevo.toUpperCase() &&
+        codigoItem !== codigoActual
+      );
+    });
+
+    return (
+      Boolean(inventarioEditando?._rowNumber) &&
+      Boolean(codigoNuevo) &&
+      Boolean(productoNuevo) &&
+      Boolean(talleNuevo) &&
+      Boolean(colorNuevo) &&
+      Number.isFinite(cantidadNueva) &&
+      cantidadNueva >= 0 &&
+      costoNuevo >= 0 &&
+      precioEfectivoNuevo >= 0 &&
+      precioListaNuevo >= 0 &&
+      !codigoDuplicado
+    );
+  }, [inventarioEditData, inventarioEditando, inventarioUnico]);
 
   const handleAlcancePrecioChange = (nextScope) => {
     setAlcancePrecio(nextScope);
@@ -2907,6 +3008,226 @@ const handleGuardarPrecios = async () => {
   setShowModificarPreciosForm(false);
   setInventario(await leerHoja("Inventario"));
 };
+
+const construirPayloadCostoEdicionInventario = ({
+  codigo,
+  producto,
+  talle,
+  color,
+  costoUnitario,
+  precioEfectivo,
+  precioLista,
+  entradas,
+}) => ({
+  "CÓDIGO": codigo,
+  CODIGO: codigo,
+  PRODUCTO: producto,
+  "Tipo de producto": producto,
+  TALLE: talle,
+  Talle: talle,
+  COLOR: color,
+  Color: color,
+  ...(entradas !== undefined ? { ENTRADAS: entradas } : {}),
+  "COSTO U.": costoUnitario,
+  "Costo U.": costoUnitario,
+  "Precio Efectivo": precioEfectivo,
+  "PRECIO EFECTIVO": precioEfectivo,
+  "Precio lista": precioLista,
+  "PRECIO LISTA": precioLista,
+});
+
+const handleGuardarEdicionInventario = async () => {
+  if (!inventarioEditando || !puedeGuardarEdicionInventario) return;
+
+  const codigoAnterior = normalizarTexto(getCodigoSeguro(inventarioEditando));
+  const codigoNuevo = normalizarTexto(inventarioEditData.codigo);
+  const productoNuevo = normalizarTexto(inventarioEditData.producto);
+  const talleNuevo = normalizarTexto(inventarioEditData.talle);
+  const colorNuevo = normalizarTexto(inventarioEditData.color);
+  const cantidadAnterior = Number(parseNumero(inventarioEditando["STOCK"])) || 0;
+  const cantidadNueva = Number(inventarioEditData.cantidad || 0);
+  const costoUnitarioNuevo = parseNumero(inventarioEditData.costoUnitario);
+  const precioEfectivoNuevo = parseNumero(inventarioEditData.precioEfectivo);
+  const precioListaNuevo = parseNumero(inventarioEditData.precioLista);
+  const rowNumberInventario = Number(inventarioEditando?._rowNumber || 0);
+
+  const codigoDuplicado = inventarioUnico.some((item) => {
+    const codigoItem = normalizarTexto(getCodigoSeguro(item)).toUpperCase();
+    return (
+      codigoItem &&
+      codigoItem === codigoNuevo.toUpperCase() &&
+      codigoItem !== codigoAnterior.toUpperCase()
+    );
+  });
+
+  if (codigoDuplicado) {
+    alert("Ya existe otra prenda con ese codigo.");
+    return;
+  }
+
+  setGuardandoEdicionInventario(true);
+
+  const costos = await leerHoja("COSTOS");
+  const filasCosto = costos
+    .filter(
+      (fila) =>
+        normalizarTexto(getCodigoSeguro(fila)).toUpperCase() ===
+        codigoAnterior.toUpperCase()
+    )
+    .sort(
+      (a, b) =>
+        Number(a?._rowNumber || 0) - Number(b?._rowNumber || 0)
+    );
+
+  const payloadActualizacion = construirPayloadCostoEdicionInventario({
+    codigo: codigoNuevo,
+    producto: productoNuevo,
+    talle: talleNuevo,
+    color: colorNuevo,
+    costoUnitario: costoUnitarioNuevo,
+    precioEfectivo: precioEfectivoNuevo,
+    precioLista: precioListaNuevo,
+  });
+
+  for (const fila of filasCosto) {
+    const result = await actualizarFila("COSTOS", fila._rowNumber, payloadActualizacion);
+    if (!result?.success) {
+      alert(
+        result?.error
+          ? `No se pudo actualizar una carga historica en COSTOS: ${result.error}`
+          : "No se pudo actualizar una carga historica en COSTOS."
+      );
+      setGuardandoEdicionInventario(false);
+      return;
+    }
+  }
+
+  const diferenciaCantidad = cantidadNueva - cantidadAnterior;
+  if (diferenciaCantidad !== 0) {
+    const hoy = new Date();
+    const meses = [
+      "ENERO",
+      "FEBRERO",
+      "MARZO",
+      "ABRIL",
+      "MAYO",
+      "JUNIO",
+      "JULIO",
+      "AGOSTO",
+      "SEPTIEMBRE",
+      "OCTUBRE",
+      "NOVIEMBRE",
+      "DICIEMBRE",
+    ];
+
+    const ajustePayload = {
+      TEMPORADA: "AJUSTE INVENTARIO",
+      FECHA: formatearFecha(getTodayInputDate()),
+      DIA: hoy.getDate(),
+      MES: meses[hoy.getMonth()],
+      ...construirPayloadCostoEdicionInventario({
+        codigo: codigoNuevo,
+        producto: productoNuevo,
+        talle: talleNuevo,
+        color: colorNuevo,
+        costoUnitario: costoUnitarioNuevo,
+        precioEfectivo: precioEfectivoNuevo,
+        precioLista: precioListaNuevo,
+        entradas: diferenciaCantidad,
+      }),
+    };
+
+    const ajusteResult = await agregarFila("COSTOS", ajustePayload);
+    if (!ajusteResult?.success) {
+      alert(
+        ajusteResult?.error
+          ? `No se pudo registrar el ajuste de stock: ${ajusteResult.error}`
+          : "No se pudo registrar el ajuste de stock."
+      );
+      setGuardandoEdicionInventario(false);
+      return;
+    }
+  }
+
+  if (rowNumberInventario) {
+    const inventarioResult = await actualizarFila("Inventario", rowNumberInventario, {
+      CODIGO: codigoNuevo,
+    });
+
+    if (!inventarioResult?.success) {
+      alert(
+        inventarioResult?.error
+          ? `Se actualizo COSTOS, pero no se pudo actualizar Inventario: ${inventarioResult.error}`
+          : "Se actualizo COSTOS, pero no se pudo actualizar Inventario."
+      );
+      setGuardandoEdicionInventario(false);
+      return;
+    }
+  }
+
+  resetEdicionInventarioForm();
+  setShowEditInventarioForm(false);
+  setInventario(await leerHoja("Inventario"));
+};
+
+const handleEliminarInventario = async () => {
+  if (!inventarioEditando) return;
+
+  const confirmar = window.confirm(
+    "Esto eliminara la prenda del inventario y dejara sin codigo sus cargas historicas en COSTOS. ¿Continuar?"
+  );
+
+  if (!confirmar) return;
+
+  setGuardandoEdicionInventario(true);
+
+  const codigoAnterior = normalizarTexto(getCodigoSeguro(inventarioEditando));
+  const rowNumberInventario = Number(inventarioEditando?._rowNumber || 0);
+  const costos = await leerHoja("COSTOS");
+  const filasCosto = costos.filter(
+    (fila) =>
+      normalizarTexto(getCodigoSeguro(fila)).toUpperCase() ===
+      codigoAnterior.toUpperCase()
+  );
+
+  for (const fila of filasCosto) {
+    const result = await actualizarFila("COSTOS", fila._rowNumber, {
+      CODIGO: "",
+      "CÓDIGO": "",
+    });
+
+    if (!result?.success) {
+      alert(
+        result?.error
+          ? `No se pudo eliminar la prenda de COSTOS: ${result.error}`
+          : "No se pudo eliminar la prenda de COSTOS."
+      );
+      setGuardandoEdicionInventario(false);
+      return;
+    }
+  }
+
+  if (rowNumberInventario) {
+    const inventarioResult = await actualizarFila("Inventario", rowNumberInventario, {
+      CODIGO: "",
+    });
+
+    if (!inventarioResult?.success) {
+      alert(
+        inventarioResult?.error
+          ? `No se pudo eliminar la fila en Inventario: ${inventarioResult.error}`
+          : "No se pudo eliminar la fila en Inventario."
+      );
+      setGuardandoEdicionInventario(false);
+      return;
+    }
+  }
+
+  resetEdicionInventarioForm();
+  setShowEditInventarioForm(false);
+  setInventario(await leerHoja("Inventario"));
+};
+
 const handleGuardarEdicion = async () => {
   if (
     !ventaEditando ||
@@ -3421,10 +3742,7 @@ const handleEliminarMedioPago = async (medio) => {
               resetCargaPrendaForm();
               setShowCargaPrendaForm(true);
             }}
-            onOpenModificarPrecios={() => {
-              resetModificarPreciosForm();
-              setShowModificarPreciosForm(true);
-            }}
+            onEditarInventario={abrirEdicionInventario}
             onResetFiltros={() => {
               setInvSearch("");
               setInvTalle("");
@@ -3646,39 +3964,20 @@ const handleEliminarMedioPago = async (medio) => {
             resumenLote={resumenLote}
           />
         )}
-        {showModificarPreciosForm && (
-          <ModificarPreciosModal
-            afectadosPrecioSeleccion={afectadosPrecioSeleccion}
-            alcancePrecio={alcancePrecio}
-            coincidenciasPrecioSeleccion={coincidenciasPrecioSeleccion}
-            codigosPrecioExcluidos={codigosPrecioExcluidos}
-            guardandoPrecios={guardandoPrecios}
+        {showEditInventarioForm && (
+          <EditarInventarioModal
+            editData={inventarioEditData}
+            guardando={guardandoEdicionInventario}
             inp={inp}
             lbl={lbl}
-            objetivosPrecioFiltrados={objetivosPrecioFiltrados}
-            onAlcancePrecioChange={handleAlcancePrecioChange}
             onClose={() => {
-              resetModificarPreciosForm();
-              setShowModificarPreciosForm(false);
+              resetEdicionInventarioForm();
+              setShowEditInventarioForm(false);
             }}
-            onGuardarPrecios={handleGuardarPrecios}
-            onPrecioDataChange={(key, value) =>
-              setPrecioData((prev) => ({ ...prev, [key]: value }))
-            }
-            onSelectPrecioObjetivo={handleSelectPrecioObjetivo}
-            onSearchPrecioObjetivoChange={(value) => {
-              setSearchPrecioObjetivo(value);
-              setShowPrecioObjetivoDrop(true);
-              setSelectedPrecioObjetivo(null);
-              setCodigosPrecioExcluidos([]);
-            }}
-            onToggleCodigoPrecioExcluido={handleToggleCodigoPrecioExcluido}
-            puedeGuardarPrecios={puedeGuardarPrecios}
-            precioData={precioData}
-            searchPrecioObjetivo={searchPrecioObjetivo}
-            selectedPrecioObjetivo={selectedPrecioObjetivo}
-            setShowPrecioObjetivoDrop={setShowPrecioObjetivoDrop}
-            showPrecioObjetivoDrop={showPrecioObjetivoDrop}
+            onDelete={handleEliminarInventario}
+            onFieldChange={handleInventarioEditDataChange}
+            onGuardar={handleGuardarEdicionInventario}
+            puedeGuardar={puedeGuardarEdicionInventario}
           />
         )}
 {/* MODAL edicion */}

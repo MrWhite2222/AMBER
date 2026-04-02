@@ -78,6 +78,13 @@
 - El selector de `Medio de Pago` en `Nueva Venta` y `Editar Venta` deja de estar hardcodeado y se alimenta desde la configuracion cargada.
 - El calculo de `Impuesto` para ventas ahora puede tomar formulas dinamicas para medios `CON_CUOTAS` y `SIN_CUOTAS`, usando los parametros guardados en `MediosPago`.
 - La baja de medios de pago se hace como desactivacion logica (`ACTIVO = NO`) para no afectar el historial de ventas.
+
+## 2026-04-02
+
+- `Gastos` ahora muestra el header `Editar` en la ultima columna de la tabla mensual.
+- `Inventario` reemplaza el boton `Modificar Precios` por una accion `Editar` fila por fila desde la tabla.
+- La edicion de inventario permite actualizar producto, codigo, talle, color, stock y precios desde un modal dedicado.
+- Los cambios de inventario ahora se reflejan tambien en `COSTOS`: se actualizan las cargas historicas del codigo original y, si cambia la cantidad, se agrega una fila de ajuste con la diferencia en `ENTRADAS`.
 - Los medios de pago `SIN_CUOTAS` ahora pueden elegir si usan `Precio efectivo` o `Precio lista` mediante el nuevo campo `PRECIO_REFERENCIA`.
 - Se elimino el fallback hardcodeado de medios de pago legacy: la app ahora toma `MediosPago` como fuente de verdad y deja de inyectar automaticamente los medios viejos.
 - `Ganancia estimada` en `Nueva Venta` ahora tambien descuenta el `Impuesto` del medio de pago elegido, no solo `Costo U.`.

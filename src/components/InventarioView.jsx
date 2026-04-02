@@ -17,9 +17,9 @@ const InventarioView = ({
   onInvColorChange,
   onInvSearchChange,
   onInvTalleChange,
+  onEditarInventario,
   onOpenCargaLote,
   onOpenCargaPrenda,
-  onOpenModificarPrecios,
   onResetFiltros,
   onShowSinStockChange,
   parseNumero,
@@ -214,21 +214,6 @@ const InventarioView = ({
         >
           Cargar Lote
         </button>
-        <button
-          onClick={onOpenModificarPrecios}
-          style={{
-            padding: "6px 14px",
-            borderRadius: "6px",
-            border: "none",
-            background: "#3498db",
-            color: "#fff",
-            fontWeight: "600",
-            cursor: "pointer",
-            fontSize: "0.82em",
-          }}
-        >
-          Modificar precios
-        </button>
       </div>
     </div>
 
@@ -267,6 +252,7 @@ const InventarioView = ({
               "Costo U.",
               "P. Efectivo",
               "P. Lista",
+              "Editar",
             ].map((h) => (
               <th
                 key={h}
@@ -351,11 +337,11 @@ const InventarioView = ({
                   style={{
                     padding: "8px 10px",
                     textAlign: "right",
-                    color: "#bbb",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  ${" "}
+                  color: "#bbb",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                ${" "}
                   {getProductoCosto(item).toLocaleString("es-AR")}
                 </td>
                 <td
@@ -381,6 +367,23 @@ const InventarioView = ({
                 >
                   ${" "}
                   {getProductoPrecioLista(item).toLocaleString("es-AR")}
+                </td>
+                <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                  <button
+                    onClick={() => onEditarInventario(item)}
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "6px",
+                      border: "none",
+                      background: "#9b59b6",
+                      color: "#fff",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                    }}
+                  >
+                    +
+                  </button>
                 </td>
               </tr>
             );

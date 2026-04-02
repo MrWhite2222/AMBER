@@ -242,7 +242,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
                 background: "rgba(0,0,0,0.2)",
               }}
             >
-              {["Fecha", "Concepto", "Tipo", "Pago", "Detalle", "Monto", ""].map((h) => (
+              {["Fecha", "Concepto", "Tipo", "Pago", "Detalle", "Monto", "Editar"].map((h) => (
                 <th
                   key={h}
                   style={{
