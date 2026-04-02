@@ -1158,38 +1158,67 @@ const tienePrecioVentaEdicion =
     return getGastosDelMes(gastos, new Date());
   }, [gastos]);
 
+  const getCantidadVentaResumen = (venta) => {
+    const cantidad = Number(venta?.["Cantidad"] ?? 1);
+    return Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 1;
+  };
+
+  const getTotalVentaResumen = (venta) =>
+    parseNumero(venta?.["Precio venta"]) * getCantidadVentaResumen(venta);
+
+  const getImpuestoVentaResumen = (venta) =>
+    parseNumero(venta?.["Impuesto"]) * getCantidadVentaResumen(venta);
+
   // Análisis resumen
-  const analisisResumen = useMemo(() => {
+  const topProductosMes = useMemo(() => {
     const a = {};
     ventasMes.forEach((v) => {
       const producto = v["Tipo de producto"] || "Sin nombre";
-      const ganancia = parseNumero(v["Ganancia Neta"]);
-      if (!a[producto]) a[producto] = { ganancia: 0, ventas: 0 };
+      const total = getTotalVentaResumen(v);
+      const ganancia = total - getImpuestoVentaResumen(v);
+      if (!a[producto]) a[producto] = { ganancia: 0, ventas: 0, total: 0 };
       a[producto].ganancia += ganancia;
-      a[producto].ventas += 1;
+      a[producto].ventas += getCantidadVentaResumen(v);
+      a[producto].total += total;
     });
     return Object.entries(a)
       .map(([name, d]) => ({
         name,
         ganancia: d.ganancia,
         ventas: d.ventas,
-        gp: d.ganancia / d.ventas,
+        total: d.total,
       }))
       .sort((a, b) => b.ganancia - a.ganancia);
   }, [ventasMes]);
 
   const totalMes = useMemo(
     () => ({
-      ganancia: ventasMes.reduce(
-        (s, v) => s + parseNumero(v["Ganancia Neta"]),
+      totalVentas: ventasMes.reduce(
+        (s, v) => s + getTotalVentaResumen(v),
         0
       ),
+      impuestos: ventasMes.reduce((s, v) => s + getImpuestoVentaResumen(v), 0),
       gastos: getTotalGastos(gastosMes),
       ventas: ventasMes.length,
       movimientosGastos: gastosMes.length,
+      gastosImpagos: getTotalGastos(
+        gastosMes.filter((gasto) => gasto.estado === "Impago")
+      ),
+      gastosImpagosCantidad: gastosMes.filter(
+        (gasto) => gasto.estado === "Impago"
+      ).length,
       resultado:
-        ventasMes.reduce((s, v) => s + parseNumero(v["Ganancia Neta"]), 0) -
+        ventasMes.reduce((s, v) => s + getTotalVentaResumen(v), 0) -
+        ventasMes.reduce((s, v) => s + getImpuestoVentaResumen(v), 0) -
         getTotalGastos(gastosMes),
+      margenNeto:
+        ventasMes.reduce((s, v) => s + getTotalVentaResumen(v), 0) > 0
+          ? ((ventasMes.reduce((s, v) => s + getTotalVentaResumen(v), 0) -
+              ventasMes.reduce((s, v) => s + getImpuestoVentaResumen(v), 0) -
+              getTotalGastos(gastosMes)) /
+              ventasMes.reduce((s, v) => s + getTotalVentaResumen(v), 0)) *
+            100
+          : 0,
     }),
     [ventasMes, gastosMes]
   );
@@ -3710,9 +3739,9 @@ const handleEliminarMedioPago = async (medio) => {
         {/* RESUMEN */}
         {viewMode === "resumen" && (
           <ResumenView
-            analisisResumen={analisisResumen}
             card={card}
             mes={getMes()}
+            topProductosMes={topProductosMes}
             totalMes={totalMes}
           />
         )}
