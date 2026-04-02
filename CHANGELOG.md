@@ -90,6 +90,7 @@
 - `Gastos` ahora registra y edita un `Estado` (`Pagado` o `Impago`) desde los modales de alta y edicion.
 - La tabla mensual de `Gastos` ahora muestra una columna `Estado` con indicadores visuales de pago.
 - El resumen del mes seleccionado en `Gastos` ahora desglosa `Gastos Pagados` y `Gastos Impagos` ademas del total.
+- En gastos fijos y cuotas, el `Estado` cargado ahora aplica solo al mes o cuota de origen; los meses futuros se proyectan como `Impago` hasta que el usuario los marque.
 - Los medios de pago `SIN_CUOTAS` ahora pueden elegir si usan `Precio efectivo` o `Precio lista` mediante el nuevo campo `PRECIO_REFERENCIA`.
 - Se elimino el fallback hardcodeado de medios de pago legacy: la app ahora toma `MediosPago` como fuente de verdad y deja de inyectar automaticamente los medios viejos.
 - `Ganancia estimada` en `Nueva Venta` ahora tambien descuenta el `Impuesto` del medio de pago elegido, no solo `Costo U.`.

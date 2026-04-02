@@ -253,6 +253,7 @@ const construirOcurrenciaGasto = ({
   cuotaActual = null,
   cantidadCuotas = 1,
   etiquetaPago = "",
+  estado = null,
   origen = "base",
   index = 0,
 }) => {
@@ -276,7 +277,7 @@ const construirOcurrenciaGasto = ({
       : tipo.toUpperCase() === "FIJOS"
       ? "Fijo mensual"
       : formaPago || "1 pago";
-  const estado = getEstadoGasto(gasto);
+  const estadoFinal = estado || getEstadoGasto(gasto);
 
   return {
     id: `${gastoId}-${fecha.getFullYear()}-${fecha.getMonth() + 1}-${origen}-${index}`,
@@ -289,7 +290,7 @@ const construirOcurrenciaGasto = ({
     tipo,
     formaPago,
     pagoLabel,
-    estado,
+    estado: estadoFinal,
     totalMostrado: monto,
     totalOriginal: parseNumeroGasto(getValorGasto(gasto, ["TOTAL", "Total"])),
     cantidadCuotas,
@@ -326,6 +327,7 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
   const formaPago = normalizarFormaPago(gasto);
   const esFijo = tipo === "FIJOS";
   const esCuotas = !esFijo && formaPago === "CUOTAS" && cantidadCuotas > 1;
+  const estadoBase = getEstadoGasto(gasto);
   const ocurrencias = [];
 
   if (esFijo) {
@@ -357,6 +359,11 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
           gasto,
           fecha,
           monto: total,
+          estado:
+            fecha.getFullYear() === fechaBase.getFullYear() &&
+            fecha.getMonth() === fechaBase.getMonth()
+              ? estadoBase
+              : "Impago",
           etiquetaPago: "Fijo mensual",
           origen: "fijo",
           index,
@@ -394,6 +401,7 @@ const expandirGasto = (gasto, rangeStart, rangeEnd, index) => {
           monto: valorCuota,
           cuotaActual: cuotaNumero,
           cantidadCuotas,
+          estado: cuotaNumero === cuotaInicio ? estadoBase : "Impago",
           etiquetaPago: `Cuota ${cuotaNumero} de ${cantidadCuotas}`,
           origen: "cuota",
           index,
