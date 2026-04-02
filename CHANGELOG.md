@@ -101,4 +101,3 @@
 - Se agrego la seccion `Balances` con una vista V1 de rentabilidad del periodo, resumen mensual, evolucion de 6 meses y ranking de productos por ganancia.
 - `Balances` ahora calcula `Total ventas` e `Impuestos` por fila completa (`Precio venta` e `Impuesto` multiplicados por `Cantidad`) y simplifica la vista a resumen tabular, dos graficos separados y un historico mensual mas ancho.
 - `Resumen` ahora usa la misma logica base que `Balances`: muestra una tabla `Resumen del mes`, suma `Gastos Impagos` del mes actual y reemplaza el analisis viejo por `Top productos del mes`.
-- `Resumen`, `Balances` y `Gastos` recibieron un pulido visual con paneles mas consistentes, mejor jerarquia tipografica y tablas mas legibles.
