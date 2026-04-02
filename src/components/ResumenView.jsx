@@ -114,28 +114,50 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
 
         <div
           style={{
-            ...card("231,76,60"),
+            display: "grid",
+            gap: "18px",
             flex: "1 1 280px",
           }}
         >
-          <h3 style={{ margin: "0 0 10px", color: "#ffb3aa", fontSize: "1em" }}>
-            Gastos Impagos
-          </h3>
-          <p
-            style={{
-              margin: "0 0 8px",
-              fontSize: "1.5em",
-              fontWeight: "700",
-              color: "#ffb3aa",
-            }}
-          >
-            $ {formatearMonto(totalMes.gastosImpagos)}
-          </p>
-          <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
-            {totalMes.gastosImpagosCantidad > 0
-              ? `${totalMes.gastosImpagosCantidad} gasto(s) pendiente(s) este mes.`
-              : "No hay gastos impagos este mes."}
-          </p>
+          <div style={card("231,76,60")}>
+            <h3 style={{ margin: "0 0 10px", color: "#ffb3aa", fontSize: "1em" }}>
+              Gastos Impagos
+            </h3>
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontSize: "1.5em",
+                fontWeight: "700",
+                color: "#ffb3aa",
+              }}
+            >
+              $ {formatearMonto(totalMes.gastosImpagos)}
+            </p>
+            <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
+              {totalMes.gastosImpagosCantidad > 0
+                ? `${totalMes.gastosImpagosCantidad} gasto(s) pendiente(s) este mes.`
+                : "No hay gastos impagos este mes."}
+            </p>
+          </div>
+
+          <div style={card("46,204,113")}>
+            <h3 style={{ margin: "0 0 10px", color: "#2ecc71", fontSize: "1em" }}>
+              Ganancia neta
+            </h3>
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontSize: "1.5em",
+                fontWeight: "700",
+                color: totalMes.resultado >= 0 ? "#2ecc71" : "#ffb3aa",
+              }}
+            >
+              $ {formatearMonto(totalMes.resultado)}
+            </p>
+            <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
+              Margen del mes: {formatearPorcentaje(totalMes.margenNeto)}
+            </p>
+          </div>
         </div>
       </div>
 
