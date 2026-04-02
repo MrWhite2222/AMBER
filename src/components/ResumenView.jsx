@@ -1,3 +1,5 @@
+import { AlertTriangle } from "lucide-react";
+
 const formatearMonto = (valor) =>
   Number(valor || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 0,
@@ -14,6 +16,20 @@ const montoCellStyle = {
   padding: "10px 14px",
   textAlign: "right",
   whiteSpace: "nowrap",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const simboloMontoStyle = {
+  display: "inline-block",
+  width: "14px",
+  textAlign: "left",
+  marginRight: "4px",
+};
+
+const valorMontoStyle = {
+  display: "inline-block",
+  minWidth: "112px",
+  textAlign: "right",
   fontVariantNumeric: "tabular-nums",
 };
 
@@ -42,6 +58,18 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
       strong: true,
     },
   ];
+
+  const renderResumenValor = (fila) => {
+    if (fila.isCount) return fila.value;
+    if (fila.isPercent) return formatearPorcentaje(fila.value);
+
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end" }}>
+        <span style={simboloMontoStyle}>$</span>
+        <span style={valorMontoStyle}>{formatearMonto(fila.value)}</span>
+      </span>
+    );
+  };
 
   return (
     <>
@@ -102,13 +130,10 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                       color: fila.color,
                       fontWeight: fila.strong ? "700" : "600",
                       fontSize: fila.strong ? "1.02em" : "0.96em",
+                      minWidth: fila.isCount || fila.isPercent ? "unset" : "140px",
                     }}
                   >
-                    {fila.isCount
-                      ? fila.value
-                      : fila.isPercent
-                        ? formatearPorcentaje(fila.value)
-                        : `$ ${formatearMonto(fila.value)}`}
+                    {renderResumenValor(fila)}
                   </td>
                 </tr>
               ))}
@@ -120,12 +145,25 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
           style={{
             display: "grid",
             gap: "18px",
-            flex: "1 1 280px",
+            flex: "0 1 auto",
+            width: "fit-content",
+            alignContent: "start",
           }}
         >
-          <div style={card("231,76,60")}>
+          <div
+            style={{
+              ...card("231,76,60"),
+              width: "fit-content",
+              minWidth: "250px",
+            }}
+          >
             <h3 style={{ margin: "0 0 10px", color: "#ffb3aa", fontSize: "1em" }}>
-              Gastos Impagos
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+              >
+                <AlertTriangle size={16} />
+                Gastos Impagos
+              </span>
             </h3>
             <p
               style={{
@@ -144,7 +182,13 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             </p>
           </div>
 
-          <div style={card("46,204,113")}>
+          <div
+            style={{
+              ...card("46,204,113"),
+              width: "fit-content",
+              minWidth: "250px",
+            }}
+          >
             <h3 style={{ margin: "0 0 10px", color: "#2ecc71", fontSize: "1em" }}>
               Ganancia neta
             </h3>
@@ -163,7 +207,6 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             </p>
           </div>
         </div>
-      </div>
 
       <div
         style={{
@@ -172,8 +215,11 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
           padding: "15px",
           border: "1px solid rgba(255,255,255,0.1)",
           overflowX: "auto",
+          flex: "0 1 auto",
+          width: "fit-content",
+          maxWidth: "100%",
         }}
-        >
+      >
           <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
             Top productos del mes
           </h3>
@@ -246,6 +292,7 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             <p>No hay ventas para este periodo.</p>
           </div>
         )}
+      </div>
       </div>
     </>
   );
