@@ -20,6 +20,7 @@ export const TIPOS_GASTO = [
 ];
 
 export const FORMAS_PAGO_GASTO = ["1 pago", "Cuotas"];
+export const ESTADOS_GASTO = ["Pagado", "Impago"];
 
 export const normalizarTextoGasto = (valor) => String(valor ?? "").trim();
 
@@ -180,6 +181,14 @@ export const parseFechaGasto = (gasto) => {
   return parseFechaFlexible(fecha);
 };
 
+export const getEstadoGasto = (gasto) => {
+  const estado = normalizarTextoGasto(
+    getValorGasto(gasto, ["ESTADO", "Estado"])
+  ).toUpperCase();
+
+  return estado === "IMPAGO" ? "Impago" : "Pagado";
+};
+
 const normalizarFormaPago = (gasto) =>
   normalizarTextoGasto(
     getValorGasto(gasto, ["FORMA_PAGO", "FORMA DE PAGO", "Forma de pago"])
@@ -267,6 +276,7 @@ const construirOcurrenciaGasto = ({
       : tipo.toUpperCase() === "FIJOS"
       ? "Fijo mensual"
       : formaPago || "1 pago";
+  const estado = getEstadoGasto(gasto);
 
   return {
     id: `${gastoId}-${fecha.getFullYear()}-${fecha.getMonth() + 1}-${origen}-${index}`,
@@ -279,6 +289,7 @@ const construirOcurrenciaGasto = ({
     tipo,
     formaPago,
     pagoLabel,
+    estado,
     totalMostrado: monto,
     totalOriginal: parseNumeroGasto(getValorGasto(gasto, ["TOTAL", "Total"])),
     cantidadCuotas,

@@ -1,3 +1,4 @@
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   formatearFechaGasto,
@@ -21,6 +22,26 @@ const formatoMonto = (valor) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
+
+const EstadoGastoBadge = ({ estado }) => {
+  const esPagado = estado === "Pagado";
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        color: esPagado ? "#2ecc71" : "#ffb3aa",
+        fontWeight: "700",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {esPagado ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+      {estado}
+    </span>
+  );
+};
 
 const puedeEditarGasto = (gasto) => Boolean(gasto?.raw?._rowNumber);
 
@@ -56,6 +77,12 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
   }, [gastos, mesSeleccionado]);
 
   const totalMesSeleccionado = getTotalGastos(gastosMesSeleccionado);
+  const totalPagadosMes = getTotalGastos(
+    gastosMesSeleccionado.filter((gasto) => gasto.estado === "Pagado")
+  );
+  const totalImpagosMes = getTotalGastos(
+    gastosMesSeleccionado.filter((gasto) => gasto.estado === "Impago")
+  );
   const ahora = new Date();
   const esMesActual =
     mesSeleccionado.getMonth() === ahora.getMonth() &&
@@ -211,6 +238,41 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
           >
             $ {formatoMonto(totalMesSeleccionado)}
           </p>
+          <div
+            style={{
+              marginTop: "10px",
+              display: "grid",
+              gap: "6px",
+              justifyItems: "end",
+            }}
+          >
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                color: "#2ecc71",
+                fontSize: "0.86em",
+                fontWeight: "700",
+              }}
+            >
+              <CheckCircle2 size={15} />
+              Gastos Pagados: $ {formatoMonto(totalPagadosMes)}
+            </div>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                color: "#ffb3aa",
+                fontSize: "0.86em",
+                fontWeight: "700",
+              }}
+            >
+              <AlertTriangle size={15} />
+              Gastos Impagos: $ {formatoMonto(totalImpagosMes)}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -242,7 +304,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
                 background: "rgba(0,0,0,0.2)",
               }}
             >
-              {["Fecha", "Concepto", "Tipo", "Pago", "Detalle", "Monto", "Editar"].map((h) => (
+              {["Fecha", "Concepto", "Tipo", "Pago", "Detalle", "Monto", "Estado", "Editar"].map((h) => (
                 <th
                   key={h}
                   style={{
@@ -290,6 +352,9 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
                   }}
                 >
                   $ {formatoMonto(gasto.totalMostrado)}
+                </td>
+                <td style={{ padding: "9px 10px" }}>
+                  <EstadoGastoBadge estado={gasto.estado || "Pagado"} />
                 </td>
                 <td style={{ padding: "9px 10px", textAlign: "right" }}>
                   {puedeEditarGasto(gasto) ? (

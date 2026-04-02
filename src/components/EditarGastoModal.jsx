@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FORMAS_PAGO_GASTO, TIPOS_GASTO } from "../utils/gastos";
+import { ESTADOS_GASTO, FORMAS_PAGO_GASTO, TIPOS_GASTO } from "../utils/gastos";
 
 const formatoMonto = (valor) =>
   Number(valor || 0).toLocaleString("es-AR", {
@@ -187,6 +187,21 @@ const EditarGastoModal = ({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label style={lbl}>Estado</label>
+            <select
+              value={gastoData.estado}
+              onChange={(e) => onGastoDataChange("estado", e.target.value)}
+              style={{ ...inp, background: "#0f3460" }}
+            >
+              {ESTADOS_GASTO.map((estado) => (
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
+              ))}
+            </select>
           </div>
 
           {esCuotaPosterior && (

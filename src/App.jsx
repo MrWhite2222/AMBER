@@ -513,6 +513,7 @@ const abrirEdicion = (venta) => {
     fecha: getTodayInputDate(),
     descripcion: "",
     tipo: "Otros gastos",
+    estado: "Pagado",
     formaPago: "1 pago",
     cantidadCuotas: "3",
     total: "",
@@ -524,6 +525,7 @@ const abrirEdicion = (venta) => {
     fecha: getTodayInputDate(),
     descripcion: "",
     tipo: "Otros gastos",
+    estado: "Pagado",
     formaPago: "1 pago",
     cantidadCuotas: "3",
     total: "",
@@ -625,6 +627,7 @@ const tienePrecioVentaEdicion =
     Boolean(normalizarTexto(gastoData.fecha)) &&
     Boolean(normalizarTexto(gastoData.descripcion)) &&
     Boolean(normalizarTexto(gastoData.tipo)) &&
+    Boolean(normalizarTexto(gastoData.estado)) &&
     totalGasto > 0 &&
     (!esGastoCuotas || cantidadCuotasGasto > 1);
   const esEditGastoFijo =
@@ -648,6 +651,7 @@ const tienePrecioVentaEdicion =
     Boolean(normalizarTexto(gastoEditData.fecha)) &&
     Boolean(normalizarTexto(gastoEditData.descripcion)) &&
     Boolean(normalizarTexto(gastoEditData.tipo)) &&
+    Boolean(normalizarTexto(gastoEditData.estado)) &&
     totalEditGasto > 0 &&
     (esCuotaPosteriorEditando || !esEditGastoCuotas || cantidadCuotasEditGasto > 1);
 
@@ -829,6 +833,7 @@ const tienePrecioVentaEdicion =
       fecha: getTodayInputDate(),
       descripcion: "",
       tipo: "Otros gastos",
+      estado: "Pagado",
       formaPago: "1 pago",
       cantidadCuotas: "3",
       total: "",
@@ -843,6 +848,7 @@ const tienePrecioVentaEdicion =
       fecha: getTodayInputDate(),
       descripcion: "",
       tipo: "Otros gastos",
+      estado: "Pagado",
       formaPago: "1 pago",
       cantidadCuotas: "3",
       total: "",
@@ -2198,6 +2204,7 @@ const construirPayloadGasto = ({
   cuotaInicio = "",
   cuotasOmitidas = "",
   eliminado = "",
+  estado = "Pagado",
   fechaISO,
   formaPago,
   gastoId,
@@ -2225,6 +2232,8 @@ const construirPayloadGasto = ({
     DESCRIPCION: normalizarTexto(descripcion),
     TIPO: tipo,
     TIPO_GASTO: tipo,
+    ESTADO: normalizarTexto(estado) || "Pagado",
+    Estado: normalizarTexto(estado) || "Pagado",
     FORMA_PAGO: formaPagoFinal,
     "FORMA DE PAGO": formaPagoFinal,
     CANTIDAD_CUOTAS: cantidadCuotas,
@@ -2267,6 +2276,7 @@ const abrirEdicionGasto = (gasto) => {
     fecha: gasto.fecha ? toInputDate(gasto.fecha) : getTodayInputDate(),
     descripcion: gasto.concepto || "",
     tipo: gasto.tipo || "Otros gastos",
+    estado: gasto.estado || "Pagado",
     formaPago,
     cantidadCuotas: String(cantidadCuotas),
     total: String(
@@ -2288,6 +2298,7 @@ const handleGuardarGasto = async () => {
   const payload = construirPayloadGasto({
     cantidadCuotas: esGastoCuotas ? cantidadCuotasGasto : 1,
     descripcion: gastoData.descripcion,
+    estado: gastoData.estado,
     fechaISO: gastoData.fecha,
     formaPago: esGastoFijo ? "1 pago" : gastoData.formaPago,
     gastoId,
@@ -2356,6 +2367,7 @@ const handleGuardarEdicionGasto = async () => {
   const payload = construirPayloadGasto({
     cantidadCuotas: esEditGastoCuotas ? cantidadCuotasEditGasto : 1,
     descripcion: gastoEditData.descripcion,
+    estado: gastoEditData.estado,
     fechaISO: gastoEditData.fecha,
     formaPago: esEditGastoFijo ? "1 pago" : gastoEditData.formaPago,
     gastoId,
@@ -2454,6 +2466,7 @@ const handleGuardarEdicionGasto = async () => {
           cuotaFin: cuotaActual,
           cuotaInicio: cuotaActual,
           descripcion: gastoEditData.descripcion,
+          estado: gastoEditData.estado,
           fechaISO: gastoEditData.fecha,
           formaPago: "Cuotas",
           gastoId,
@@ -2508,6 +2521,7 @@ const handleGuardarEdicionGasto = async () => {
           cuotaFin: ultimaCuotaActiva < cantidadCuotasTotal ? ultimaCuotaActiva : "",
           cuotaInicio: cuotaActual,
           descripcion: gastoEditData.descripcion,
+          estado: gastoEditData.estado,
           fechaISO: gastoEditData.fecha,
           formaPago: "Cuotas",
           gastoId,
