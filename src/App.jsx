@@ -1314,20 +1314,20 @@ const tienePrecioVentaEdicion =
   return items;
 }, [inventarioUnico, invSearch, invTalle, invColor, showSinStock]);
 
-  const invStats = useMemo(
-    () => ({
-      total: inventarioFiltrado.reduce(
-        (s, i) => s + parseNumero(i["STOCK"]),
-        0
-      ),
+  const invStats = useMemo(() => {
+    const itemsConStock = inventarioFiltrado.filter(
+      (item) => parseNumero(item["STOCK"]) > 0
+    );
+
+    return {
+      total: itemsConStock.reduce((s, i) => s + parseNumero(i["STOCK"]), 0),
       items: inventarioFiltrado.length,
-      valorTotal: inventarioFiltrado.reduce(
+      valorTotal: itemsConStock.reduce(
         (s, i) => s + parseNumero(i["STOCK TOTAL"]),
         0
       ),
-    }),
-    [inventarioFiltrado]
-  );
+    };
+  }, [inventarioFiltrado]);
 
   // Productos filtrados para el buscador
   const productosFiltrados = useMemo(() => {
