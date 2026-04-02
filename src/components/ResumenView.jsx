@@ -17,6 +17,23 @@ const montoCellStyle = {
   fontVariantNumeric: "tabular-nums",
 };
 
+const glassPanel = {
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+  border: "1px solid rgba(255,255,255,0.12)",
+  boxShadow: "0 20px 40px rgba(0,0,0,0.18)",
+  backdropFilter: "blur(8px)",
+};
+
+const eyebrowStyle = {
+  margin: "0 0 6px",
+  color: "#8ea4d2",
+  fontSize: "0.72em",
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  fontWeight: "700",
+};
+
 const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
   const resumenFilas = [
     { label: "Total ventas", value: totalMes.totalVentas, color: "#f39c12" },
@@ -45,7 +62,10 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
 
   return (
     <>
-      <h2 style={{ color: "#f39c12", margin: "0 0 18px" }}>{mes}</h2>
+      <div style={{ marginBottom: "18px" }}>
+        <p style={eyebrowStyle}>Vista General</p>
+        <h2 style={{ color: "#f39c12", margin: 0, fontSize: "1.72em" }}>{mes}</h2>
+      </div>
       <div
         style={{
           display: "flex",
@@ -58,17 +78,20 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
         <div
           style={{
             ...card("243,156,18"),
+            ...glassPanel,
             overflowX: "auto",
             flex: "1 1 480px",
           }}
         >
-          <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1em" }}>
+          <p style={eyebrowStyle}>Corte Del Mes</p>
+          <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1.05em" }}>
             Resumen del mes
           </h3>
           <table
             style={{
               width: "100%",
-              borderCollapse: "collapse",
+              borderCollapse: "separate",
+              borderSpacing: 0,
               minWidth: "420px",
             }}
           >
@@ -77,10 +100,8 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                 <tr
                   key={fila.label}
                   style={{
-                    borderBottom:
-                      index === resumenFilas.length - 1
-                        ? "none"
-                        : "1px solid rgba(255,255,255,0.08)",
+                    background:
+                      index % 2 === 0 ? "rgba(255,255,255,0.025)" : "transparent",
                   }}
                 >
                   <td
@@ -88,6 +109,10 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                       padding: "12px 14px",
                       color: "#fff",
                       fontWeight: fila.strong ? "700" : "600",
+                      borderBottom:
+                        index === resumenFilas.length - 1
+                          ? "none"
+                          : "1px solid rgba(255,255,255,0.08)",
                     }}
                   >
                     {fila.label}
@@ -96,8 +121,12 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                     style={{
                       ...montoCellStyle,
                       color: fila.color,
-                      fontWeight: fila.strong ? "700" : "600",
+                      fontWeight: fila.strong ? "800" : "600",
                       fontSize: fila.strong ? "1.02em" : "0.96em",
+                      borderBottom:
+                        index === resumenFilas.length - 1
+                          ? "none"
+                          : "1px solid rgba(255,255,255,0.08)",
                     }}
                   >
                     {fila.isCount
@@ -119,36 +148,56 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             flex: "1 1 280px",
           }}
         >
-          <div style={card("231,76,60")}>
+          <div
+            style={{
+              ...card("231,76,60"),
+              ...glassPanel,
+              minHeight: "150px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <p style={eyebrowStyle}>Seguimiento</p>
             <h3 style={{ margin: "0 0 10px", color: "#ffb3aa", fontSize: "1em" }}>
               Gastos Impagos
             </h3>
             <p
               style={{
                 margin: "0 0 8px",
-                fontSize: "1.5em",
-                fontWeight: "700",
+                fontSize: "1.62em",
+                fontWeight: "800",
                 color: "#ffb3aa",
               }}
             >
               $ {formatearMonto(totalMes.gastosImpagos)}
             </p>
-            <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
+            <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em", lineHeight: 1.45 }}>
               {totalMes.gastosImpagosCantidad > 0
                 ? `${totalMes.gastosImpagosCantidad} gasto(s) pendiente(s) este mes.`
                 : "No hay gastos impagos este mes."}
             </p>
           </div>
 
-          <div style={card("46,204,113")}>
+          <div
+            style={{
+              ...card("46,204,113"),
+              ...glassPanel,
+              minHeight: "150px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <p style={eyebrowStyle}>Dato Clave</p>
             <h3 style={{ margin: "0 0 10px", color: "#2ecc71", fontSize: "1em" }}>
               Ganancia neta
             </h3>
             <p
               style={{
                 margin: "0 0 8px",
-                fontSize: "1.5em",
-                fontWeight: "700",
+                fontSize: "1.62em",
+                fontWeight: "800",
                 color: totalMes.resultado >= 0 ? "#2ecc71" : "#ffb3aa",
               }}
             >
@@ -163,33 +212,35 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
 
       <div
         style={{
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: "12px",
-          padding: "15px",
-          border: "1px solid rgba(255,255,255,0.1)",
+          ...glassPanel,
+          borderRadius: "14px",
+          padding: "18px",
           overflowX: "auto",
         }}
       >
-        <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
+        <p style={eyebrowStyle}>Ranking Del Mes</p>
+        <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1.05em" }}>
           Top productos del mes
         </h3>
         <table
           style={{
             width: "100%",
-            borderCollapse: "collapse",
+            borderCollapse: "separate",
+            borderSpacing: 0,
             fontSize: "0.82em",
           }}
         >
           <thead>
-            <tr style={{ borderBottom: "2px solid rgba(46,204,113,0.35)" }}>
+            <tr style={{ background: "rgba(46,204,113,0.08)" }}>
               {["Producto", "Unid.", "Total", "Gan. Neta"].map((header) => (
                 <th
                   key={header}
                   style={{
-                    padding: "9px 10px",
+                    padding: "11px 12px",
                     textAlign: header === "Producto" ? "left" : "right",
                     color: "#2ecc71",
                     whiteSpace: "nowrap",
+                    borderBottom: "1px solid rgba(46,204,113,0.22)",
                   }}
                 >
                   {header}
@@ -198,25 +249,28 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             </tr>
           </thead>
           <tbody>
-            {topProductosMes.map((producto) => (
+            {topProductosMes.map((producto, index) => (
               <tr
                 key={producto.name}
-                style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                style={{
+                  background:
+                    index % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+                }}
               >
-                <td style={{ padding: "9px 10px", color: "#fff" }}>{producto.name}</td>
+                <td style={{ padding: "11px 12px", color: "#fff" }}>{producto.name}</td>
                 <td
                   style={{
-                    padding: "9px 10px",
+                    padding: "11px 12px",
                     textAlign: "right",
                     color: "#3498db",
                   }}
                 >
                   {producto.ventas}
                 </td>
-                <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#f39c12" }}>
+                <td style={{ ...montoCellStyle, padding: "11px 12px", color: "#f39c12" }}>
                   $ {formatearMonto(producto.total)}
                 </td>
-                <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#2ecc71" }}>
+                <td style={{ ...montoCellStyle, padding: "11px 12px", color: "#2ecc71" }}>
                   $ {formatearMonto(producto.ganancia)}
                 </td>
               </tr>
