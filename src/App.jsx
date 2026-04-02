@@ -3740,7 +3740,7 @@ const handleEliminarMedioPago = async (medio) => {
         {viewMode === "resumen" && (
           <ResumenView
             card={card}
-            mes={getMes()}
+            mes={`${getMes()} ${getAnio()}`}
             topProductosMes={topProductosMes}
             totalMes={totalMes}
           />
