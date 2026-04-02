@@ -59,7 +59,9 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
           style={{
             ...card("243,156,18"),
             overflowX: "auto",
-            flex: "1 1 480px",
+            flex: "0 1 auto",
+            width: "fit-content",
+            maxWidth: "100%",
           }}
         >
           <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1em" }}>
@@ -189,7 +191,7 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                   key={header}
                   style={{
                     padding: "8px 9px",
-                    textAlign: header === "Producto" ? "left" : "right",
+                    textAlign: header === "Producto" ? "left" : "center",
                     color: "#2ecc71",
                     whiteSpace: "nowrap",
                   }}
@@ -209,16 +211,30 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
                 <td
                   style={{
                     padding: "8px 9px",
-                    textAlign: "right",
+                    textAlign: "center",
                     color: "#3498db",
                   }}
                 >
                   {producto.ventas}
                 </td>
-                <td style={{ ...montoCellStyle, padding: "8px 9px", color: "#f39c12" }}>
+                <td
+                  style={{
+                    ...montoCellStyle,
+                    padding: "8px 9px",
+                    color: "#f39c12",
+                    textAlign: "center",
+                  }}
+                >
                   $ {formatearMonto(producto.total)}
                 </td>
-                <td style={{ ...montoCellStyle, padding: "8px 9px", color: "#2ecc71" }}>
+                <td
+                  style={{
+                    ...montoCellStyle,
+                    padding: "8px 9px",
+                    color: "#2ecc71",
+                    textAlign: "center",
+                  }}
+                >
                   $ {formatearMonto(producto.ganancia)}
                 </td>
               </tr>
