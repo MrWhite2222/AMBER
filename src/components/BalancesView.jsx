@@ -206,7 +206,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
       color: "#e74c3c",
     },
     {
-      label: "Resultado final",
+      label: "Ganancia neta",
       value: resumenPrincipal.resultadoFinal,
       color: resumenPrincipal.resultadoFinal >= 0 ? "#2ecc71" : "#ffb3aa",
       strong: true,
@@ -295,57 +295,131 @@ const BalancesView = ({ allVentas, card, gastos }) => {
 
       <div
         style={{
-          ...card("243,156,18"),
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "18px",
           marginBottom: "20px",
-          overflowX: "auto",
+          alignItems: "start",
         }}
       >
-        <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1em" }}>
-          Resumen del mes
-        </h3>
-        <table
+        <div
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            minWidth: "420px",
+            ...card("243,156,18"),
+            overflowX: "auto",
+            flex: "1 1 480px",
           }}
         >
-          <tbody>
-            {resumenFilas.map((fila, index) => (
-              <tr
-                key={fila.label}
-                style={{
-                  borderBottom:
-                    index === resumenFilas.length - 1
-                      ? "none"
-                      : "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <td
+          <h3 style={{ margin: "0 0 14px", color: "#f39c12", fontSize: "1em" }}>
+            Resumen del mes
+          </h3>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              minWidth: "420px",
+            }}
+          >
+            <tbody>
+              {resumenFilas.map((fila, index) => (
+                <tr
+                  key={fila.label}
                   style={{
-                    padding: "12px 14px",
-                    color: "#fff",
-                    fontWeight: fila.strong ? "700" : "600",
+                    borderBottom:
+                      index === resumenFilas.length - 1
+                        ? "none"
+                        : "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
-                  {fila.label}
-                </td>
-                <td
-                  style={{
-                    ...montoCellStyle,
-                    color: fila.color,
-                    fontWeight: fila.strong ? "700" : "600",
-                    fontSize: fila.strong ? "1.02em" : "0.96em",
-                  }}
-                >
-                  {fila.isPercent
-                    ? formatearPorcentaje(fila.value)
-                    : `$ ${formatearMonto(fila.value)}`}
-                </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      color: "#fff",
+                      fontWeight: fila.strong ? "700" : "600",
+                    }}
+                  >
+                    {fila.label}
+                  </td>
+                  <td
+                    style={{
+                      ...montoCellStyle,
+                      color: fila.color,
+                      fontWeight: fila.strong ? "700" : "600",
+                      fontSize: fila.strong ? "1.02em" : "0.96em",
+                    }}
+                  >
+                    {fila.isPercent
+                      ? formatearPorcentaje(fila.value)
+                      : `$ ${formatearMonto(fila.value)}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            borderRadius: "12px",
+            padding: "15px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            overflowX: "auto",
+            flex: "1 1 360px",
+          }}
+        >
+          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
+            Top productos del mes
+          </h3>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.8em",
+            }}
+          >
+            <thead>
+              <tr style={{ borderBottom: "2px solid rgba(46,204,113,0.35)" }}>
+                {["Producto", "Unid.", "Total", "Gan. Neta"].map((header) => (
+                  <th
+                    key={header}
+                    style={{
+                      padding: "9px 10px",
+                      textAlign: header === "Producto" ? "left" : "right",
+                      color: "#2ecc71",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {header}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rankingProductos.map((producto) => (
+                <tr
+                  key={producto.producto}
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <td style={{ padding: "9px 10px", color: "#fff" }}>{producto.producto}</td>
+                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#3498db" }}>
+                    {producto.ventas}
+                  </td>
+                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#f39c12" }}>
+                    $ {formatearMonto(producto.totalVentas)}
+                  </td>
+                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#2ecc71" }}>
+                    $ {formatearMonto(producto.gananciaNeta)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {rankingProductos.length === 0 && (
+            <div style={{ textAlign: "center", padding: "28px", color: "#666" }}>
+              <p>No hay ventas para este periodo.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div
@@ -397,7 +471,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           }}
         >
           <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
-            Resultado final
+            Ganancia neta
           </h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={historialMeses}>
@@ -416,7 +490,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
               />
               <Bar
                 dataKey="resultadoFinal"
-                name="Resultado final"
+                name="Ganancia neta"
                 fill="#2ecc71"
                 radius={[4, 4, 0, 0]}
               />
@@ -440,7 +514,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             padding: "15px",
             border: "1px solid rgba(255,255,255,0.1)",
             overflowX: "auto",
-            flex: "1.55 1 620px",
+            flex: "1 1 100%",
           }}
         >
           <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1em" }}>
@@ -514,69 +588,6 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           </table>
         </div>
 
-        <div
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            borderRadius: "12px",
-            padding: "15px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            overflowX: "auto",
-            flex: "0.95 1 360px",
-          }}
-        >
-          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
-            Top productos del periodo
-          </h3>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "0.8em",
-            }}
-          >
-            <thead>
-              <tr style={{ borderBottom: "2px solid rgba(46,204,113,0.35)" }}>
-                {["Producto", "Unid.", "Total", "Gan. Neta"].map((header) => (
-                  <th
-                    key={header}
-                    style={{
-                      padding: "9px 10px",
-                      textAlign: header === "Producto" ? "left" : "right",
-                      color: "#2ecc71",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rankingProductos.map((producto) => (
-                <tr
-                  key={producto.producto}
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
-                >
-                  <td style={{ padding: "9px 10px", color: "#fff" }}>{producto.producto}</td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#3498db" }}>
-                    {producto.ventas}
-                  </td>
-                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#f39c12" }}>
-                    $ {formatearMonto(producto.totalVentas)}
-                  </td>
-                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#2ecc71" }}>
-                    $ {formatearMonto(producto.gananciaNeta)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {rankingProductos.length === 0 && (
-            <div style={{ textAlign: "center", padding: "28px", color: "#666" }}>
-              <p>No hay ventas para este periodo.</p>
-            </div>
-          )}
-        </div>
       </div>
     </>
   );
