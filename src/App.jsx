@@ -1241,6 +1241,17 @@ const tienePrecioVentaEdicion =
 
   // Ventas filtradas para dashboard
   const ventasDash = useMemo(() => {
+  const fechaDesde = df.startDate ? parseFecha(df.startDate) : null;
+  const fechaHasta = df.endDate ? parseFecha(df.endDate) : null;
+
+  if (fechaDesde) {
+    fechaDesde.setHours(0, 0, 0, 0);
+  }
+
+  if (fechaHasta) {
+    fechaHasta.setHours(23, 59, 59, 999);
+  }
+
   return allVentas.filter((v) => {
     const f = parseFecha(v["Fecha"]);
     if (!f) return false;
@@ -1254,8 +1265,8 @@ const tienePrecioVentaEdicion =
     const talle = String(productoInv?.["TALLE"] ?? "").toUpperCase();
     const color = String(productoInv?.["COLOR"] ?? "").toUpperCase();
 
-    const startOk = !df.startDate || f >= new Date(df.startDate);
-    const endOk = !df.endDate || f <= new Date(df.endDate);
+    const startOk = !fechaDesde || f >= fechaDesde;
+    const endOk = !fechaHasta || f <= fechaHasta;
     const prodOk = !df.producto || v["Tipo de producto"] === df.producto;
     const talleOk = !df.talle || talle.includes(String(df.talle).toUpperCase());
     const colorOk = !df.color || color.includes(String(df.color).toUpperCase());
