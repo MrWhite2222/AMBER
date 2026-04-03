@@ -89,8 +89,8 @@ const CargarPrendaModal = ({
           </h2>
           <p style={{ margin: "4px 0 0", color: "#999", fontSize: "0.82em" }}>
             {modoEsNuevo
-              ? "Modo 2: alta de producto nuevo que todavia no existe en inventario"
-              : "Modo 1: renovacion de stock para productos ya existentes en inventario"}
+              ? "Alta de producto nuevo que todavia no existe en inventario"
+              : "Renovacion de stock para productos ya existentes en inventario"}
           </p>
         </div>
         <button
