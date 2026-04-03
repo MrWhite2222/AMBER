@@ -18,6 +18,29 @@ const createMedioPagoVacio = () => ({
   precioReferencia: PRECIO_REFERENCIA_EFECTIVO,
 });
 
+const hydrateMedioPagoForm = (medio = null) => ({
+  nombre: medio?.nombre ?? "",
+  tipo: medio?.tipo ?? TIPO_MEDIO_PAGO_SIN_CUOTAS,
+  cantidadCuotas: String(medio?.cantidadCuotas || 3),
+  coeficienteConIva:
+    medio?.coeficienteConIva || medio?.coeficienteConIva === 0
+      ? String(medio.coeficienteConIva)
+      : "",
+  arancelCreditoSinIva:
+    medio?.arancelCreditoSinIva || medio?.arancelCreditoSinIva === 0
+      ? String(medio.arancelCreditoSinIva)
+      : "",
+  arancelMedioSinIva:
+    medio?.arancelMedioSinIva || medio?.arancelMedioSinIva === 0
+      ? String(medio.arancelMedioSinIva)
+      : "",
+  arancelBancoSinIva:
+    medio?.arancelBancoSinIva || medio?.arancelBancoSinIva === 0
+      ? String(medio.arancelBancoSinIva)
+      : "",
+  precioReferencia: medio?.precioReferencia ?? PRECIO_REFERENCIA_EFECTIVO,
+});
+
 const MediosPagoModal = ({
   guardando,
   inp,
@@ -26,10 +49,12 @@ const MediosPagoModal = ({
   onClose,
   onEliminar,
   onGuardar,
+  onModificar,
 }) => {
   const [modo, setModo] = useState("agregar");
   const [formData, setFormData] = useState(createMedioPagoVacio());
   const [medioEliminar, setMedioEliminar] = useState("");
+  const [medioModificar, setMedioModificar] = useState("");
 
   const mediosGestionables = useMemo(
     () =>
@@ -47,14 +72,25 @@ const MediosPagoModal = ({
     [medioEliminar, mediosGestionables]
   );
 
+  const medioSeleccionadoModificar = useMemo(
+    () =>
+      mediosGestionables.find(
+        (medio) => normalizarTexto(medio.nombre) === normalizarTexto(medioModificar)
+      ) || null,
+    [medioModificar, mediosGestionables]
+  );
+
   const nombreDuplicado = useMemo(() => {
     const nombre = normalizarTexto(formData.nombre).toUpperCase();
     if (!nombre) return false;
 
     return mediosGestionables.some(
-      (medio) => normalizarTexto(medio.nombre).toUpperCase() === nombre
+      (medio) =>
+        normalizarTexto(medio.nombre).toUpperCase() === nombre &&
+        (!medioSeleccionadoModificar ||
+          Number(medio._rowNumber) !== Number(medioSeleccionadoModificar._rowNumber))
     );
-  }, [formData.nombre, mediosGestionables]);
+  }, [formData.nombre, medioSeleccionadoModificar, mediosGestionables]);
 
   const puedeGuardar =
     Boolean(normalizarTexto(formData.nombre)) &&
@@ -70,6 +106,23 @@ const MediosPagoModal = ({
     if (!mediosGestionables.length) return;
     setMedioEliminar(mediosGestionables[0].nombre);
   }, [medioSeleccionadoEliminar, mediosGestionables]);
+
+  useEffect(() => {
+    if (medioSeleccionadoModificar) return;
+    if (!mediosGestionables.length) return;
+    setMedioModificar(mediosGestionables[0].nombre);
+  }, [medioSeleccionadoModificar, mediosGestionables]);
+
+  useEffect(() => {
+    if (modo === "agregar") {
+      setFormData(createMedioPagoVacio());
+      return;
+    }
+
+    if (modo === "modificar" && medioSeleccionadoModificar) {
+      setFormData(hydrateMedioPagoForm(medioSeleccionadoModificar));
+    }
+  }, [medioSeleccionadoModificar, modo]);
 
   return (
     <div
@@ -130,6 +183,7 @@ const MediosPagoModal = ({
         >
           {[
             ["agregar", "Agregar Medio de Pago"],
+            ["modificar", "Modificar Medio de Pago"],
             ["eliminar", "Eliminar Medio de Pago"],
           ].map(([valor, label]) => (
             <button
@@ -152,8 +206,40 @@ const MediosPagoModal = ({
           ))}
         </div>
 
-        {modo === "agregar" ? (
+        {modo === "agregar" || modo === "modificar" ? (
           <div style={{ display: "grid", gap: "14px" }}>
+            {modo === "modificar" && (
+              <div>
+                <label style={lbl}>Medio de Pago</label>
+                <select
+                  value={medioModificar}
+                  onChange={(e) => setMedioModificar(e.target.value)}
+                  style={{ ...inp, background: "#0f3460" }}
+                >
+                  {mediosGestionables.map((medio) => (
+                    <option key={medio.nombre} value={medio.nombre}>
+                      {medio.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {modo === "modificar" && !mediosGestionables.length ? (
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "10px",
+                  padding: "14px",
+                  color: "#bbb",
+                  fontSize: "0.9em",
+                }}
+              >
+                Todavia no hay medios de pago guardados en la hoja `MediosPago`.
+              </div>
+            ) : (
+              <>
             <div>
               <label style={lbl}>Nombre</label>
               <input
@@ -340,6 +426,8 @@ const MediosPagoModal = ({
                 )}
               </div>
             </div>
+              </>
+            )}
           </div>
         ) : (
           <div style={{ display: "grid", gap: "14px" }}>
@@ -432,6 +520,46 @@ const MediosPagoModal = ({
               }}
             >
               {guardando ? "Guardando..." : "Guardar Medio"}
+            </button>
+          ) : modo === "modificar" ? (
+            <button
+              onClick={() =>
+                medioSeleccionadoModificar &&
+                onModificar(
+                  medioSeleccionadoModificar,
+                  formData,
+                  () => setFormData(hydrateMedioPagoForm(medioSeleccionadoModificar))
+                )
+              }
+              disabled={
+                !medioSeleccionadoModificar ||
+                !puedeGuardar ||
+                guardando ||
+                !mediosGestionables.length
+              }
+              style={{
+                padding: "12px",
+                borderRadius: "8px",
+                border: "none",
+                background:
+                  medioSeleccionadoModificar &&
+                  puedeGuardar &&
+                  !guardando &&
+                  mediosGestionables.length
+                    ? "#3498db"
+                    : "rgba(52,152,219,0.3)",
+                color: "#fff",
+                fontWeight: "700",
+                cursor:
+                  medioSeleccionadoModificar &&
+                  puedeGuardar &&
+                  !guardando &&
+                  mediosGestionables.length
+                    ? "pointer"
+                    : "not-allowed",
+              }}
+            >
+              {guardando ? "Guardando..." : "Modificar Medio"}
             </button>
           ) : (
             <button

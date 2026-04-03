@@ -3492,6 +3492,36 @@ const handleGuardarMedioPago = async (medioData, onSuccess) => {
   setShowMediosPagoForm(false);
 };
 
+const handleModificarMedioPago = async (medioOriginal, medioData, onSuccess) => {
+  if (!medioOriginal?._rowNumber) return;
+
+  const payload = {
+    ...medioOriginal.raw,
+    ...construirPayloadMedioPago(medioData),
+    ACTIVO: "SI",
+  };
+
+  if (!payload.NOMBRE) return;
+
+  setGuardandoMedioPago(true);
+  const result = await actualizarFila("MediosPago", medioOriginal._rowNumber, payload);
+
+  if (!result?.success) {
+    alert(
+      result?.error
+        ? `No se pudo modificar el medio de pago: ${result.error}`
+        : "No se pudo modificar el medio de pago."
+    );
+    setGuardandoMedioPago(false);
+    return;
+  }
+
+  await refrescarMediosPago();
+  onSuccess?.();
+  setGuardandoMedioPago(false);
+  setShowMediosPagoForm(false);
+};
+
 const handleEliminarMedioPago = async (medio) => {
   if (!medio?._rowNumber) return;
 
@@ -4059,6 +4089,7 @@ const handleEliminarMedioPago = async (medio) => {
             onClose={() => setShowMediosPagoForm(false)}
             onEliminar={handleEliminarMedioPago}
             onGuardar={handleGuardarMedioPago}
+            onModificar={handleModificarMedioPago}
           />
         )}
       </div>

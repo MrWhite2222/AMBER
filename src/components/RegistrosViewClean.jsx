@@ -111,7 +111,7 @@ const RegistrosViewClean = ({
             fontSize: "0.85em",
           }}
         >
-          Medios de Pago
+          Editar Medios de Pago
         </button>
       </div>
 
