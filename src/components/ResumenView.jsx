@@ -99,7 +99,7 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             style={{
               width: "auto",
               borderCollapse: "collapse",
-              minWidth: "320px",
+              minWidth: "290px",
             }}
           >
             <tbody>
@@ -152,6 +152,32 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
         >
           <div
             style={{
+              ...card("46,204,113"),
+              width: "fit-content",
+              minWidth: "300px",
+              textAlign: "center",
+            }}
+          >
+            <h3 style={{ margin: "0 0 10px", color: "#2ecc71", fontSize: "1em" }}>
+              Ganancia neta
+            </h3>
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontSize: "1.8em",
+                fontWeight: "700",
+                color: totalMes.resultado >= 0 ? "#2ecc71" : "#ffb3aa",
+              }}
+            >
+              $ {formatearMonto(totalMes.resultado)}
+            </p>
+            <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
+              Margen del mes: {formatearPorcentaje(totalMes.margenNeto)}
+            </p>
+          </div>
+
+          <div
+            style={{
               ...card("231,76,60"),
               width: "fit-content",
               minWidth: "250px",
@@ -183,31 +209,6 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             </p>
           </div>
 
-          <div
-            style={{
-              ...card("46,204,113"),
-              width: "fit-content",
-              minWidth: "250px",
-              textAlign: "center",
-            }}
-          >
-            <h3 style={{ margin: "0 0 10px", color: "#2ecc71", fontSize: "1em" }}>
-              Ganancia neta
-            </h3>
-            <p
-              style={{
-                margin: "0 0 8px",
-                fontSize: "1.5em",
-                fontWeight: "700",
-                color: totalMes.resultado >= 0 ? "#2ecc71" : "#ffb3aa",
-              }}
-            >
-              $ {formatearMonto(totalMes.resultado)}
-            </p>
-            <p style={{ margin: 0, color: "#bbb", fontSize: "0.85em" }}>
-              Margen del mes: {formatearPorcentaje(totalMes.margenNeto)}
-            </p>
-          </div>
         </div>
 
       <div
