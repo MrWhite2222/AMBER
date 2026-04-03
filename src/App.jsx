@@ -3597,7 +3597,7 @@ const handleEliminarMedioPago = async (medio) => {
   const navBtns = [
     ["resumen", "Resumen"],
     ["inventario", "Inventario"],
-    ["registros", "Registros"],
+    ["registros", "Ventas"],
     ["gastos", "Gastos"],
     ["balances", "Balances"],
   ];
