@@ -175,10 +175,10 @@ const MediosPagoModal = ({
 
         <div
           style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
             gap: "10px",
             marginBottom: "18px",
-            flexWrap: "wrap",
           }}
         >
           {[
@@ -194,11 +194,22 @@ const MediosPagoModal = ({
                 borderRadius: "8px",
                 border: "none",
                 background:
-                  modo === valor ? "#f39c12" : "rgba(255,255,255,0.08)",
-                color: modo === valor ? "#1a1a2e" : "#fff",
+                  valor === "agregar"
+                    ? modo === valor
+                      ? "#2ecc71"
+                      : "rgba(46,204,113,0.22)"
+                    : valor === "modificar"
+                    ? modo === valor
+                      ? "#3498db"
+                      : "rgba(52,152,219,0.22)"
+                    : modo === valor
+                    ? "#e74c3c"
+                    : "rgba(231,76,60,0.22)",
+                color: "#fff",
                 fontWeight: "700",
                 cursor: "pointer",
                 fontSize: "0.85em",
+                textAlign: "center",
               }}
             >
               {label}
