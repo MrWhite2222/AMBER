@@ -41,6 +41,13 @@ const hydrateMedioPagoForm = (medio = null) => ({
   precioReferencia: medio?.precioReferencia ?? PRECIO_REFERENCIA_EFECTIVO,
 });
 
+const getPercentInputStyle = (inp) => ({
+  ...inp,
+  width: "96px",
+  minWidth: "96px",
+  flex: "0 0 96px",
+});
+
 const MediosPagoModal = ({
   guardando,
   inp,
@@ -335,7 +342,7 @@ const MediosPagoModal = ({
                 </div>
                 <div>
                   <label style={lbl}>Arancel credito (sin IVA)</label>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                     <input
                       type="number"
                       step="0.01"
@@ -347,7 +354,7 @@ const MediosPagoModal = ({
                           arancelCreditoSinIva: e.target.value,
                         }))
                       }
-                      style={inp}
+                      style={getPercentInputStyle(inp)}
                     />
                     <span style={{ color: "#f39c12", fontWeight: "700" }}>%</span>
                     <span style={{ color: "#999", fontSize: "0.8em" }}>
@@ -393,7 +400,7 @@ const MediosPagoModal = ({
                 </div>
                 <div>
                   <label style={lbl}>Arancel del medio de pago (sin IVA)</label>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                     <input
                       type="number"
                       step="0.01"
@@ -405,7 +412,7 @@ const MediosPagoModal = ({
                           arancelMedioSinIva: e.target.value,
                         }))
                       }
-                      style={inp}
+                      style={getPercentInputStyle(inp)}
                     />
                     <span style={{ color: "#f39c12", fontWeight: "700" }}>%</span>
                   </div>
@@ -415,7 +422,7 @@ const MediosPagoModal = ({
 
             <div>
               <label style={lbl}>Arancel del banco (sin IVA)</label>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                 <input
                   type="number"
                   step="0.01"
@@ -427,7 +434,7 @@ const MediosPagoModal = ({
                       arancelBancoSinIva: e.target.value,
                     }))
                   }
-                  style={inp}
+                  style={getPercentInputStyle(inp)}
                 />
                 <span style={{ color: "#f39c12", fontWeight: "700" }}>%</span>
                 {formData.tipo === TIPO_MEDIO_PAGO_CON_CUOTAS && (
