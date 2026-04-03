@@ -3473,8 +3473,28 @@ const handleGuardarMedioPago = async (medioData, onSuccess) => {
   const payload = construirPayloadMedioPago(medioData);
   if (!payload.NOMBRE) return;
 
+  const nombreObjetivo = String(payload.NOMBRE).trim().toUpperCase();
+  const medioInactivoExistente =
+    [...mediosPagoConfigurados]
+      .filter(
+        (medio) =>
+          String(medio?.nombre || "")
+            .trim()
+            .toUpperCase() === nombreObjetivo &&
+          !medio?.activo &&
+          Number(medio?._rowNumber || 0) > 0
+      )
+      .sort((a, b) => Number(b._rowNumber || 0) - Number(a._rowNumber || 0))[0] ||
+    null;
+
   setGuardandoMedioPago(true);
-  const result = await agregarFila("MediosPago", payload);
+  const result = medioInactivoExistente
+    ? await actualizarFila("MediosPago", medioInactivoExistente._rowNumber, {
+        ...medioInactivoExistente.raw,
+        ...payload,
+        ACTIVO: "SI",
+      })
+    : await agregarFila("MediosPago", payload);
 
   if (!result?.success) {
     alert(
