@@ -119,19 +119,35 @@ export const getMediosPagoConfigurados = (mediosPago = []) =>
     .map((registro) => normalizarMedioPagoConfig(registro))
     .filter((medio) => medio.nombre);
 
+const getMediosPagoOrdenadosPorFilaDesc = (mediosPago = []) =>
+  [...getMediosPagoConfigurados(mediosPago)].sort(
+    (a, b) => Number(b._rowNumber || 0) - Number(a._rowNumber || 0)
+  );
+
 export const getMediosPagoActivos = (mediosPago = []) => {
-  return getMediosPagoConfigurados(mediosPago).filter((medio) => medio.activo);
+  const mapa = new Map();
+
+  getMediosPagoOrdenadosPorFilaDesc(mediosPago)
+    .filter((medio) => medio.activo)
+    .forEach((medio) => {
+      const clave = normalizarTexto(medio.nombre).toUpperCase();
+      if (!mapa.has(clave)) {
+        mapa.set(clave, medio);
+      }
+    });
+
+  return Array.from(mapa.values());
 };
 
 export const buscarConfigMedioPago = (mediosPago = [], nombre = "") => {
   const objetivo = normalizarTexto(nombre).toUpperCase();
   if (!objetivo) return null;
 
-  return (
-    getMediosPagoConfigurados(mediosPago).find(
-      (medio) => normalizarTexto(medio.nombre).toUpperCase() === objetivo
-    ) || null
+  const candidatos = getMediosPagoOrdenadosPorFilaDesc(mediosPago).filter(
+    (medio) => normalizarTexto(medio.nombre).toUpperCase() === objetivo
   );
+
+  return candidatos.find((medio) => medio.activo) || candidatos[0] || null;
 };
 
 export const medioPagoUsaPrecioEfectivo = (medioPago, mediosPago = []) => {
