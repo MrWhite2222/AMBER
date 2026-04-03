@@ -126,7 +126,8 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "48px repeat(5, minmax(0, 1fr)) 48px",
+          gridTemplateColumns:
+            "48px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 48px",
           gap: "12px",
           alignItems: "stretch",
           marginBottom: "22px",
@@ -208,12 +209,12 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
       <div
         style={{
           ...card("231,76,60"),
-          marginBottom: "20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "16px",
-          flexWrap: "wrap",
+          margin: "0 auto 20px",
+          width: "min(100%, 560px)",
+          display: "grid",
+          justifyItems: "center",
+          textAlign: "center",
+          gap: "14px",
         }}
       >
         <div>
@@ -224,7 +225,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
             {formatearMesTarjeta(mesSeleccionado)}
           </h3>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: "center" }}>
           <p style={{ margin: "0 0 6px", color: "#bbb", fontSize: "0.82em" }}>
             Gasto total
           </p>
@@ -243,7 +244,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
               marginTop: "10px",
               display: "grid",
               gap: "6px",
-              justifyItems: "end",
+              justifyItems: "center",
             }}
           >
             <div
