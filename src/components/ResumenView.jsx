@@ -154,7 +154,8 @@ const ResumenView = ({ card, mes, topProductosMes, totalMes }) => {
             style={{
               ...card("46,204,113"),
               width: "fit-content",
-              minWidth: "300px",
+              minWidth: "248px",
+              padding: "12px 14px",
               textAlign: "center",
             }}
           >
