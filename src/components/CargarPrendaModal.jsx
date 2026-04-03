@@ -131,10 +131,7 @@ const CargarPrendaModal = ({
               textAlign: "left",
             }}
           >
-            Modo 1
-            <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: "4px" }}>
-              Producto ya existente
-            </div>
+            Producto existente
           </button>
           <button
             onClick={() => onModoCargaPrendaChange("nuevo")}
@@ -152,10 +149,7 @@ const CargarPrendaModal = ({
               textAlign: "left",
             }}
           >
-            Modo 2
-            <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: "4px" }}>
-              Producto nuevo
-            </div>
+            Producto nuevo
           </button>
         </div>
 
