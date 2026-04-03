@@ -212,7 +212,7 @@ const InventarioView = ({
             fontSize: "0.82em",
           }}
         >
-          Cargar Lote
+          + Cargar Lote
         </button>
       </div>
     </div>
