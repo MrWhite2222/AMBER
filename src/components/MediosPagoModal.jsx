@@ -42,10 +42,16 @@ const hydrateMedioPagoForm = (medio = null) => ({
 });
 
 const getPercentInputStyle = (inp) => ({
-  ...inp,
+  ...getEditableFieldStyle(inp),
   width: "96px",
   minWidth: "96px",
   flex: "0 0 96px",
+});
+
+const getEditableFieldStyle = (inp) => ({
+  ...inp,
+  background: "#d9dde6",
+  color: "#182033",
 });
 
 const MediosPagoModal = ({
@@ -232,7 +238,7 @@ const MediosPagoModal = ({
                 <select
                   value={medioModificar}
                   onChange={(e) => setMedioModificar(e.target.value)}
-                  style={{ ...inp, background: "#0f3460" }}
+                  style={getEditableFieldStyle(inp)}
                 >
                   {mediosGestionables.map((medio) => (
                     <option key={medio.nombre} value={medio.nombre}>
@@ -267,7 +273,7 @@ const MediosPagoModal = ({
                   setFormData((prev) => ({ ...prev, nombre: e.target.value }))
                 }
                 placeholder="Ej: VISA 3 CUOTAS"
-                style={inp}
+                style={getEditableFieldStyle(inp)}
               />
               {nombreDuplicado && (
                 <p style={{ margin: "6px 0 0", color: "#ff6b6b", fontSize: "0.8em" }}>
@@ -321,7 +327,7 @@ const MediosPagoModal = ({
                         cantidadCuotas: e.target.value,
                       }))
                     }
-                    style={inp}
+                    style={getEditableFieldStyle(inp)}
                   />
                 </div>
                 <div>
@@ -337,7 +343,7 @@ const MediosPagoModal = ({
                         coeficienteConIva: e.target.value,
                       }))
                     }
-                    style={inp}
+                    style={getEditableFieldStyle(inp)}
                   />
                 </div>
                 <div>
@@ -469,7 +475,7 @@ const MediosPagoModal = ({
                   <select
                     value={medioEliminar}
                     onChange={(e) => setMedioEliminar(e.target.value)}
-                    style={{ ...inp, background: "#0f3460" }}
+                    style={getEditableFieldStyle(inp)}
                   >
                     {mediosGestionables.map((medio) => (
                       <option key={medio.nombre} value={medio.nombre}>
