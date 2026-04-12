@@ -496,8 +496,8 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 top: "-22px",
                 right: "12px",
                 color: "#5dade2",
-                fontSize: "0.82em",
-                fontWeight: "700",
+                fontSize: "1em",
+                fontWeight: "400",
                 zIndex: 2,
               }}
             >
