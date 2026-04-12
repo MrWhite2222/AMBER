@@ -507,6 +507,13 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                 tick={{ fontSize: 11 }}
                 allowDecimals={false}
                 width={44}
+                label={{
+                  value: "Cant. ventas",
+                  position: "top",
+                  offset: 12,
+                  fill: "#5dade2",
+                  fontSize: 12,
+                }}
               />
               <Tooltip
                 contentStyle={{
