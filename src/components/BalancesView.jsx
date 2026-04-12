@@ -575,6 +575,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   width={90}
                   domain={dominioEjeMonto}
                   ticks={ticksEjeMonto}
+                  allowDataOverflow
                 />
                 <YAxis
                   yAxisId="cantidad"
@@ -585,6 +586,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   width={44}
                   domain={dominioEjeCantidad}
                   ticks={ticksEjeCantidad}
+                  allowDataOverflow
                 />
                 <Tooltip
                   contentStyle={{
