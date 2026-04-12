@@ -153,7 +153,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
   );
 
   const historialMeses = useMemo(() => {
-    return Array.from({ length: 6 }, (_, index) => sumarMeses(mesSeleccionado, index - 5)).map(
+    return Array.from({ length: 12 }, (_, index) => sumarMeses(mesSeleccionado, index - 11)).map(
       (fecha) => {
         const ventasMes = allVentas.filter((venta) => {
           const fechaVenta = parseVentaFecha(venta?.["Fecha"]);
@@ -483,7 +483,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
         <div
           style={{
             ...card("243,156,18"),
-            flex: "1.15 1 380px",
+            flex: "1 1 100%",
           }}
         >
           <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1em" }}>
@@ -577,45 +577,6 @@ const BalancesView = ({ allVentas, card, gastos }) => {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        <div
-          style={{
-            ...card("46,204,113"),
-            flex: "1 1 380px",
-          }}
-        >
-          <h3 style={{ margin: "0 0 12px", color: "#2ecc71", fontSize: "1em" }}>
-            Ganancia neta
-          </h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={historialMeses}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
-              <YAxis
-                stroke="#999"
-                tick={{ fontSize: 11 }}
-                tickFormatter={formatearMontoEje}
-                width={90}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "#1a1a2e",
-                  border: "1px solid #2ecc71",
-                  borderRadius: "6px",
-                  color: "#fff",
-                  fontSize: "0.85em",
-                }}
-                formatter={(value) => `$ ${formatearMonto(value)}`}
-              />
-              <Bar
-                dataKey="resultadoFinal"
-                name="Ganancia neta"
-                fill="#2ecc71"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       </div>
 
