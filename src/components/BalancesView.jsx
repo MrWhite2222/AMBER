@@ -63,6 +63,12 @@ const formatearMonto = (valor) =>
     maximumFractionDigits: 2,
   });
 
+const formatearMontoEje = (valor) =>
+  `$ ${Number(valor || 0).toLocaleString("es-AR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+
 const formatearPorcentaje = (valor) =>
   `${Number(valor || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 1,
@@ -484,7 +490,12 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             <BarChart data={historialMeses}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#999" tick={{ fontSize: 11 }} />
+              <YAxis
+                stroke="#999"
+                tick={{ fontSize: 11 }}
+                tickFormatter={formatearMontoEje}
+                width={90}
+              />
               <Tooltip
                 contentStyle={{
                   background: "#1a1a2e",
@@ -518,7 +529,12 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             <BarChart data={historialMeses}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#999" tick={{ fontSize: 11 }} />
+              <YAxis
+                stroke="#999"
+                tick={{ fontSize: 11 }}
+                tickFormatter={formatearMontoEje}
+                width={90}
+              />
               <Tooltip
                 contentStyle={{
                   background: "#1a1a2e",
