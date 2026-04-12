@@ -52,7 +52,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
   });
 
   const ventanaMeses = useMemo(
-    () => getVentanaMeses(mesSeleccionado, 2),
+    () => getVentanaMeses(mesSeleccionado, 1),
     [mesSeleccionado]
   );
 
@@ -127,7 +127,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
         style={{
           display: "grid",
           gridTemplateColumns:
-            "48px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 48px",
+            "48px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) 48px",
           gap: "12px",
           alignItems: "stretch",
           marginBottom: "22px",
@@ -148,7 +148,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
         </button>
 
         {resumenMeses.map((mesInfo, index) => {
-          const seleccionado = index === 2;
+          const seleccionado = index === 1;
 
           return (
             <button
