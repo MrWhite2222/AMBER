@@ -493,7 +493,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             <span
               style={{
                 position: "absolute",
-                top: "-8px",
+                top: "-22px",
                 right: "12px",
                 color: "#5dade2",
                 fontSize: "0.82em",
