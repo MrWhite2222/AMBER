@@ -84,6 +84,18 @@ const formatearMes = (fecha) =>
     .slice(1)
     .toLowerCase()} ${fecha.getFullYear()}`;
 
+const redondearMillonSuperior = (valor) => {
+  const numero = Number(valor || 0);
+  if (numero <= 0) return 1000000;
+  return Math.ceil(numero / 1000000) * 1000000;
+};
+
+const redondearMillonInferior = (valor) => {
+  const numero = Number(valor || 0);
+  if (numero >= 0) return 0;
+  return Math.floor(numero / 1000000) * 1000000;
+};
+
 const montoCellStyle = {
   padding: "10px 14px",
   textAlign: "right",
@@ -208,6 +220,22 @@ const BalancesView = ({ allVentas, card, gastos }) => {
       .sort((a, b) => b.gananciaNeta - a.gananciaNeta)
       .slice(0, 8);
   }, [ventasMesSeleccionado]);
+
+  const dominioEjeMonto = useMemo(() => {
+    const valores = historialMeses.flatMap((fila) => [
+      Number(fila.totalVentas || 0),
+      Number(fila.gastosPeriodo || 0),
+      Number(fila.resultadoFinal || 0),
+    ]);
+
+    const maxValor = valores.length ? Math.max(...valores) : 0;
+    const minValor = valores.length ? Math.min(...valores) : 0;
+
+    return [
+      redondearMillonInferior(minValor),
+      redondearMillonSuperior(maxValor),
+    ];
+  }, [historialMeses]);
 
   const resumenFilas = [
     {
@@ -517,6 +545,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   tick={{ fontSize: 11 }}
                   tickFormatter={formatearMontoEje}
                   width={90}
+                  domain={dominioEjeMonto}
                 />
                 <YAxis
                   yAxisId="cantidad"
