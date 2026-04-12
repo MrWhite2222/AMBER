@@ -3776,8 +3776,9 @@ const handleEliminarMedioPago = async (medio) => {
                     style={{
                       position: "absolute",
                       top: "calc(100% + 8px)",
-                      right: 0,
+                      left: 0,
                       minWidth: "220px",
+                      maxWidth: "calc(100vw - 40px)",
                       background: "#16213e",
                       border: "1px solid rgba(255,255,255,0.12)",
                       borderRadius: "12px",
