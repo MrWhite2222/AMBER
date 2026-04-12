@@ -96,6 +96,12 @@ const redondearMillonInferior = (valor) => {
   return Math.floor(numero / 1000000) * 1000000;
 };
 
+const redondearCantidadSuperior = (valor) => {
+  const numero = Number(valor || 0);
+  if (numero <= 0) return 1;
+  return Math.ceil(numero);
+};
+
 const montoCellStyle = {
   padding: "10px 14px",
   textAlign: "right",
@@ -236,6 +242,32 @@ const BalancesView = ({ allVentas, card, gastos }) => {
       redondearMillonSuperior(maxValor),
     ];
   }, [historialMeses]);
+
+  const dominioEjeCantidad = useMemo(() => {
+    const cantidades = historialMeses.map((fila) => Number(fila.cantidadVentas || 0));
+    const maxCantidad = cantidades.length ? Math.max(...cantidades) : 0;
+    const maxCantidadRedondeada = redondearCantidadSuperior(maxCantidad);
+
+    const [minMonto, maxMonto] = dominioEjeMonto;
+    const rangoMonto = maxMonto - minMonto;
+
+    if (rangoMonto <= 0 || minMonto >= 0) {
+      return [0, maxCantidadRedondeada];
+    }
+
+    const proporcionCero = (0 - minMonto) / rangoMonto;
+
+    if (proporcionCero <= 0 || proporcionCero >= 1) {
+      return [0, maxCantidadRedondeada];
+    }
+
+    const minimoCantidad = -(
+      (proporcionCero * maxCantidadRedondeada) /
+      (1 - proporcionCero)
+    );
+
+    return [Math.floor(minimoCantidad), maxCantidadRedondeada];
+  }, [dominioEjeMonto, historialMeses]);
 
   const resumenFilas = [
     {
@@ -554,6 +586,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   tick={{ fontSize: 11 }}
                   allowDecimals={false}
                   width={44}
+                  domain={dominioEjeCantidad}
                 />
                 <Tooltip
                   contentStyle={{
