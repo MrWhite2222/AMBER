@@ -489,65 +489,73 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           <h3 style={{ margin: "0 0 12px", color: "#f39c12", fontSize: "1em" }}>
             Total ventas
           </h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <ComposedChart data={historialMeses}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
-              <YAxis
-                yAxisId="monto"
-                stroke="#999"
-                tick={{ fontSize: 11 }}
-                tickFormatter={formatearMontoEje}
-                width={90}
-              />
-              <YAxis
-                yAxisId="cantidad"
-                orientation="right"
-                stroke="#5dade2"
-                tick={{ fontSize: 11 }}
-                allowDecimals={false}
-                width={44}
-                label={{
-                  value: "Cant. ventas",
-                  position: "top",
-                  offset: 12,
-                  fill: "#5dade2",
-                  fontSize: 12,
-                }}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "#1a1a2e",
-                  border: "1px solid #f39c12",
-                  borderRadius: "6px",
-                  color: "#fff",
-                  fontSize: "0.85em",
-                }}
-                formatter={(value, name) =>
-                  name === "Cantidad ventas"
-                    ? [value, name]
-                    : [`$ ${formatearMonto(value)}`, name]
-                }
-              />
-              <Bar
-                yAxisId="monto"
-                dataKey="totalVentas"
-                name="Total ventas"
-                fill="#f39c12"
-                radius={[4, 4, 0, 0]}
-              />
-              <Line
-                yAxisId="cantidad"
-                type="monotone"
-                dataKey="cantidadVentas"
-                name="Cantidad ventas"
-                stroke="#5dade2"
-                strokeWidth={3}
-                dot={{ r: 3, fill: "#5dade2" }}
-                activeDot={{ r: 5 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+          <div style={{ position: "relative", width: "100%", height: 260 }}>
+            <span
+              style={{
+                position: "absolute",
+                top: "4px",
+                right: "12px",
+                color: "#5dade2",
+                fontSize: "0.82em",
+                fontWeight: "700",
+                zIndex: 2,
+              }}
+            >
+              Cant. ventas
+            </span>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={historialMeses}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
+                <YAxis
+                  yAxisId="monto"
+                  stroke="#999"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={formatearMontoEje}
+                  width={90}
+                />
+                <YAxis
+                  yAxisId="cantidad"
+                  orientation="right"
+                  stroke="#5dade2"
+                  tick={{ fontSize: 11 }}
+                  allowDecimals={false}
+                  width={44}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1a1a2e",
+                    border: "1px solid #f39c12",
+                    borderRadius: "6px",
+                    color: "#fff",
+                    fontSize: "0.85em",
+                  }}
+                  formatter={(value, name) =>
+                    name === "Cantidad ventas"
+                      ? [value, name]
+                      : [`$ ${formatearMonto(value)}`, name]
+                  }
+                />
+                <Bar
+                  yAxisId="monto"
+                  dataKey="totalVentas"
+                  name="Total ventas"
+                  fill="#f39c12"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Line
+                  yAxisId="cantidad"
+                  type="monotone"
+                  dataKey="cantidadVentas"
+                  name="Cantidad ventas"
+                  stroke="#5dade2"
+                  strokeWidth={3}
+                  dot={{ r: 3, fill: "#5dade2" }}
+                  activeDot={{ r: 5 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div
