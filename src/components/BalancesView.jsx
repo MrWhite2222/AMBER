@@ -99,6 +99,7 @@ const calcularResumenMes = (ventasMes, gastosMes) => {
 
   return {
     totalVentas,
+    cantidadVentas: ventasMes.length,
     impuestos,
     gananciaNetaVentas,
     gastosPeriodo,
@@ -194,6 +195,12 @@ const BalancesView = ({ allVentas, card, gastos }) => {
       label: "Total ventas",
       value: resumenPrincipal.totalVentas,
       color: "#f39c12",
+    },
+    {
+      label: "Cantidad ventas",
+      value: resumenPrincipal.cantidadVentas,
+      color: "#3498db",
+      isCount: true,
     },
     {
       label: "Impuestos",
@@ -347,7 +354,9 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                       fontSize: fila.strong ? "1.02em" : "0.96em",
                     }}
                   >
-                    {fila.isPercent
+                    {fila.isCount
+                      ? fila.value
+                      : fila.isPercent
                       ? formatearPorcentaje(fila.value)
                       : `$ ${formatearMonto(fila.value)}`}
                   </td>
