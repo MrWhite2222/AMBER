@@ -2,8 +2,9 @@ import { CalendarRange } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -172,6 +173,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
           ).slice(-2)}`,
           mes: formatearMes(fecha),
           totalVentas: resumenMes.totalVentas,
+          cantidadVentas: resumenMes.cantidadVentas,
           impuestos: resumenMes.impuestos,
           gananciaNetaVentas: resumenMes.gananciaNetaVentas,
           gastosPeriodo: resumenMes.gastosPeriodo,
@@ -487,14 +489,23 @@ const BalancesView = ({ allVentas, card, gastos }) => {
             Total ventas
           </h3>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={historialMeses}>
+            <ComposedChart data={historialMeses}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
               <YAxis
+                yAxisId="monto"
                 stroke="#999"
                 tick={{ fontSize: 11 }}
                 tickFormatter={formatearMontoEje}
                 width={90}
+              />
+              <YAxis
+                yAxisId="cantidad"
+                orientation="right"
+                stroke="#5dade2"
+                tick={{ fontSize: 11 }}
+                allowDecimals={false}
+                width={44}
               />
               <Tooltip
                 contentStyle={{
@@ -504,15 +515,30 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   color: "#fff",
                   fontSize: "0.85em",
                 }}
-                formatter={(value) => `$ ${formatearMonto(value)}`}
+                formatter={(value, name) =>
+                  name === "Cantidad ventas"
+                    ? [value, name]
+                    : [`$ ${formatearMonto(value)}`, name]
+                }
               />
               <Bar
+                yAxisId="monto"
                 dataKey="totalVentas"
                 name="Total ventas"
                 fill="#f39c12"
                 radius={[4, 4, 0, 0]}
               />
-            </BarChart>
+              <Line
+                yAxisId="cantidad"
+                type="monotone"
+                dataKey="cantidadVentas"
+                name="Cantidad ventas"
+                stroke="#5dade2"
+                strokeWidth={3}
+                dot={{ r: 3, fill: "#5dade2" }}
+                activeDot={{ r: 5 }}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
 
