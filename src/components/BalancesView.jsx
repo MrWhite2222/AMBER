@@ -556,6 +556,14 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   barSize={10}
                   radius={[4, 4, 0, 0]}
                 />
+                <Bar
+                  yAxisId="monto"
+                  dataKey="resultadoFinal"
+                  name="Ganancia neta"
+                  fill="#2ecc71"
+                  barSize={10}
+                  radius={[4, 4, 0, 0]}
+                />
                 <Line
                   yAxisId="cantidad"
                   type="monotone"
