@@ -5,6 +5,17 @@ import {
   getProductoPrecioLista,
 } from "../utils/ventas";
 
+const columnasCentradasInventario = new Set([
+  "CÃ³digo",
+  "Talle",
+  "Color",
+  "Stock",
+  "Costo U.",
+  "P. Efectivo",
+  "P. Lista",
+  "Editar",
+]);
+
 const InventarioView = ({
   card,
   inp,
@@ -305,14 +316,7 @@ const InventarioView = ({
                 key={h}
                 style={{
                   padding: "9px 10px",
-                  textAlign: [
-                    "Stock",
-                    "Costo U.",
-                    "P. Efectivo",
-                    "P. Lista",
-                  ].includes(h)
-                    ? "right"
-                    : "left",
+                  textAlign: columnasCentradasInventario.has(h) ? "center" : "left",
                   color: "#f39c12",
                   whiteSpace: "nowrap",
                 }}
@@ -347,6 +351,7 @@ const InventarioView = ({
                     color: "#777",
                     fontSize: "0.85em",
                     whiteSpace: "nowrap",
+                    textAlign: "center",
                   }}
                 >
                   {item["CÓDIGO"]}
@@ -360,16 +365,16 @@ const InventarioView = ({
                 >
                   {item["PRODUCTO"]}
                 </td>
-                <td style={{ padding: "8px 10px", color: "#9b59b6" }}>
+                <td style={{ padding: "8px 10px", color: "#9b59b6", textAlign: "center" }}>
                   {item["TALLE"]}
                 </td>
-                <td style={{ padding: "8px 10px", color: "#3498db" }}>
+                <td style={{ padding: "8px 10px", color: "#3498db", textAlign: "center" }}>
                   {item["COLOR"]}
                 </td>
                 <td
                   style={{
                     padding: "8px 10px",
-                    textAlign: "right",
+                    textAlign: "center",
                     fontWeight: "700",
                     color: sinStock
                       ? "#e74c3c"
@@ -383,7 +388,7 @@ const InventarioView = ({
                 <td
                   style={{
                     padding: "8px 10px",
-                    textAlign: "right",
+                    textAlign: "center",
                   color: "#bbb",
                   whiteSpace: "nowrap",
                 }}
@@ -394,7 +399,7 @@ const InventarioView = ({
                 <td
                   style={{
                     padding: "8px 10px",
-                    textAlign: "right",
+                    textAlign: "center",
                     color: "#2ecc71",
                     whiteSpace: "nowrap",
                   }}
@@ -407,7 +412,7 @@ const InventarioView = ({
                 <td
                   style={{
                     padding: "8px 10px",
-                    textAlign: "right",
+                    textAlign: "center",
                     color: "#f39c12",
                     whiteSpace: "nowrap",
                   }}
