@@ -3946,6 +3946,7 @@ const handleEliminarMedioPago = async (medio) => {
           <InventarioView
             card={card}
             inp={inp}
+            isMobileLayout={isMobileLayout}
             invColor={invColor}
             inventarioFiltrado={inventarioFiltrado}
             invSearch={invSearch}

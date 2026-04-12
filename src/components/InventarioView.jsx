@@ -8,6 +8,7 @@ import {
 const InventarioView = ({
   card,
   inp,
+  isMobileLayout,
   invColor,
   inventarioFiltrado,
   invSearch,
@@ -26,63 +27,65 @@ const InventarioView = ({
   showSinStock,
 }) => (
   <>
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
-        gap: "12px",
-        marginBottom: "20px",
-      }}
-    >
-      <div style={card("243,156,18")}>
-        <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
-          Items encontrados
-        </p>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "1.5em",
-            fontWeight: "700",
-            color: "#f39c12",
-          }}
-        >
-          {invStats.items}
-        </p>
+    {!isMobileLayout && (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
+          gap: "12px",
+          marginBottom: "20px",
+        }}
+      >
+        <div style={card("243,156,18")}>
+          <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
+            Items encontrados
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "1.5em",
+              fontWeight: "700",
+              color: "#f39c12",
+            }}
+          >
+            {invStats.items}
+          </p>
+        </div>
+        <div style={card("52,152,219")}>
+          <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
+            Unidades en stock
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "1.5em",
+              fontWeight: "700",
+              color: "#3498db",
+            }}
+          >
+            {invStats.total}
+          </p>
+        </div>
+        <div style={card("46,204,113")}>
+          <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
+            Valor en stock
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "1.2em",
+              fontWeight: "700",
+              color: "#2ecc71",
+            }}
+          >
+            ${" "}
+            {invStats.valorTotal.toLocaleString("es-AR", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
+        </div>
       </div>
-      <div style={card("52,152,219")}>
-        <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
-          Unidades en stock
-        </p>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "1.5em",
-            fontWeight: "700",
-            color: "#3498db",
-          }}
-        >
-          {invStats.total}
-        </p>
-      </div>
-      <div style={card("46,204,113")}>
-        <p style={{ margin: "0 0 4px", color: "#bbb", fontSize: "0.8em" }}>
-          Valor en stock
-        </p>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "1.2em",
-            fontWeight: "700",
-            color: "#2ecc71",
-          }}
-        >
-          ${" "}
-          {invStats.valorTotal.toLocaleString("es-AR", {
-            maximumFractionDigits: 0,
-          })}
-        </p>
-      </div>
-    </div>
+    )}
 
     <div
       style={{
@@ -96,11 +99,51 @@ const InventarioView = ({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "2fr 1fr 1fr",
+          gridTemplateColumns: isMobileLayout ? "1fr" : "2fr 1fr 1fr",
           gap: "12px",
           alignItems: "end",
         }}
       >
+        {isMobileLayout && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "10px",
+            }}
+          >
+            <button
+              onClick={onOpenCargaPrenda}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "6px",
+                border: "none",
+                background: "#2ecc71",
+                color: "#fff",
+                fontWeight: "600",
+                cursor: "pointer",
+                fontSize: "0.82em",
+              }}
+            >
+              + Cargar Prenda
+            </button>
+            <button
+              onClick={onOpenCargaLote}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "6px",
+                border: "none",
+                background: "#16a085",
+                color: "#fff",
+                fontWeight: "600",
+                cursor: "pointer",
+                fontSize: "0.82em",
+              }}
+            >
+              + Cargar Lote
+            </button>
+          </div>
+        )}
         <div>
           <label style={lbl}>Buscar producto o código</label>
           <div style={{ position: "relative" }}>
@@ -184,36 +227,40 @@ const InventarioView = ({
         >
           Limpiar
         </button>
-        <button
-          onClick={onOpenCargaPrenda}
-          style={{
-            padding: "6px 14px",
-            borderRadius: "6px",
-            border: "none",
-            background: "#2ecc71",
-            color: "#fff",
-            fontWeight: "600",
-            cursor: "pointer",
-            fontSize: "0.82em",
-          }}
-        >
-          + Cargar Prenda
-        </button>
-        <button
-          onClick={onOpenCargaLote}
-          style={{
-            padding: "6px 14px",
-            borderRadius: "6px",
-            border: "none",
-            background: "#16a085",
-            color: "#fff",
-            fontWeight: "600",
-            cursor: "pointer",
-            fontSize: "0.82em",
-          }}
-        >
-          + Cargar Lote
-        </button>
+        {!isMobileLayout && (
+          <>
+            <button
+              onClick={onOpenCargaPrenda}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "6px",
+                border: "none",
+                background: "#2ecc71",
+                color: "#fff",
+                fontWeight: "600",
+                cursor: "pointer",
+                fontSize: "0.82em",
+              }}
+            >
+              + Cargar Prenda
+            </button>
+            <button
+              onClick={onOpenCargaLote}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "6px",
+                border: "none",
+                background: "#16a085",
+                color: "#fff",
+                fontWeight: "600",
+                cursor: "pointer",
+                fontSize: "0.82em",
+              }}
+            >
+              + Cargar Lote
+            </button>
+          </>
+        )}
       </div>
     </div>
 
