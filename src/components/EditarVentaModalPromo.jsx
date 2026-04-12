@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   getCodigoSeguro,
   getProductoColorSeguro,
@@ -28,6 +29,7 @@ const EditarVentaModalPromo = ({
   inp,
   lbl,
   onClose,
+  onDelete,
   onEditFormDataChange,
   onEditSearchProductoChange,
   setEditSearchProducto,
@@ -35,6 +37,7 @@ const EditarVentaModalPromo = ({
   setShowEditProductoDrop,
   showEditProductoDrop,
 }) => {
+  const [confirmandoEliminacion, setConfirmandoEliminacion] = useState(false);
   const promoActiva = Boolean(editFormData.promoActiva);
   const descuentoPromo = parsePromoDescuento(editFormData.promoDescuento);
   const promoValida =
@@ -51,6 +54,10 @@ const EditarVentaModalPromo = ({
     !guardandoEdicion &&
     !(editSelectedProducto?._editWarnings?.length > 0) &&
     !promoPendiente;
+  const cerrarModal = () => {
+    setConfirmandoEliminacion(false);
+    onClose();
+  };
 
   return (
     <div
@@ -88,7 +95,7 @@ const EditarVentaModalPromo = ({
             Editar Venta
           </h2>
           <button
-            onClick={onClose}
+            onClick={cerrarModal}
             style={{
               background: "none",
               border: "none",
@@ -100,6 +107,67 @@ const EditarVentaModalPromo = ({
             x
           </button>
         </div>
+
+        {confirmandoEliminacion && (
+          <div
+            style={{
+              marginBottom: "18px",
+              background: "rgba(231,76,60,0.12)",
+              border: "1px solid rgba(231,76,60,0.45)",
+              borderRadius: "10px",
+              padding: "14px",
+            }}
+          >
+            <p
+              style={{
+                margin: "0 0 12px",
+                color: "#ffd4cf",
+                fontWeight: "700",
+                fontSize: "0.92em",
+              }}
+            >
+              Se eliminara esta venta. Esta seguro de esto?
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+              }}
+            >
+              <button
+                onClick={onDelete}
+                disabled={guardandoEdicion}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: guardandoEdicion ? "rgba(231,76,60,0.3)" : "#e74c3c",
+                  color: "#fff",
+                  fontWeight: "700",
+                  cursor: guardandoEdicion ? "not-allowed" : "pointer",
+                }}
+              >
+                Si
+              </button>
+              <button
+                onClick={() => setConfirmandoEliminacion(false)}
+                disabled={guardandoEdicion}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "rgba(255,255,255,0.12)",
+                  color: "#fff",
+                  fontWeight: "700",
+                  cursor: guardandoEdicion ? "not-allowed" : "pointer",
+                }}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: "grid", gap: "16px" }}>
           <div>
@@ -442,13 +510,13 @@ const EditarVentaModalPromo = ({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "1fr 1fr 1fr",
             gap: "12px",
             marginTop: "20px",
           }}
         >
           <button
-            onClick={onClose}
+            onClick={cerrarModal}
             style={{
               padding: "12px",
               borderRadius: "8px",
@@ -460,6 +528,21 @@ const EditarVentaModalPromo = ({
             }}
           >
             Cancelar
+          </button>
+          <button
+            onClick={() => setConfirmandoEliminacion(true)}
+            disabled={guardandoEdicion}
+            style={{
+              padding: "12px",
+              borderRadius: "8px",
+              border: "none",
+              background: guardandoEdicion ? "rgba(231,76,60,0.3)" : "#e74c3c",
+              color: "#fff",
+              fontWeight: "700",
+              cursor: guardandoEdicion ? "not-allowed" : "pointer",
+            }}
+          >
+            Eliminar venta
           </button>
           <button
             onClick={handleGuardarEdicion}

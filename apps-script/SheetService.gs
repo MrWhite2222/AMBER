@@ -63,3 +63,19 @@ function actualizarFila(sheetName, rowNumber, rowData) {
     return errorResponse_(String(error.message || error));
   }
 }
+
+function eliminarFila(sheetName, rowNumber) {
+  try {
+    const sheet = getSheetOrThrow_(sheetName);
+    const parsedRowNumber = parseRowNumberOrThrow_(sheet, rowNumber);
+
+    deleteRow_(sheet, parsedRowNumber);
+
+    return successResponse_({
+      mensaje: "Fila eliminada",
+      rowNumber: parsedRowNumber,
+    });
+  } catch (error) {
+    return errorResponse_(String(error.message || error));
+  }
+}

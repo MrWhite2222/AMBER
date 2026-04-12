@@ -57,6 +57,23 @@ export const actualizarFila = async (nombreHoja, rowNumber, fila) => {
   }
 };
 
+export const eliminarFila = async (nombreHoja, rowNumber) => {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "delete",
+        sheet: nombreHoja,
+        rowNumber,
+      }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error eliminando fila:", error);
+    return { success: false, error: String(error) };
+  }
+};
+
 export const crearImportacionLote = async (rows, sourceFile) => {
   try {
     const response = await fetch(API_URL, {

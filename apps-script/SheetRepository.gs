@@ -289,3 +289,7 @@ function copyFormulasFromTemplate_(sheet, templateRow, targetRow, columnIndexes)
     }
   });
 }
+
+function deleteRow_(sheet, rowNumber) {
+  sheet.deleteRow(rowNumber);
+}

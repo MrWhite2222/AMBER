@@ -17,6 +17,7 @@ import {
   actualizarFila,
   agregarFila,
   crearImportacionLote,
+  eliminarFila,
   leerBackendInfo,
   leerImportacionLote,
   leerHoja,
@@ -3284,6 +3285,15 @@ const handleEliminarInventario = async () => {
   setInventario(await leerHoja("Inventario"));
 };
 
+const cerrarEdicionVenta = () => {
+  setShowEditForm(false);
+  setVentaEditando(null);
+  setEditSelectedProducto(null);
+  setEditSearchProducto("");
+  setShowEditProductoDrop(false);
+  setGuardandoEdicion(false);
+};
+
 const handleGuardarEdicion = async () => {
   if (
     !ventaEditando ||
@@ -3456,11 +3466,47 @@ const handleGuardarEdicion = async () => {
     })
   );
 
-  setShowEditForm(false);
-  setVentaEditando(null);
-  setEditSelectedProducto(null);
-  setEditSearchProducto("");
-  setGuardandoEdicion(false);
+  cerrarEdicionVenta();
+};
+
+const handleEliminarVenta = async () => {
+  if (!ventaEditando) return;
+
+  const rowNumber = await resolverRowNumberVenta(ventaEditando);
+
+  if (!rowNumber) {
+    alert(
+      "No se puede eliminar esta venta todavia. Espera unos segundos a que se sincronice con Google Sheets."
+    );
+    return;
+  }
+
+  setGuardandoEdicion(true);
+
+  const deleteResult = await eliminarFila("Ventas", rowNumber);
+
+  if (!deleteResult?.success) {
+    alert(
+      deleteResult?.error
+        ? `Error al eliminar la venta: ${deleteResult.error}`
+        : "Error al eliminar la venta."
+    );
+    setGuardandoEdicion(false);
+    return;
+  }
+
+  setAllVentas((prev) =>
+    prev.filter((v) => {
+      const esMismaVenta = ventaEditando._rowNumber
+        ? Number(v._rowNumber) === Number(ventaEditando._rowNumber)
+        : v._tempId && v._tempId === ventaEditando._tempId;
+
+      return !esMismaVenta;
+    })
+  );
+
+  setInventario(await leerHoja("Inventario"));
+  cerrarEdicionVenta();
 };
 
 const construirPayloadMedioPago = (medioData) => ({
@@ -4220,7 +4266,8 @@ const handleEliminarMedioPago = async (medio) => {
     handleGuardarEdicion={handleGuardarEdicion}
     inp={inp}
     lbl={lbl}
-    onClose={() => setShowEditForm(false)}
+    onClose={cerrarEdicionVenta}
+    onDelete={handleEliminarVenta}
     onEditFormDataChange={(key, value) =>
       setEditFormData((f) => ({ ...f, [key]: value }))
     }

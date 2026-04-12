@@ -41,6 +41,10 @@ function doPost(e) {
       return actualizarFila(sheetName, payload.rowNumber, rowData);
     }
 
+    if (action === "delete") {
+      return eliminarFila(sheetName, payload.rowNumber);
+    }
+
     if (action === "create_import_job") {
       return crearImportacionLote(payload.rows || [], payload.sourceFile || "");
     }
