@@ -43,6 +43,15 @@ const EstadoGastoBadge = ({ estado }) => {
 
 const puedeEditarGasto = (gasto) => Boolean(gasto?.raw?._rowNumber);
 
+const columnasCentradasGastos = new Set([
+  "Fecha",
+  "Tipo",
+  "Pago",
+  "Monto",
+  "Estado",
+  "Editar",
+]);
+
 const GastosViewClean = ({
   card,
   gastos,
@@ -250,7 +259,7 @@ const GastosViewClean = ({
                   key={h}
                   style={{
                     padding: "9px 10px",
-                    textAlign: h === "Monto" ? "right" : "left",
+                    textAlign: columnasCentradasGastos.has(h) ? "center" : "left",
                     color: "#f39c12",
                     whiteSpace: "nowrap",
                   }}
@@ -268,16 +277,22 @@ const GastosViewClean = ({
                   borderBottom: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                <td style={{ padding: "9px 10px", color: "#bbb" }}>
+                <td
+                  style={{ padding: "9px 10px", color: "#bbb", textAlign: "center" }}
+                >
                   {formatearFechaGasto(gasto.fecha)}
                 </td>
                 <td style={{ padding: "9px 10px", color: "#fff" }}>
                   {gasto.concepto || "-"}
                 </td>
-                <td style={{ padding: "9px 10px", color: "#3498db" }}>
+                <td
+                  style={{ padding: "9px 10px", color: "#3498db", textAlign: "center" }}
+                >
                   {gasto.tipo || "-"}
                 </td>
-                <td style={{ padding: "9px 10px", color: "#bbb" }}>
+                <td
+                  style={{ padding: "9px 10px", color: "#bbb", textAlign: "center" }}
+                >
                   {gasto.pagoLabel || gasto.formaPago || "1 pago"}
                 </td>
                 <td style={{ padding: "9px 10px", color: "#999" }}>
@@ -286,7 +301,7 @@ const GastosViewClean = ({
                 <td
                   style={{
                     padding: "9px 10px",
-                    textAlign: "right",
+                    textAlign: "center",
                     color: "#e74c3c",
                     fontWeight: "600",
                     whiteSpace: "nowrap",
@@ -294,10 +309,10 @@ const GastosViewClean = ({
                 >
                   $ {formatoMonto(gasto.totalMostrado)}
                 </td>
-                <td style={{ padding: "9px 10px" }}>
+                <td style={{ padding: "9px 10px", textAlign: "center" }}>
                   <EstadoGastoBadge estado={gasto.estado || "Pagado"} />
                 </td>
-                <td style={{ padding: "9px 10px", textAlign: "right" }}>
+                <td style={{ padding: "9px 10px", textAlign: "center" }}>
                   {puedeEditarGasto(gasto) ? (
                     <button
                       onClick={() => onEditarGasto(gasto)}

@@ -83,6 +83,16 @@ const montoCellStyle = {
   fontVariantNumeric: "tabular-nums",
 };
 
+const columnasCentradasTopProductos = new Set(["Unid.", "Total", "Gan. Neta"]);
+const columnasCentradasHistorico = new Set([
+  "Total ventas",
+  "Cantidad ventas",
+  "Impuestos",
+  "Gan. Neta",
+  "Gastos",
+  "Resultado",
+]);
+
 const calcularResumenMes = (ventasMes, gastosMes) => {
   const totalVentas = ventasMes.reduce(
     (acum, venta) => acum + getTotalVentaFila(venta),
@@ -393,7 +403,9 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                     key={header}
                     style={{
                       padding: "9px 10px",
-                      textAlign: header === "Producto" ? "left" : "right",
+                      textAlign: columnasCentradasTopProductos.has(header)
+                        ? "center"
+                        : "left",
                       color: "#2ecc71",
                       whiteSpace: "nowrap",
                     }}
@@ -410,13 +422,33 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
                 >
                   <td style={{ padding: "9px 10px", color: "#fff" }}>{producto.producto}</td>
-                  <td style={{ padding: "9px 10px", textAlign: "right", color: "#3498db" }}>
+                  <td
+                    style={{
+                      padding: "9px 10px",
+                      textAlign: "center",
+                      color: "#3498db",
+                    }}
+                  >
                     {producto.ventas}
                   </td>
-                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#f39c12" }}>
+                  <td
+                    style={{
+                      ...montoCellStyle,
+                      padding: "9px 10px",
+                      color: "#f39c12",
+                      textAlign: "center",
+                    }}
+                  >
                     $ {formatearMonto(producto.totalVentas)}
                   </td>
-                  <td style={{ ...montoCellStyle, padding: "9px 10px", color: "#2ecc71" }}>
+                  <td
+                    style={{
+                      ...montoCellStyle,
+                      padding: "9px 10px",
+                      color: "#2ecc71",
+                      textAlign: "center",
+                    }}
+                  >
                     $ {formatearMonto(producto.gananciaNeta)}
                   </td>
                 </tr>
@@ -551,7 +583,9 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                     key={header}
                     style={{
                       padding: "9px 10px",
-                      textAlign: header === "Mes" ? "left" : "right",
+                      textAlign: columnasCentradasHistorico.has(header)
+                        ? "center"
+                        : "left",
                       color: "#f39c12",
                       whiteSpace: "nowrap",
                     }}
@@ -570,16 +604,40 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   <td style={{ padding: "10px 14px", color: "#fff", whiteSpace: "nowrap" }}>
                     {fila.mes}
                   </td>
-                  <td style={{ ...montoCellStyle, color: "#f39c12" }}>
+                  <td
+                    style={{
+                      ...montoCellStyle,
+                      color: "#f39c12",
+                      textAlign: "center",
+                    }}
+                  >
                     $ {formatearMonto(fila.totalVentas)}
                   </td>
-                  <td style={{ ...montoCellStyle, color: "#e67e22" }}>
+                  <td
+                    style={{
+                      ...montoCellStyle,
+                      color: "#e67e22",
+                      textAlign: "center",
+                    }}
+                  >
                     $ {formatearMonto(fila.impuestos)}
                   </td>
-                  <td style={{ ...montoCellStyle, color: "#3498db" }}>
+                  <td
+                    style={{
+                      ...montoCellStyle,
+                      color: "#3498db",
+                      textAlign: "center",
+                    }}
+                  >
                     $ {formatearMonto(fila.gananciaNetaVentas)}
                   </td>
-                  <td style={{ ...montoCellStyle, color: "#e74c3c" }}>
+                  <td
+                    style={{
+                      ...montoCellStyle,
+                      color: "#e74c3c",
+                      textAlign: "center",
+                    }}
+                  >
                     $ {formatearMonto(fila.gastosPeriodo)}
                   </td>
                   <td
@@ -587,6 +645,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                       ...montoCellStyle,
                       color: fila.resultadoFinal >= 0 ? "#2ecc71" : "#ffb3aa",
                       fontWeight: "700",
+                      textAlign: "center",
                     }}
                   >
                     $ {formatearMonto(fila.resultadoFinal)}

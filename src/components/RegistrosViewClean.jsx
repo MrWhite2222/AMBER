@@ -55,6 +55,17 @@ const formatearPromoRegistro = (venta) => {
   return promoRaw;
 };
 
+const columnasCentradasVentas = new Set([
+  "Codigo",
+  "Talle",
+  "Color",
+  "Cant",
+  "Precio",
+  "Pago",
+  "Promo",
+  "Editar",
+]);
+
 const RegistrosViewClean = ({
   abrirEdicion,
   dashNombresFiltrados,
@@ -271,8 +282,8 @@ const RegistrosViewClean = ({
                 key={header}
                 style={{
                   padding: "8px 10px",
-                  textAlign: ["Precio", "Cant"].includes(header)
-                    ? "right"
+                  textAlign: columnasCentradasVentas.has(header)
+                    ? "center"
                     : "left",
                   color: "#f39c12",
                   whiteSpace: "nowrap",
@@ -331,20 +342,33 @@ const RegistrosViewClean = ({
                     padding: "8px 10px",
                     color: "#777",
                     fontSize: "0.85em",
+                    textAlign: "center",
                   }}
                 >
                   {codigo}
                 </td>
-                <td style={{ padding: "8px 10px", color: "#9b59b6" }}>
+                <td
+                  style={{
+                    padding: "8px 10px",
+                    color: "#9b59b6",
+                    textAlign: "center",
+                  }}
+                >
                   {talle}
                 </td>
-                <td style={{ padding: "8px 10px", color: "#3498db" }}>
+                <td
+                  style={{
+                    padding: "8px 10px",
+                    color: "#3498db",
+                    textAlign: "center",
+                  }}
+                >
                   {color}
                 </td>
                 <td
                   style={{
                     padding: "8px 10px",
-                    textAlign: "right",
+                    textAlign: "center",
                     color: "#3498db",
                   }}
                 >
@@ -353,7 +377,7 @@ const RegistrosViewClean = ({
                 <td
                   style={{
                     padding: "8px 10px",
-                    textAlign: "right",
+                    textAlign: "center",
                     color: "#fff",
                     whiteSpace: "nowrap",
                   }}
@@ -366,6 +390,7 @@ const RegistrosViewClean = ({
                     color: "#777",
                     fontSize: "0.85em",
                     whiteSpace: "nowrap",
+                    textAlign: "center",
                   }}
                 >
                   {venta["Medio de pago"]}
