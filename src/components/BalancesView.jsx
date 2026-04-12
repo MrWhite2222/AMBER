@@ -504,7 +504,11 @@ const BalancesView = ({ allVentas, card, gastos }) => {
               Cant. ventas
             </span>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={historialMeses} barGap="-100%">
+              <ComposedChart
+                data={historialMeses}
+                barGap={0}
+                barCategoryGap="28%"
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="label" stroke="#999" tick={{ fontSize: 11 }} />
                 <YAxis
