@@ -86,20 +86,34 @@ const formatearMes = (fecha) =>
 
 const redondearMillonSuperior = (valor) => {
   const numero = Number(valor || 0);
-  if (numero <= 0) return 1000000;
-  return Math.ceil(numero / 1000000) * 1000000;
+  if (numero <= 0) return 2000000;
+  return Math.ceil(numero / 2000000) * 2000000;
 };
 
 const redondearMillonInferior = (valor) => {
   const numero = Number(valor || 0);
   if (numero >= 0) return 0;
-  return Math.floor(numero / 1000000) * 1000000;
+  return Math.floor(numero / 2000000) * 2000000;
 };
 
 const redondearCantidadSuperior = (valor) => {
   const numero = Number(valor || 0);
-  if (numero <= 0) return 1;
-  return Math.ceil(numero);
+  if (numero <= 0) return 20;
+  return Math.ceil(numero / 20) * 20;
+};
+
+const redondearCantidadInferior = (valor) => {
+  const numero = Number(valor || 0);
+  if (numero >= 0) return 0;
+  return Math.floor(numero / 20) * 20;
+};
+
+const construirTicks = (minimo, maximo, paso) => {
+  const ticks = [];
+  for (let valor = minimo; valor <= maximo; valor += paso) {
+    ticks.push(valor);
+  }
+  return ticks;
 };
 
 const montoCellStyle = {
@@ -266,8 +280,18 @@ const BalancesView = ({ allVentas, card, gastos }) => {
       (1 - proporcionCero)
     );
 
-    return [Math.floor(minimoCantidad), maxCantidadRedondeada];
+    return [redondearCantidadInferior(minimoCantidad), maxCantidadRedondeada];
   }, [dominioEjeMonto, historialMeses]);
+
+  const ticksEjeMonto = useMemo(
+    () => construirTicks(dominioEjeMonto[0], dominioEjeMonto[1], 2000000),
+    [dominioEjeMonto]
+  );
+
+  const ticksEjeCantidad = useMemo(
+    () => construirTicks(dominioEjeCantidad[0], dominioEjeCantidad[1], 20),
+    [dominioEjeCantidad]
+  );
 
   const resumenFilas = [
     {
@@ -578,6 +602,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   tickFormatter={formatearMontoEje}
                   width={90}
                   domain={dominioEjeMonto}
+                  ticks={ticksEjeMonto}
                 />
                 <YAxis
                   yAxisId="cantidad"
@@ -587,6 +612,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   allowDecimals={false}
                   width={44}
                   domain={dominioEjeCantidad}
+                  ticks={ticksEjeCantidad}
                 />
                 <Tooltip
                   contentStyle={{
