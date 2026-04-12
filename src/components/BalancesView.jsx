@@ -608,6 +608,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
                   orientation="right"
                   stroke="#5dade2"
                   tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => (Number(value) < 0 ? "" : value)}
                   allowDecimals={false}
                   width={44}
                   domain={dominioEjeCantidad}
