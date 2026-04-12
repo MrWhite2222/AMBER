@@ -5,9 +5,7 @@ import {
   getGastosDelMes,
   getMesNombreGasto,
   getTotalGastos,
-  getVentanaMeses,
   sumarMeses,
-  toInputDate,
 } from "../utils/gastos";
 
 const formatearMesTarjeta = (fecha) =>
@@ -56,25 +54,6 @@ const GastosViewClean = ({
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-
-  const ventanaMeses = useMemo(
-    () => getVentanaMeses(mesSeleccionado, 1),
-    [mesSeleccionado]
-  );
-
-  const resumenMeses = useMemo(
-    () =>
-      ventanaMeses.map((fecha) => {
-        const items = getGastosDelMes(gastos, fecha);
-        return {
-          key: toInputDate(fecha),
-          fecha,
-          items,
-          total: getTotalGastos(items),
-        };
-      }),
-    [gastos, ventanaMeses]
-  );
 
   const gastosMesSeleccionado = useMemo(() => {
     return [...getGastosDelMes(gastos, mesSeleccionado)].sort(
@@ -131,93 +110,6 @@ const GastosViewClean = ({
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: isMobileLayout
-            ? "1fr"
-            : "48px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) 48px",
-          gap: "12px",
-          alignItems: "stretch",
-          marginBottom: "22px",
-        }}
-      >
-        <button
-          onClick={() => setMesSeleccionado((prev) => sumarMeses(prev, -1))}
-          style={{
-            borderRadius: "12px",
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(255,255,255,0.06)",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: "1.1em",
-            minHeight: isMobileLayout ? "42px" : "auto",
-          }}
-        >
-          {"<"}
-        </button>
-
-        {resumenMeses.map((mesInfo, index) => {
-          const seleccionado = index === 1;
-
-          return (
-            <button
-              key={mesInfo.key}
-              onClick={() => setMesSeleccionado(new Date(mesInfo.fecha))}
-              style={{
-                ...card(seleccionado ? "231,76,60" : "52,152,219"),
-                background: seleccionado
-                  ? "rgba(231,76,60,0.18)"
-                  : "rgba(255,255,255,0.05)",
-                padding: seleccionado ? "18px" : "14px",
-                cursor: "pointer",
-                textAlign: "left",
-                transform: seleccionado ? "translateY(-2px)" : "none",
-                width: "100%",
-              }}
-            >
-              <p
-                style={{
-                  margin: "0 0 6px",
-                  color: seleccionado ? "#ffb3aa" : "#bbb",
-                  fontSize: seleccionado ? "0.84em" : "0.78em",
-                }}
-              >
-                {formatearMesTarjeta(mesInfo.fecha)}
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  color: seleccionado ? "#e74c3c" : "#7ed6df",
-                  fontSize: seleccionado ? "1.45em" : "1.1em",
-                  fontWeight: "700",
-                }}
-              >
-                $ {formatoMonto(mesInfo.total)}
-              </p>
-              <p style={{ margin: "6px 0 0", color: "#999", fontSize: "0.78em" }}>
-                {mesInfo.items.length} movimientos
-              </p>
-            </button>
-          );
-        })}
-
-        <button
-          onClick={() => setMesSeleccionado((prev) => sumarMeses(prev, 1))}
-          style={{
-            borderRadius: "12px",
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(255,255,255,0.06)",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: "1.1em",
-            minHeight: isMobileLayout ? "42px" : "auto",
-          }}
-        >
-          {">"}
-        </button>
-      </div>
-
-      <div
-        style={{
           ...card("231,76,60"),
           margin: "0 auto 20px",
           width: "min(100%, 560px)",
@@ -227,13 +119,51 @@ const GastosViewClean = ({
           gap: "14px",
         }}
       >
-        <div>
+        <div
+          style={{
+            width: "100%",
+            display: "grid",
+            gridTemplateColumns: "42px 1fr 42px",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <button
+            onClick={() => setMesSeleccionado((prev) => sumarMeses(prev, -1))}
+            style={{
+              borderRadius: "10px",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.06)",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: "1.05em",
+              minHeight: "40px",
+            }}
+          >
+            {"<"}
+          </button>
+          <div>
           <p style={{ margin: "0 0 6px", color: "#bbb", fontSize: "0.82em" }}>
             {esMesActual ? "Mes actual" : "Mes seleccionado"}
           </p>
           <h3 style={{ margin: 0, color: "#fff", fontSize: "1.2em" }}>
             {formatearMesTarjeta(mesSeleccionado)}
           </h3>
+          </div>
+          <button
+            onClick={() => setMesSeleccionado((prev) => sumarMeses(prev, 1))}
+            style={{
+              borderRadius: "10px",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.06)",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: "1.05em",
+              minHeight: "40px",
+            }}
+          >
+            {">"}
+          </button>
         </div>
         <div style={{ textAlign: "center" }}>
           <p style={{ margin: "0 0 6px", color: "#bbb", fontSize: "0.82em" }}>
