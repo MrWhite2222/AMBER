@@ -382,7 +382,10 @@ const RegistrosViewClean = ({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  $ {parseNumero(venta["Precio venta"]).toLocaleString("es-AR")}
+                  ${" "}
+                  {parseNumero(venta["Precio venta"]).toLocaleString("es-AR", {
+                    maximumFractionDigits: 0,
+                  })}
                 </td>
                 <td
                   style={{

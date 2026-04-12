@@ -394,7 +394,9 @@ const InventarioView = ({
                 }}
               >
                 ${" "}
-                  {getProductoCosto(item).toLocaleString("es-AR")}
+                  {getProductoCosto(item).toLocaleString("es-AR", {
+                    maximumFractionDigits: 0,
+                  })}
                 </td>
                 <td
                   style={{
@@ -406,7 +408,10 @@ const InventarioView = ({
                 >
                   ${" "}
                   {getProductoPrecioEfectivo(item).toLocaleString(
-                    "es-AR"
+                    "es-AR",
+                    {
+                      maximumFractionDigits: 0,
+                    }
                   )}
                 </td>
                 <td
@@ -418,7 +423,9 @@ const InventarioView = ({
                   }}
                 >
                   ${" "}
-                  {getProductoPrecioLista(item).toLocaleString("es-AR")}
+                  {getProductoPrecioLista(item).toLocaleString("es-AR", {
+                    maximumFractionDigits: 0,
+                  })}
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "center" }}>
                   <button

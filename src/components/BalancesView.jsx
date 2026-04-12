@@ -62,7 +62,7 @@ const getImpuestoVentaFila = (venta) =>
 const formatearMonto = (valor) =>
   Number(valor || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   });
 
 const formatearMontoEje = (valor) =>
@@ -73,8 +73,8 @@ const formatearMontoEje = (valor) =>
 
 const formatearPorcentaje = (valor) =>
   `${Number(valor || 0).toLocaleString("es-AR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   })}%`;
 
 const formatearMes = (fecha) =>

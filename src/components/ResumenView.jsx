@@ -3,13 +3,13 @@ import { AlertTriangle } from "lucide-react";
 const formatearMonto = (valor) =>
   Number(valor || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   });
 
 const formatearPorcentaje = (valor) =>
   `${Number(valor || 0).toLocaleString("es-AR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   })}%`;
 
 const montoCellStyle = {
