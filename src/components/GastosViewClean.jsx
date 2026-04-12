@@ -45,7 +45,13 @@ const EstadoGastoBadge = ({ estado }) => {
 
 const puedeEditarGasto = (gasto) => Boolean(gasto?.raw?._rowNumber);
 
-const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => {
+const GastosViewClean = ({
+  card,
+  gastos,
+  isMobileLayout,
+  onEditarGasto,
+  onOpenCargarGasto,
+}) => {
   const [mesSeleccionado, setMesSeleccionado] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -126,8 +132,9 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "48px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) 48px",
+          gridTemplateColumns: isMobileLayout
+            ? "1fr"
+            : "48px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) 48px",
           gap: "12px",
           alignItems: "stretch",
           marginBottom: "22px",
@@ -142,6 +149,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
             color: "#fff",
             cursor: "pointer",
             fontSize: "1.1em",
+            minHeight: isMobileLayout ? "42px" : "auto",
           }}
         >
           {"<"}
@@ -163,6 +171,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
                 cursor: "pointer",
                 textAlign: "left",
                 transform: seleccionado ? "translateY(-2px)" : "none",
+                width: "100%",
               }}
             >
               <p
@@ -200,6 +209,7 @@ const GastosViewClean = ({ card, gastos, onEditarGasto, onOpenCargarGasto }) => 
             color: "#fff",
             cursor: "pointer",
             fontSize: "1.1em",
+            minHeight: isMobileLayout ? "42px" : "auto",
           }}
         >
           {">"}

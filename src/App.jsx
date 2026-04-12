@@ -4021,6 +4021,7 @@ const handleEliminarMedioPago = async (medio) => {
           <GastosView
             card={card}
             gastos={gastos}
+            isMobileLayout={isMobileLayout}
             onEditarGasto={abrirEdicionGasto}
             onOpenCargarGasto={() => {
               resetGastoForm();
