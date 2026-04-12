@@ -3792,7 +3792,7 @@ const handleEliminarMedioPago = async (medio) => {
               Control contable · {allVentas.length} ventas · {inventarioUnico.length}{" "}
               productos · {gastos.length} gastos
             </p>
-            {backendInfo?.version && (
+            {false && backendInfo?.version && (
               <p style={{ margin: "6px 0 0", color: "#7ed6df", fontSize: "0.75em" }}>
                 Backend {backendInfo.version}
                 {backendInfo.spreadsheetName ? ` · ${backendInfo.spreadsheetName}` : ""}
