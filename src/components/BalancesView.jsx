@@ -91,9 +91,7 @@ const redondearMillonSuperior = (valor) => {
 };
 
 const redondearMillonInferior = (valor) => {
-  const numero = Number(valor || 0);
-  if (numero >= 0) return 0;
-  return Math.floor(numero / 2000000) * 2000000;
+  return 0;
 };
 
 const redondearCantidadSuperior = (valor) => {
