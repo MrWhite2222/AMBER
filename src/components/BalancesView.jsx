@@ -98,14 +98,8 @@ const redondearMillonInferior = (valor) => {
 
 const redondearCantidadSuperior = (valor) => {
   const numero = Number(valor || 0);
-  if (numero <= 0) return 20;
-  return Math.ceil(numero / 20) * 20;
-};
-
-const redondearCantidadInferior = (valor) => {
-  const numero = Number(valor || 0);
-  if (numero >= 0) return 0;
-  return Math.floor(numero / 20) * 20;
+  if (numero <= 0) return 25;
+  return Math.ceil(numero / 25) * 25;
 };
 
 const construirTicks = (minimo, maximo, paso) => {
@@ -260,28 +254,8 @@ const BalancesView = ({ allVentas, card, gastos }) => {
   const dominioEjeCantidad = useMemo(() => {
     const cantidades = historialMeses.map((fila) => Number(fila.cantidadVentas || 0));
     const maxCantidad = cantidades.length ? Math.max(...cantidades) : 0;
-    const maxCantidadRedondeada = redondearCantidadSuperior(maxCantidad);
-
-    const [minMonto, maxMonto] = dominioEjeMonto;
-    const rangoMonto = maxMonto - minMonto;
-
-    if (rangoMonto <= 0 || minMonto >= 0) {
-      return [0, maxCantidadRedondeada];
-    }
-
-    const proporcionCero = (0 - minMonto) / rangoMonto;
-
-    if (proporcionCero <= 0 || proporcionCero >= 1) {
-      return [0, maxCantidadRedondeada];
-    }
-
-    const minimoCantidad = -(
-      (proporcionCero * maxCantidadRedondeada) /
-      (1 - proporcionCero)
-    );
-
-    return [redondearCantidadInferior(minimoCantidad), maxCantidadRedondeada];
-  }, [dominioEjeMonto, historialMeses]);
+    return [0, redondearCantidadSuperior(maxCantidad)];
+  }, [historialMeses]);
 
   const ticksEjeMonto = useMemo(
     () => construirTicks(dominioEjeMonto[0], dominioEjeMonto[1], 2000000),
@@ -289,7 +263,7 @@ const BalancesView = ({ allVentas, card, gastos }) => {
   );
 
   const ticksEjeCantidad = useMemo(
-    () => construirTicks(dominioEjeCantidad[0], dominioEjeCantidad[1], 20),
+    () => construirTicks(dominioEjeCantidad[0], dominioEjeCantidad[1], 25),
     [dominioEjeCantidad]
   );
 
