@@ -62,6 +62,7 @@ import {
 } from "./utils/gastos";
 
 const getTodayInputDate = () => toInputDate(new Date());
+const MOBILE_BREAKPOINT = 768;
 
 const parseInputDateLocal = (value) => {
   const [year, month, day] = String(value ?? "")
@@ -110,6 +111,10 @@ const AmberApp = () => {
   const [viewMode, setViewMode] = useState("resumen");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isMobileLayout, setIsMobileLayout] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= MOBILE_BREAKPOINT : false
+  );
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [allVentas, setAllVentas] = useState([]);
   const [inventario, setInventario] = useState([]);
@@ -150,6 +155,22 @@ const AmberApp = () => {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileLayout(window.innerWidth <= MOBILE_BREAKPOINT);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileLayout) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [isMobileLayout]);
 
   useEffect(() => {
     allVentasRef.current = allVentas;
@@ -3605,6 +3626,26 @@ const handleEliminarMedioPago = async (medio) => {
     ? `https://docs.google.com/spreadsheets/d/${backendInfo.spreadsheetId}/export?format=xlsx`
     : "";
 
+  const handleDownloadSheet = () => {
+    if (!spreadsheetDownloadUrl) {
+      alert("No se pudo detectar la planilla para descargar.");
+      return;
+    }
+
+    window.open(spreadsheetDownloadUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleOpenNuevaVenta = () => {
+    setFormData((prev) => ({ ...prev, medioPago: medioPagoDefault }));
+    setShowForm(true);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleChangeViewMode = (mode) => {
+    setViewMode(mode);
+    setIsMobileMenuOpen(false);
+  };
+
   // Pantalla de carga
   if (loading) {
     return (
@@ -3712,72 +3753,165 @@ const handleEliminarMedioPago = async (medio) => {
               </p>
             )}
           </div>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            {navBtns.map(([m, label]) => (
-              <button
-                key={m}
-                onClick={() => setViewMode(m)}
-                style={{
-                  padding: "9px 15px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background:
-                    viewMode === m ? "#f39c12" : "rgba(255,255,255,0.1)",
-                  color: viewMode === m ? "#1a1a2e" : "#fff",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  fontSize: "0.85em",
-                }}
-              >
-                {label}
-              </button>
-            ))}
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", position: "relative" }}>
+            {isMobileLayout ? (
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                  style={{
+                    padding: "9px 15px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "rgba(255,255,255,0.1)",
+                    color: "#fff",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "0.85em",
+                  }}
+                >
+                  Menu
+                </button>
+                {isMobileMenuOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      right: 0,
+                      minWidth: "220px",
+                      background: "#16213e",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: "12px",
+                      padding: "10px",
+                      display: "grid",
+                      gap: "8px",
+                      zIndex: 30,
+                      boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+                    }}
+                  >
+                    {navBtns.map(([m, label]) => (
+                      <button
+                        key={m}
+                        onClick={() => handleChangeViewMode(m)}
+                        style={{
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          border: "none",
+                          background:
+                            viewMode === m ? "#f39c12" : "rgba(255,255,255,0.08)",
+                          color: viewMode === m ? "#1a1a2e" : "#fff",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          fontSize: "0.85em",
+                          textAlign: "left",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        cargarDatos();
+                      }}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: "#2ecc71",
+                        color: "#fff",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        fontSize: "0.85em",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        justifyContent: "flex-start",
+                      }}
+                    >
+                      <RefreshCw size={15} /> Actualizar
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleDownloadSheet();
+                      }}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: "#3498db",
+                        color: "#fff",
+                        fontWeight: "600",
+                        cursor: spreadsheetDownloadUrl ? "pointer" : "not-allowed",
+                        fontSize: "0.85em",
+                        opacity: spreadsheetDownloadUrl ? 1 : 0.7,
+                        textAlign: "left",
+                      }}
+                    >
+                      Descargar Sheet
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {navBtns.map(([m, label]) => (
+                  <button
+                    key={m}
+                    onClick={() => handleChangeViewMode(m)}
+                    style={{
+                      padding: "9px 15px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background:
+                        viewMode === m ? "#f39c12" : "rgba(255,255,255,0.1)",
+                      color: viewMode === m ? "#1a1a2e" : "#fff",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      fontSize: "0.85em",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+                <button
+                  onClick={cargarDatos}
+                  style={{
+                    padding: "9px 15px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#2ecc71",
+                    color: "#fff",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "0.85em",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  <RefreshCw size={15} /> Actualizar
+                </button>
+                <button
+                  onClick={handleDownloadSheet}
+                  style={{
+                    padding: "9px 15px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#3498db",
+                    color: "#fff",
+                    fontWeight: "600",
+                    cursor: spreadsheetDownloadUrl ? "pointer" : "not-allowed",
+                    fontSize: "0.85em",
+                    opacity: spreadsheetDownloadUrl ? 1 : 0.7,
+                  }}
+                >
+                  Descargar Sheet
+                </button>
+              </>
+            )}
             <button
-              onClick={cargarDatos}
-              style={{
-                padding: "9px 15px",
-                borderRadius: "8px",
-                border: "none",
-                background: "#2ecc71",
-                color: "#fff",
-                fontWeight: "600",
-                cursor: "pointer",
-                fontSize: "0.85em",
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-            >
-              <RefreshCw size={15} /> Actualizar
-            </button>
-            <button
-              onClick={() => {
-                if (!spreadsheetDownloadUrl) {
-                  alert("No se pudo detectar la planilla para descargar.");
-                  return;
-                }
-
-                window.open(spreadsheetDownloadUrl, "_blank", "noopener,noreferrer");
-              }}
-              style={{
-                padding: "9px 15px",
-                borderRadius: "8px",
-                border: "none",
-                background: "#3498db",
-                color: "#fff",
-                fontWeight: "600",
-                cursor: spreadsheetDownloadUrl ? "pointer" : "not-allowed",
-                fontSize: "0.85em",
-                opacity: spreadsheetDownloadUrl ? 1 : 0.7,
-              }}
-            >
-              Descargar Sheet
-            </button>
-            <button
-              onClick={() => {
-                setFormData((prev) => ({ ...prev, medioPago: medioPagoDefault }));
-                setShowForm(true);
-              }}
+              onClick={handleOpenNuevaVenta}
               style={{
                 padding: "9px 15px",
                 borderRadius: "8px",
