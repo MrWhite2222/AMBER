@@ -1374,8 +1374,7 @@ const tienePrecioVentaEdicion =
           .toUpperCase()
           .includes(searchProducto.toUpperCase()) ||
         getInventarioCodigo(p).toUpperCase().includes(searchProducto.toUpperCase())
-    )
-    .slice(0, 8);
+    );
 }, [searchProducto, inventarioUnico]);
 
   //Filtro Edicion
