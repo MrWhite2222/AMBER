@@ -124,7 +124,7 @@ const NuevaVentaModalPromo = ({
             <div style={{ position: "relative" }}>
               <input
                 type="text"
-                placeholder="Escribi nombre o codigo..."
+                placeholder="Nombre, nombre + talle, nombre + talle + color o código"
                 value={searchProducto}
                 disabled={promoPendiente}
                 onChange={(e) => onSearchProductoChange(e.target.value)}

@@ -84,6 +84,30 @@ export const getProductoTalleSeguro = (registro) =>
 export const getProductoColorSeguro = (registro) =>
   normalizarTexto(getProductoValor(registro, ["COLOR", "Color"]));
 
+const normalizarBusquedaProducto = (valor) =>
+  normalizarTexto(valor).replace(/\s+/g, " ").toUpperCase();
+
+export const coincideBusquedaProducto = (producto, busqueda) => {
+  const termino = normalizarBusquedaProducto(busqueda);
+  if (!termino) return false;
+
+  const nombre = normalizarBusquedaProducto(getProductoNombreSeguro(producto));
+  const codigo = normalizarBusquedaProducto(getCodigoSeguro(producto));
+
+  if (nombre.includes(termino) || codigo.includes(termino)) return true;
+
+  const talle = normalizarBusquedaProducto(getProductoTalleSeguro(producto));
+  if (!nombre || !talle) return false;
+
+  const nombreConTalle = `${nombre} ${talle}`;
+  if (termino === nombreConTalle) return true;
+  if (!termino.startsWith(`${nombreConTalle} `)) return false;
+
+  const color = normalizarBusquedaProducto(getProductoColorSeguro(producto));
+  const colorBuscado = termino.slice(nombreConTalle.length + 1);
+  return Boolean(color) && color.startsWith(colorBuscado);
+};
+
 export const construirCodigoBuscador = ({
   codigo = "",
   producto = "",

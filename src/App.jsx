@@ -23,6 +23,7 @@ import {
   leerHoja,
 } from "./services/sheets";
 import {
+  coincideBusquedaProducto,
   construirCodigoBuscador,
   formatearFecha,
   getCodigoSeguro,
@@ -1368,13 +1369,7 @@ const tienePrecioVentaEdicion =
 
   return inventarioUnico
     .filter((p) => parseNumero(p["STOCK"]) > 0)
-    .filter(
-      (p) =>
-        String(p["PRODUCTO"] ?? "")
-          .toUpperCase()
-          .includes(searchProducto.toUpperCase()) ||
-        getInventarioCodigo(p).toUpperCase().includes(searchProducto.toUpperCase())
-    );
+    .filter((p) => coincideBusquedaProducto(p, searchProducto));
 }, [searchProducto, inventarioUnico]);
 
   //Filtro Edicion
